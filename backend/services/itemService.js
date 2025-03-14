@@ -10,7 +10,7 @@ import { collection, addDoc, doc, getDoc, updateDoc, query, where, getDocs } fro
 export const storeItemData = async (itemData) => {
   try {
     // Validate required fields
-    const requiredFields = ['name', 'description', 'category', 'status', 'location'];
+    const requiredFields = ['name', 'description', 'category', 'imageUrl', 'status', 'location'];
     for (const field of requiredFields) {
       if (!itemData[field]) {
         throw new Error(`Missing required field: ${field}`);
@@ -22,7 +22,7 @@ export const storeItemData = async (itemData) => {
       name: itemData.name,
       description: itemData.description,
       category: itemData.category,
-      imageUrl: itemData.imageUrl || null,
+      imageUrl: itemData.imageUrl,
       status: itemData.status,
       location: itemData.location,
       reportDate: itemData.reportDate || new Date(),

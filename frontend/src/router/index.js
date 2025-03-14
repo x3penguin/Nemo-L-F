@@ -5,10 +5,10 @@ import store from '@/store';
 import Home from '@/views/Home.vue';
 import Login from '@/views/Login.vue';
 import Register from '@/views/Register.vue';
-import ReportLost from '@/views/ReportLost.vue';
-import ReportFound from '@/views/ReportFound.vue';
-import Collection from '@/views/Collection.vue';
-import Profile from '@/views/Profile.vue';
+// import ReportLost from '@/views/ReportLost.vue';
+// import ReportFound from '@/views/ReportFound.vue';
+// import Collection from '@/views/Collection.vue';
+// import Profile from '@/views/Profile.vue';
 
 const routes = [
   {
@@ -32,38 +32,7 @@ const routes = [
       guest: true 
     }
   },
-  {
-    path: '/report-lost',
-    name: 'report-lost',
-    component: ReportLost,
-    meta: { 
-      requiresAuth: true 
-    }
-  },
-  {
-    path: '/report-found',
-    name: 'report-found',
-    component: ReportFound,
-    meta: { 
-      requiresAuth: true 
-    }
-  },
-  {
-    path: '/collections',
-    name: 'collections',
-    component: Collection,
-    meta: { 
-      requiresAuth: true 
-    }
-  },
-  {
-    path: '/profile',
-    name: 'profile',
-    component: Profile,
-    meta: { 
-      requiresAuth: true 
-    }
-  }
+  
 ];
 
 const router = createRouter({

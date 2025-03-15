@@ -1,5 +1,5 @@
 // itemService.js
-import { db } from '../firebase/firebase';
+import { db } from '../firebase/firebase.js';
 import { collection, addDoc, doc, getDoc, updateDoc, query, where, getDocs } from 'firebase/firestore';
 
 /**
@@ -137,7 +137,7 @@ export const getItemsByStatus = async (status) => {
 
 // Add this to your itemService.js
 
-import { storage } from '../firebase/firebase';
+import { storage } from '../firebase/firebase.js';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 /**

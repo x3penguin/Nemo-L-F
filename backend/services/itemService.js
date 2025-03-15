@@ -26,11 +26,11 @@ export const storeItemData = async (itemData) => {
       imageUrl: itemData.imageUrl || null, // Make imageUrl optional
       status: itemData.status,
       location: itemData.location,
-      reportDate: itemData.reportDate ? Timestamp.fromDate(new Date(itemData.reportDate)) : Timestamp.now(),
+      lostDate: Timestamp.fromDate(new Date(itemData.reportDate)),
       ownerId: itemData.ownerId || null,
       finderId: itemData.finderId || null,
       matchingConfidence: itemData.matchingConfidence || null,
-      createdAt: Timestamp.now()
+      reportedDate: Timestamp.now()
     };
 
     // Store in Firestore

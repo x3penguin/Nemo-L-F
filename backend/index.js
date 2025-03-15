@@ -66,7 +66,7 @@ app.post('/api/items/lost', upload.single('image'), async (req, res) => {
       imageUrl: imageUrl,
       status: 'LOST',
       location: req.body.venue ? `${req.body.venue} | ${req.body.specific_location || ''}` : req.body.location,
-      reportDate: req.body.lost_date ? Timestamp.fromDate(new Date(req.body.lost_date)) : Timestamp.now(),      
+      lostDate: req.body.lost_date,
       ownerId: req.body.userId ?? null, //remember to delete 1 once user service set
       finderId: null
     };
@@ -108,7 +108,7 @@ app.post('/api/items/found', upload.single('image'), async (req, res) => {
       imageUrl: imageUrl,
       status: 'FOUND',
       location: req.body.venue ? `${req.body.venue} | ${req.body.specific_location || ''}` : req.body.location,
-      reportDate: req.body.lost_date ? Timestamp.fromDate(new Date(req.body.lost_date)) : Timestamp.now(),      ownerId: req.body.userId,
+      lostDate: req.body.lost_date,
       ownerId: null,
       finderId: req.body.userId ?? null //rmb delete 
     };

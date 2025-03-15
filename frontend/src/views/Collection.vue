@@ -67,7 +67,7 @@
           <div v-for="item in filteredItems" :key="item.id" class="item-card">
             <div class="item-image">
               <img
-                :src="item.image_url"
+                :src="item.imageUrl || item.image_url"
                 :alt="item.name"
                 @error="handleImageError"
               />
@@ -81,32 +81,18 @@
             <div class="item-details">
               <h3 class="item-name">{{ item.name }}</h3>
               <p class="item-category">{{ item.category }}</p>
-              <p class="item-location">Found at: {{ item.venue }}</p>
+              <p class="item-location">
+                Location: {{ item.venue || item.location }}
+              </p>
               <p class="item-date">
-                Matched: {{ formatDate(item.matched_date) }}
+                Reported:
+                {{ formatDate(item.report_date || item.reportedDate) }}
               </p>
             </div>
             <div class="item-actions">
-              <button
-                v-if="item.status === 'MATCHED'"
-                @click="initiateCollection(item)"
-                class="btn btn-primary"
-              >
+              <button @click="initiateCollection(item)" class="btn btn-primary">
                 Arrange Collection
               </button>
-              <button
-                v-else-if="item.status === 'COLLECTING'"
-                @click="viewCollectionDetails(item)"
-                class="btn btn-secondary"
-              >
-                View Collection Details
-              </button>
-              <div
-                v-else-if="item.status === 'RETRIEVED'"
-                class="retrieved-message"
-              >
-                Retrieved on {{ formatDate(item.retrieved_date) }}
-              </div>
             </div>
           </div>
         </div>
@@ -615,14 +601,46 @@
 
 <script>
 import { ref, computed, onMounted } from "vue";
-
+import itemService from "@/services/item.service";
+// import ItemCard from '@/components/ItemCard.vue';
 export default {
   name: "CollectionView",
+  // components: {
+  //   ItemCard
+  // },
   setup() {
+    const fetchMatchedItems = async () => {
+      isLoading.value = true;
+      error.value = null;
+
+      try {
+        // Use the correct endpoint with query parameter
+        const response = await itemService.getLostItems();
+        matchedItems.value = response.data;
+        console.log("Items fetched:", matchedItems.value); // For debugging
+      } catch (err) {
+        console.error("Error fetching matched items:", err);
+        error.value = "Failed to load your matched items. Please try again.";
+      } finally {
+        isLoading.value = false;
+      }
+    };
+
+    const fetchItems = async () => {
+      try {
+        const response = await itemService.getLostItems();
+        matchedItems.value = response.data;
+        console.log("Items fetched:", response.data);
+      } catch (err) {
+        console.error("Error fetching items:", err);
+      }
+    };
+
     const handleImageError = (event) => {
       // Fallback to placeholder if image fails to load
       event.target.src = "/img/placeholder-image.jpg";
     };
+
     const isLoading = ref(false);
     const error = ref(null);
     const matchedItems = ref([]);
@@ -660,28 +678,6 @@ export default {
       surcharge: 0,
       total: 8.5,
     });
-
-    const fetchMatchedItems = async () => {
-      isLoading.value = true;
-      error.value = null;
-
-      try {
-        // Call your backend API that uses the itemService.js functions
-        const response = await fetch("/api/items/matched");
-
-        if (!response.ok) {
-          throw new Error("Failed to load items");
-        }
-
-        // The backend should return items with signed image URLs
-        matchedItems.value = await response.json();
-      } catch (err) {
-        console.error("Error fetching matched items:", err);
-        error.value = "Failed to load your matched items. Please try again.";
-      } finally {
-        isLoading.value = false;
-      }
-    };
 
     const fetchSavedAddresses = async () => {
       try {
@@ -723,24 +719,25 @@ export default {
     };
 
     const fetchCollectionDetails = async (itemId) => {
-  try {
-    // Show loading state
-    collectionError.value = null;
-    
-    // Call your backend API to get collection details
-    const response = await fetch(`/api/items/${itemId}/collection`);
-    
-    if (!response.ok) {
-      throw new Error('Failed to fetch collection details');
-    }
-    
-    // Update the collection details
-    collectionDetails.value = await response.json();
-  } catch (err) {
-    console.error('Error fetching collection details:', err);
-    collectionError.value = 'Failed to load collection details. Please try again.';
-  }
-};
+      try {
+        // Show loading state
+        collectionError.value = null;
+
+        // Call your backend API to get collection details
+        const response = await fetch(`/api/items/${itemId}/collection`);
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch collection details");
+        }
+
+        // Update the collection details
+        collectionDetails.value = await response.json();
+      } catch (err) {
+        console.error("Error fetching collection details:", err);
+        collectionError.value =
+          "Failed to load collection details. Please try again.";
+      }
+    };
 
     onMounted(() => {
       fetchMatchedItems();
@@ -791,7 +788,16 @@ export default {
     const formatDate = (dateStr) => {
       if (!dateStr) return "N/A";
 
-      const date = new Date(dateStr);
+      let date;
+      if (dateStr instanceof Date) {
+        date = dateStr;
+      } else if (typeof dateStr === "object" && dateStr.seconds) {
+        // Handle Firestore timestamp
+        date = new Date(dateStr.seconds * 1000);
+      } else {
+        date = new Date(dateStr);
+      }
+
       return date.toLocaleDateString("en-US", {
         year: "numeric",
         month: "short",
@@ -836,21 +842,21 @@ export default {
     };
 
     const formatFullAddress = (details) => {
-  if (!details || !details.delivery_address) return 'N/A';
-  return details.delivery_address;
-};
+      if (!details || !details.delivery_address) return "N/A";
+      return details.delivery_address;
+    };
 
-const isDeliveryStepActive = (step) => {
-  const statusOrder = ['SCHEDULED', 'PAID', 'IN_PROGRESS', 'COMPLETED'];
-  const currentStatus = collectionDetails.value.status;
-  
-  if (!currentStatus || !statusOrder.includes(currentStatus)) return false;
-  
-  const currentIndex = statusOrder.indexOf(currentStatus);
-  const stepIndex = statusOrder.indexOf(step);
-  
-  return stepIndex <= currentIndex;
-};
+    const isDeliveryStepActive = (step) => {
+      const statusOrder = ["SCHEDULED", "PAID", "IN_PROGRESS", "COMPLETED"];
+      const currentStatus = collectionDetails.value.status;
+
+      if (!currentStatus || !statusOrder.includes(currentStatus)) return false;
+
+      const currentIndex = statusOrder.indexOf(currentStatus);
+      const stepIndex = statusOrder.indexOf(step);
+
+      return stepIndex <= currentIndex;
+    };
 
     const initiateCollection = (item) => {
       selectedItem.value = item;
@@ -861,12 +867,12 @@ const isDeliveryStepActive = (step) => {
     };
 
     const viewCollectionDetails = async (item) => {
-  selectedItem.value = item;
-  modalType.value = 'details';
-  showModal.value = true;
-  
-  await fetchCollectionDetails(item.id);
-};
+      selectedItem.value = item;
+      modalType.value = "details";
+      showModal.value = true;
+
+      await fetchCollectionDetails(item.id);
+    };
 
     const closeModal = () => {
       showModal.value = false;
@@ -1037,7 +1043,7 @@ const isDeliveryStepActive = (step) => {
       submitCollectionRequest,
       processPayment,
       handleImageError,
-      
+      fetchItems,
     };
   },
 };

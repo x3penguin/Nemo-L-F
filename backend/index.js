@@ -27,7 +27,6 @@ app.get('/api/items', async (req, res) => {
   
   const result = await getItemsByStatus(status);
   if (result.success) {
-    // Return data in the format expected by frontend
     res.status(200).json(result.items);
   } else {
     res.status(400).json({ error: result.error });
@@ -199,4 +198,17 @@ app.get('/health', (req, res) => {
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Lost and Found Item Service running on port ${PORT}`);
+});
+
+app.get('/items/collection', async (req, res) => {
+  const status = req.query.status;
+  console.log("API called with status:", status);
+  const userId = req.query.userId || 1; // Default to 1 for testing
+  
+  const result = await getCollectionItems(userId);
+  if (result.success) {
+    res.status(200).json(result.items);
+  } else {
+    res.status(400).json(result);
+  }
 });

@@ -48,6 +48,11 @@ class ItemService {
   //   });
   // }
   
+  getAllCollectionItems() {
+    // This gets all items in the collection process
+    return api.get('/items/collection');
+  }
+
   initiateCollection(itemId, collectionData) {
     return api.post(`/items/${itemId}/collection`, collectionData);
   }

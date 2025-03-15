@@ -1,90 +1,98 @@
-import { createRouter, createWebHistory } from 'vue-router';
-import store from '@/store';
+import { createRouter, createWebHistory } from "vue-router";
+import store from "@/store";
 
 // Views
-import Home from '@/views/Home.vue';
-import Login from '@/views/Login.vue';
+import Home from "@/views/Home.vue";
+import Login from "@/views/Login.vue";
 
 const routes = [
   {
-    path: '/',
-    name: 'home',
-    component: Home
+    path: "/",
+    name: "home",
+    component: Home,
   },
   {
-    path: '/login',
-    name: 'login',
+    path: "/login",
+    name: "login",
     component: Login,
-    meta: { 
-      guest: true 
-    }
+    meta: {
+      guest: true,
+    },
   },
   {
-    path: '/register',
-    name: 'register',
-    component: () => import('@/views/Register.vue'),
-    meta: { 
-      guest: true 
-    }
+    path: "/register",
+    name: "register",
+    component: () => import("@/views/Register.vue"),
+    meta: {
+      guest: true,
+    },
   },
   {
-    path: '/report-lost',
-    name: 'report-lost',
-    component: () => import('@/views/ReportLost.vue'),
-    // meta: { 
-    //   requiresAuth: true 
+    path: "/report-lost",
+    name: "report-lost",
+    component: () => import("@/views/ReportLost.vue"),
+    // meta: {
+    //   requiresAuth: true
     // }
   },
   {
-    path: '/report-found',
-    name: 'report-found',
-    component: () => import('@/views/ReportFound.vue'),
-    // meta: { 
-    //   requiresAuth: true 
+    path: "/report-found",
+    name: "report-found",
+    component: () => import("@/views/ReportFound.vue"),
+    // meta: {
+    //   requiresAuth: true
     // }
   },
   {
-    path: '/profile',
-    name: 'profile',
-    component: () => import('@/views/Profile.vue'),
-    // meta: { 
-    //   requiresAuth: true 
+    path: "/profile",
+    name: "profile",
+    component: () => import("@/views/Profile.vue"),
+    // meta: {
+    //   requiresAuth: true
     // }
   },
   {
-    path: '/collections',
-    name: 'collection',
-    component: () => import('@/views/Collection.vue'),
-    // meta: { 
-    //   requiresAuth: true 
+    path: "/collections",
+    name: "collection",
+    component: () => import("@/views/Collection.vue"),
+    // meta: {
+    //   requiresAuth: true
     // }
-  }
+  },
+  {
+    path: "/report-success",
+    name: "report-success",
+    component: () => import("@/views/ReportSuccess.vue"),
+    // meta: {
+    //   requiresAuth: true
+    // }
+  },
 ];
 
 const router = createRouter({
   history: createWebHistory(process.env.BASE_URL),
-  routes
+  routes,
 });
 
 // Navigation guard
 router.beforeEach((to, from, next) => {
-  const isLoggedIn = store.getters['auth/isLoggedIn'];
-  
+  const isLoggedIn = store.getters["auth/isLoggedIn"];
+
   // Routes that require authentication
-  if (to.matched.some(record => record.meta.requiresAuth)) {
+  if (to.matched.some((record) => record.meta.requiresAuth)) {
     if (!isLoggedIn) {
       next({
-        path: '/login',
-        query: { redirect: to.fullPath }
+        path: "/login",
+        query: { redirect: to.fullPath },
       });
     } else {
       next();
     }
-  } 
+  }
   // Routes for guests only (login, register)
-  else if (to.matched.some(record => record.meta.guest)) {
+  else if (to.matched.some((record) => record.meta.guest)) {
     if (isLoggedIn) {
-      next({ path: '/' });
+      next({ path: "/" });
     } else {
       next();
     }

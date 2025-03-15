@@ -4,11 +4,6 @@ import store from '@/store';
 // Views
 import Home from '@/views/Home.vue';
 import Login from '@/views/Login.vue';
-import Register from '@/views/Register.vue';
-// import ReportLost from '@/views/ReportLost.vue';
-// import ReportFound from '@/views/ReportFound.vue';
-// import Collection from '@/views/Collection.vue';
-// import Profile from '@/views/Profile.vue';
 
 const routes = [
   {
@@ -27,12 +22,43 @@ const routes = [
   {
     path: '/register',
     name: 'register',
-    component: Register,
+    component: () => import('@/views/Register.vue'),
     meta: { 
       guest: true 
     }
   },
-  
+  {
+    path: '/report-lost',
+    name: 'report-lost',
+    component: () => import('@/views/ReportLost.vue'),
+    // meta: { 
+    //   requiresAuth: true 
+    // }
+  },
+  {
+    path: '/report-found',
+    name: 'report-found',
+    component: () => import('@/views/ReportFound.vue'),
+    // meta: { 
+    //   requiresAuth: true 
+    // }
+  },
+  {
+    path: '/profile',
+    name: 'profile',
+    component: () => import('@/views/Profile.vue'),
+    // meta: { 
+    //   requiresAuth: true 
+    // }
+  },
+  {
+    path: '/collections',
+    name: 'collection',
+    component: () => import('@/views/Collection.vue'),
+    // meta: { 
+    //   requiresAuth: true 
+    // }
+  }
 ];
 
 const router = createRouter({

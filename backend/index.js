@@ -3,6 +3,7 @@ import express from 'express';
 import cors from 'cors';
 import multer from 'multer';
 import { storeItemData, getItemById, updateItem, getItemsByStatus, uploadImage } from './services/itemService.js';
+import { Timestamp } from 'firebase/firestore';
 
 const app = express();
 app.use(cors());
@@ -14,8 +15,11 @@ const upload = multer({
   limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit
 });
 
+// Add prefix to all routes to match frontend expectations
+app.use('/api', express.Router());
+
 // Get items by status (handles getLostItems, getFoundItems, getMatchedItems)
-app.get('/items', async (req, res) => {
+app.get('/api/items', async (req, res) => {
   const status = req.query.status;
   if (!status) {
     return res.status(400).json({ success: false, error: 'Status parameter is required' });
@@ -23,110 +27,167 @@ app.get('/items', async (req, res) => {
   
   const result = await getItemsByStatus(status);
   if (result.success) {
+    // Return data in the format expected by frontend
     res.status(200).json(result.items);
   } else {
-    res.status(400).json(result);
+    res.status(400).json({ error: result.error });
   }
 });
 
 // Get item by ID
-app.get('/items/:id', async (req, res) => {
+app.get('/api/items/:id', async (req, res) => {
   const result = await getItemById(req.params.id);
   if (result.success) {
+    // Return data in the format expected by frontend
     res.status(200).json(result.data);
   } else {
-    res.status(404).json(result);
+    res.status(404).json({ error: result.error });
   }
 });
 
-// Report lost item
-app.post('/items/lost', async (req, res) => {
-  const itemData = {
-    ...req.body,
-    status: 'LOST',
-    ownerId: req.body.userId,
-    finderId: null
-  };
-  
-  const result = await storeItemData(itemData);
-  if (result.success) {
-    res.status(201).json(result);
-  } else {
-    res.status(400).json(result);
+// Report lost item - handle FormData
+app.post('/api/items/lost', upload.single('image'), async (req, res) => {
+  try {
+    // First upload the image if present
+    let imageUrl = null;
+    if (req.file) {
+      const imageResult = await uploadImage(req.file);
+      if (!imageResult.success) {
+        return res.status(400).json({ error: imageResult.error });
+      }
+      imageUrl = imageResult.imageUrl;
+    }
+    
+    // Prepare item data
+    const itemData = {
+      name: req.body.name,
+      description: req.body.description,
+      category: req.body.category,
+      imageUrl: imageUrl,
+      status: 'LOST',
+      location: req.body.venue ? `${req.body.venue} | ${req.body.specific_location || ''}` : req.body.location,
+      lostDate: req.body.lost_date,
+      ownerId: req.body.userId ?? null, //remember to delete 1 once user service set
+      finderId: null
+    };
+    
+    const result = await storeItemData(itemData);
+    if (result.success) {
+      res.status(201).json({ 
+        success: true,
+        itemId: result.itemId,
+        message: 'Lost item reported successfully'
+      });
+    } else {
+      res.status(400).json({ error: result.error });
+    }
+  } catch (error) {
+    console.error("Error processing lost item:", error);
+    res.status(500).json({ error: error.message });
   }
 });
 
-// Report found item
-app.post('/items/found', async (req, res) => {
-  const itemData = {
-    ...req.body,
-    status: 'FOUND',
-    ownerId: null,
-    finderId: req.body.userId
-  };
-  
-  const result = await storeItemData(itemData);
-  if (result.success) {
-    res.status(201).json(result);
-  } else {
-    res.status(400).json(result);
+// Report found item - handle FormData
+app.post('/api/items/found', upload.single('image'), async (req, res) => {
+  try {
+    // First upload the image if present
+    let imageUrl = null;
+    if (req.file) {
+      const imageResult = await uploadImage(req.file);
+      if (!imageResult.success) {
+        return res.status(400).json({ error: imageResult.error });
+      }
+      imageUrl = imageResult.imageUrl;
+    }
+    
+    // Prepare item data
+    const itemData = {
+      name: req.body.name,
+      description: req.body.description,
+      category: req.body.category,
+      imageUrl: imageUrl,
+      status: 'FOUND',
+      location: req.body.venue ? `${req.body.venue} | ${req.body.specific_location || ''}` : req.body.location,
+      lostDate: req.body.lost_date,
+      ownerId: null,
+      finderId: req.body.userId ?? null //rmb delete 
+    };
+    
+    const result = await storeItemData(itemData);
+    if (result.success) {
+      res.status(201).json({ 
+        success: true,
+        itemId: result.itemId,
+        message: 'Found item reported successfully'
+      });
+    } else {
+      res.status(400).json({ error: result.error });
+    }
+  } catch (error) {
+    console.error("Error processing found item:", error);
+    res.status(500).json({ error: error.message });
   }
 });
 
 // Update item status
-app.put('/items/:id/status', async (req, res) => {
+app.put('/api/items/:id/status', async (req, res) => {
   const { status } = req.body;
   if (!status) {
-    return res.status(400).json({ success: false, error: 'Status is required' });
+    return res.status(400).json({ error: 'Status is required' });
   }
   
   const result = await updateItem(req.params.id, { status });
   if (result.success) {
-    res.status(200).json(result);
+    res.status(200).json({ 
+      success: true,
+      message: 'Item status updated successfully'
+    });
   } else {
-    res.status(400).json(result);
+    res.status(400).json({ error: result.error });
   }
 });
 
 // Upload item image
-app.post('/items/upload', upload.single('file'), async (req, res) => {
-  if (!req.file) {
-    return res.status(400).json({ success: false, error: 'No file uploaded' });
-  }
+// app.post('/api/items/upload', upload.single('file'), async (req, res) => {
+//   if (!req.file) {
+//     return res.status(400).json({ error: 'No file uploaded' });
+//   }
   
-  const result = await uploadImage(req.file);
-  if (result.success) {
-    res.status(201).json(result);
-  } else {
-    res.status(400).json(result);
-  }
-});
+//   const result = await uploadImage(req.file);
+//   if (result.success) {
+//     res.status(201).json({ 
+//       imageUrl: result.imageUrl,
+//       message: 'Image uploaded successfully'
+//     });
+//   } else {
+//     res.status(400).json({ error: result.error });
+//   }
+// });
 
 // Initiate collection
-app.post('/items/:itemId/collection', async (req, res) => {
+app.post('/api/items/:itemId/collection', async (req, res) => {
   const result = await updateItem(req.params.itemId, { 
     status: 'COLLECTING',
     collectionDetails: req.body
   });
   
   if (result.success) {
-    res.status(201).json(result);
+    res.status(201).json({ 
+      success: true,
+      message: 'Collection initiated successfully'
+    });
   } else {
-    res.status(400).json(result);
+    res.status(400).json({ error: result.error });
   }
 });
 
 // Get collection details
-app.get('/items/:itemId/collection', async (req, res) => {
+app.get('/api/items/:itemId/collection', async (req, res) => {
   const result = await getItemById(req.params.itemId);
-  if (result.success) {
-    if (result.data.collectionDetails) {
-      res.status(200).json(result.data.collectionDetails);
-    } else {
-      res.status(404).json({ success: false, error: 'No collection details found' });
-    }
+  if (result.success && result.data.collectionDetails) {
+    res.status(200).json(result.data.collectionDetails);
   } else {
-    res.status(404).json(result);
+    res.status(404).json({ error: 'No collection details found' });
   }
 });
 

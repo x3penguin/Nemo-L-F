@@ -1,6 +1,7 @@
 // itemService.js
-import { db } from '../firebase/firebase';
-import { collection, addDoc, doc, getDoc, updateDoc, query, where, getDocs } from 'firebase/firestore';
+import { db, storage } from '../firebase/firebase.js';
+import { Timestamp, collection, addDoc, doc, getDoc, updateDoc, query, where, getDocs } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 /**
  * Store item data in Firestore
@@ -22,14 +23,14 @@ export const storeItemData = async (itemData) => {
       name: itemData.name,
       description: itemData.description,
       category: itemData.category,
-      imageUrl: itemData.imageUrl || null,
+      imageUrl: itemData.imageUrl || null, // Make imageUrl optional
       status: itemData.status,
       location: itemData.location,
-      reportDate: itemData.reportDate || new Date(),
+      lostDate: Timestamp.fromDate(new Date(itemData.reportDate)),
       ownerId: itemData.ownerId || null,
       finderId: itemData.finderId || null,
       matchingConfidence: itemData.matchingConfidence || null,
-      createdAt: new Date()
+      reportedDate: Timestamp.now()
     };
 
     // Store in Firestore
@@ -134,11 +135,6 @@ export const getItemsByStatus = async (status) => {
     };
   }
 };
-
-// Add this to your itemService.js
-
-import { storage } from '../firebase/firebase';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 /**
  * Upload image to Firebase Storage

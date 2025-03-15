@@ -2,11 +2,11 @@
     <div class="login-container">
       <div class="login-content">
         <div class="logo-container">
-          <h1 class="logo-text">All-In-One</h1>
+          <h1 class="logo-text">Nemo</h1>
         </div>
         
         <div class="login-form">
-          <h1 class="title">Sign In To Lost & Found Portal</h1>
+          <h1 class="title">Sign In To Nemo Portal</h1>
           
           <div class="form-group">
             <label for="email">Email</label>

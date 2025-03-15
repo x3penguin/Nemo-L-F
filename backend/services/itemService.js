@@ -1,7 +1,6 @@
 // itemService.js
-import { db, storage } from '../firebase/firebase.js';
-import { Timestamp, collection, addDoc, doc, getDoc, updateDoc, query, where, getDocs } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { db } from '../firebase/firebase.js';
+import { collection, addDoc, doc, getDoc, updateDoc, query, where, getDocs } from 'firebase/firestore';
 
 /**
  * Store item data in Firestore
@@ -11,7 +10,7 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 export const storeItemData = async (itemData) => {
   try {
     // Validate required fields
-    const requiredFields = ['name', 'description', 'category', 'status', 'location'];
+    const requiredFields = ['name', 'description', 'category', 'imageUrl', 'status', 'location'];
     for (const field of requiredFields) {
       if (!itemData[field]) {
         throw new Error(`Missing required field: ${field}`);
@@ -23,14 +22,14 @@ export const storeItemData = async (itemData) => {
       name: itemData.name,
       description: itemData.description,
       category: itemData.category,
-      imageUrl: itemData.imageUrl || null, // Make imageUrl optional
+      imageUrl: itemData.imageUrl,
       status: itemData.status,
       location: itemData.location,
-      reportDate: itemData.reportDate ? Timestamp.fromDate(new Date(itemData.reportDate)) : Timestamp.now(),
+      reportDate: itemData.reportDate || new Date(),
       ownerId: itemData.ownerId || null,
       finderId: itemData.finderId || null,
       matchingConfidence: itemData.matchingConfidence || null,
-      createdAt: Timestamp.now()
+      createdAt: new Date()
     };
 
     // Store in Firestore
@@ -135,6 +134,11 @@ export const getItemsByStatus = async (status) => {
     };
   }
 };
+
+// Add this to your itemService.js
+
+import { storage } from '../firebase/firebase.js';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 /**
  * Upload image to Firebase Storage

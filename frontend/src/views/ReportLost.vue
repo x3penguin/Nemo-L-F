@@ -416,14 +416,12 @@
           apiFormData.append('venue', formData.value.venue);
           apiFormData.append('specific_location', formData.value.specificLocation);
           
-          // Create a JavaScript Date object
-          const lostDateTime = formData.value.lostTime 
-            ? new Date(`${formData.value.lostDate}T${formData.value.lostTime}:00`) 
-            : new Date(`${formData.value.lostDate}T00:00:00`);
-
-          // Format as ISO string for transmission
-          apiFormData.append('lost_date', lostDateTime.toISOString());
-
+          // Combine date and time
+          const lostDateTimeStr = formData.value.lostTime 
+            ? `${formData.value.lostDate}T${formData.value.lostTime}:00` 
+            : `${formData.value.lostDate}T00:00:00`;
+          
+          apiFormData.append('lost_date', lostDateTimeStr);
           
           if (formData.value.imageFile) {
             apiFormData.append('image', formData.value.imageFile);

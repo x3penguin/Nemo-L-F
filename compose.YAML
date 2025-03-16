@@ -1,0 +1,60 @@
+version: '3'
+services:
+  frontend:
+    container_name: frontend
+    build: 
+      context: ./frontend
+    ports:
+      - "8080:8080"
+    depends_on:
+      - storage
+      - user
+      - matching
+      - logistics
+
+  logistics:
+    container_name: logistics
+    build: 
+      context: ./logistics
+    ports:
+      - "3001:3000"
+
+
+  matching:
+    container_name: matching
+    build: 
+      context: ./matching
+    ports:
+      - "3002:3000"
+    depends_on:
+      - storage
+
+  payment:
+    container_name: payment
+    build: 
+      context: ./payment
+    ports:
+      - "3003:3000"
+
+
+  storage:
+    container_name: storage
+    build: 
+      context: ./storage
+    ports:
+      - "3000:3000"
+    environment:
+      - FIREBASE_API_KEY=${FIREBASE_API_KEY}
+      - FIREBASE_AUTH_DOMAIN=${FIREBASE_AUTH_DOMAIN}
+      - FIREBASE_PROJECT_ID=${FIREBASE_PROJECT_ID}
+      - FIREBASE_STORAGE_BUCKET=esd-nemo.firebasestorage.app
+      - FIREBASE_MESSAGING_SENDER_ID=${FIREBASE_MESSAGING_SENDER_ID}
+      - FIREBASE_APP_ID=${FIREBASE_APP_ID}
+      - FIREBASE_MEASUREMENT_ID=${FIREBASE_MEASUREMENT_ID}
+
+  user:
+    container_name: user
+    build: 
+      context: ./user
+    ports:
+      - "3004:3000"

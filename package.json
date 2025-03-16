@@ -3,8 +3,6 @@
     "dotenv": "^16.4.7"
   },
   "scripts": {
-    "start:frontend": "cd frontend && npm run serve",
-    "start:backend": "node backend/index.js",
     "dev": "concurrently \"cd backend && node index.js\" \"cd frontend && npm run serve\""
 
   },

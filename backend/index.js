@@ -3,7 +3,6 @@ import express from 'express';
 import cors from 'cors';
 import multer from 'multer';
 import { storeItemData, getItemById, updateItem, getItemsByStatus, uploadImage } from './services/itemService.js';
-import { Timestamp } from 'firebase/firestore';
 
 const app = express();
 app.use(cors());

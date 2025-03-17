@@ -64,37 +64,21 @@
         </div>
 
         <div class="matched-items">
-          <div v-for="item in filteredItems" :key="item.id" class="item-card">
-            <div class="item-image">
-              <img
-                :src="item.imageUrl || item.image_url"
-                :alt="item.name"
-                @error="handleImageError"
-              />
-              <div
-                class="item-status"
-                :class="'status-' + item.status.toLowerCase()"
+          <ItemCard
+            v-for="item in filteredItems"
+            :key="item.id"
+            :item="item"
+            @click="viewItemDetails(item)"
+          >
+            <template #actions>
+              <button
+                @click.stop="initiateCollection(item)"
+                class="btn btn-primary"
               >
-                {{ formatStatus(item.status) }}
-              </div>
-            </div>
-            <div class="item-details">
-              <h3 class="item-name">{{ item.name }}</h3>
-              <p class="item-category">{{ item.category }}</p>
-              <p class="item-location">
-                Location: {{ item.venue || item.location }}
-              </p>
-              <p class="item-date">
-                Reported:
-                {{ formatDate(item.report_date || item.reportedDate) }}
-              </p>
-            </div>
-            <div class="item-actions">
-              <button @click="initiateCollection(item)" class="btn btn-primary">
                 Arrange Collection
               </button>
-            </div>
-          </div>
+            </template>
+          </ItemCard>
         </div>
       </div>
     </div>
@@ -602,12 +586,12 @@
 <script>
 import { ref, computed, onMounted } from "vue";
 import itemService from "@/services/item.service";
-// import ItemCard from '@/components/ItemCard.vue';
+import ItemCard from "@/components/ItemCard.vue";
 export default {
   name: "CollectionView",
-  // components: {
-  //   ItemCard
-  // },
+  components: {
+    ItemCard,
+  },
   setup() {
     const fetchMatchedItems = async () => {
       isLoading.value = true;
@@ -783,26 +767,6 @@ export default {
         RETRIEVED: "Retrieved",
       };
       return statusMap[status] || status;
-    };
-
-    const formatDate = (dateStr) => {
-      if (!dateStr) return "N/A";
-
-      let date;
-      if (dateStr instanceof Date) {
-        date = dateStr;
-      } else if (typeof dateStr === "object" && dateStr.seconds) {
-        // Handle Firestore timestamp
-        date = new Date(dateStr.seconds * 1000);
-      } else {
-        date = new Date(dateStr);
-      }
-
-      return date.toLocaleDateString("en-US", {
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-      });
     };
 
     const formatTime = (dateStr) => {
@@ -1026,7 +990,6 @@ export default {
       paymentDetails,
       isProcessingPayment,
       formatStatus,
-      formatDate,
       formatTime,
       formatCollectionMethod,
       formatDeliveryStatus,

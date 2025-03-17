@@ -268,6 +268,7 @@
 import { ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useStore } from 'vuex';
+import GoogleAddressAutocomplete from 'vue3-google-address-autocomplete';
 
 export default {
   name: 'ReportLostView',
@@ -417,12 +418,12 @@ export default {
         apiFormData.append('specific_location', formData.value.specificLocation);
         
         // Create a JavaScript Date object
-        const lostDateTime = formData.value.lostTime 
-          ? new Date(`${formData.value.lostDate}T${formData.value.lostTime}:00`) 
-          : new Date(`${formData.value.lostDate}T00:00:00`);
+        const dateTime = formData.value.lostTime 
+          ? new `${formData.value.lostDate}T${formData.value.lostTime}:00` 
+          : new `${formData.value.lostDate}T00:00:00`;
 
         // Format as ISO string for transmission
-        apiFormData.append('lost_date', lostDateTime.toISOString());
+        apiFormData.append('date_time', dateTime);
 
         
         if (formData.value.imageFile) {

@@ -63,8 +63,9 @@ app.post('/api/items/lost', upload.single('image'), async (req, res) => {
       category: req.body.category,
       imageUrl: imageUrl,
       status: 'LOST',
-      location: req.body.venue ? `${req.body.venue} | ${req.body.specific_location || ''}` : req.body.location,
-      lostDate: req.body.lost_date,
+      location: `${req.body.venue} | ${req.body.specific_location || ''}`,
+      dateTime: req.body.date_time,
+      currentLocation: 'NA',
       ownerId: req.body.userId ?? null, //remember to delete 1 once user service set
       finderId: null
     };
@@ -99,14 +100,17 @@ app.post('/api/items/found', upload.single('image'), async (req, res) => {
     }
     
     // Prepare item data
+    let currentLocation = req.body.current_location === "other" ? req.body.other_location_details : req.body.current_location;
+
     const itemData = {
       name: req.body.name,
       description: req.body.description,
       category: req.body.category,
       imageUrl: imageUrl,
       status: 'FOUND',
-      location: req.body.venue ? `${req.body.venue} | ${req.body.specific_location || ''}` : req.body.location,
-      lostDate: req.body.lost_date,
+      location: `${req.body.venue} | ${req.body.specific_location || ''}`,      
+      dateTime: req.body.date_time,
+      currentLocation: currentLocation,
       ownerId: null,
       finderId: req.body.userId ?? null //rmb delete 
     };

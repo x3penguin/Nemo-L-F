@@ -300,13 +300,14 @@
   <script>
   import { ref, computed } from 'vue';
   import { useRouter } from 'vue-router';
-//   import { useStore } from 'vuex';
+  import { useStore } from 'vuex';
+  import GoogleAddressAutocomplete from 'vue3-google-address-autocomplete';
   
   export default {
     name: 'ReportFoundView',
     setup() {
       const router = useRouter();
-    //   const store = useStore();
+      const store = useStore();
       
       const currentStep = ref(1);
       const isSubmitting = ref(false);
@@ -474,11 +475,11 @@
           }
           
           // Combine date and time
-          const foundDateTimeStr = formData.value.foundTime 
+          const dateTime = formData.value.foundTime 
             ? `${formData.value.foundDate}T${formData.value.foundTime}:00` 
             : `${formData.value.foundDate}T00:00:00`;
           
-          apiFormData.append('found_date', foundDateTimeStr);
+          apiFormData.append('date_time', dateTime);
           
           if (formData.value.imageFile) {
             apiFormData.append('image', formData.value.imageFile);
@@ -486,21 +487,18 @@
           
           // Here would be the actual API call to submit the found item
           // For now, we'll simulate a delay and success
-          setTimeout(() => {
-            console.log('Form submitted:', Object.fromEntries(apiFormData));
-            
+          await store.dispatch('items/reportFoundItem', apiFormData);
+
             // Redirect to success page
             router.push({
               path: '/report-success',
               query: { type: 'found' }
             });
-            
-            isSubmitting.value = false;
-          }, 1500);
           
         } catch (error) {
           console.error('Error submitting report:', error);
           alert('There was an error submitting your report. Please try again.');
+        } finally {
           isSubmitting.value = false;
         }
       };

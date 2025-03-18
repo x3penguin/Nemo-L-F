@@ -2,7 +2,7 @@ import api from './api';
 
 class AuthService {
   async login(email, password) {
-    const response = await api.post('/auth/login', {
+    const response = await api.post('/login', {
       email,
       password
     });
@@ -18,11 +18,12 @@ class AuthService {
     localStorage.removeItem('user');
   }
   
-  async register(name, email, password) {
-    return api.post('/auth/register', {
+  async register(name, email, password,phone) {
+    return api.post('/users', {
       name,
       email,
-      password
+      password,
+      phone
     });
   }
   

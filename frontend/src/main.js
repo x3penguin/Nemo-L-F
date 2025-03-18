@@ -9,12 +9,15 @@ import './assets/styles/index.css';
 import './services/api';
 
 const app = createApp(App);
+window.addEventListener("beforeunload", () => {
+    localStorage.removeItem("user"); // Clear user session on tab close
+});
 
 app.use(router);
 app.use(store);
 app.mount('#app');
 
-Vue.config.globalProperties.$googleMapsApiKey = 'YOUR_GOOGLE_MAPS_API_KEY';
+//Vue.config.globalProperties.$googleMapsApiKey = 'YOUR_GOOGLE_MAPS_API_KEY';
 
 new Vue({
     render: h => h(App),

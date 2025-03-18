@@ -4,60 +4,41 @@
       <div class="logo-container">
         <h1 class="logo-text">All-In-One</h1>
       </div>
-      
+
       <div class="register-form">
         <h1 class="title">Create Account</h1>
-        
+
         <div v-if="error" class="alert alert-danger">
           {{ error }}
         </div>
-        
+
         <div class="form-group">
           <label for="name">Full Name</label>
-          <input 
-            type="text" 
-            id="name" 
-            v-model="name" 
-            placeholder="John Doe" 
-            class="form-control"
-          />
+          <input type="text" id="name" v-model="name" placeholder="John Doe" class="form-control" />
         </div>
         
         <div class="form-group">
           <label for="email">Email</label>
-          <input 
-            type="email" 
-            id="email" 
-            v-model="email" 
-            placeholder="name@example.com" 
-            class="form-control"
-          />
+          <input type="email" id="email" v-model="email" placeholder="name@example.com" class="form-control" />
         </div>
-        
+        <div class="form-group">
+          <label for="phone">Phone</label>
+          <input type="text" id="phone" v-model="phone" placeholder="85928384" class="form-control" />
+        </div>
+
         <div class="form-group">
           <label for="password">Password</label>
-          <input 
-            type="password" 
-            id="password" 
-            v-model="password" 
-            placeholder="Password" 
-            class="form-control"
-          />
+          <input type="password" id="password" v-model="password" placeholder="Password" class="form-control" />
         </div>
-        
+
         <div class="form-group">
           <label for="passwordConfirm">Confirm Password</label>
-          <input 
-            type="password" 
-            id="passwordConfirm" 
-            v-model="passwordConfirm" 
-            placeholder="Confirm Password" 
-            class="form-control"
-          />
+          <input type="password" id="passwordConfirm" v-model="passwordConfirm" placeholder="Confirm Password"
+            class="form-control" />
         </div>
-        
+
         <button @click="register" class="btn-register">Create Account</button>
-        
+
         <div class="login-link">
           Already have an account?
           <router-link to="/login">Sign in</router-link>
@@ -72,46 +53,52 @@ import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useStore } from 'vuex';
 
+
 export default {
   name: 'RegisterView',
   setup() {
     const router = useRouter();
     const store = useStore();
-    
+
     const name = ref('');
     const email = ref('');
+    const phone = ref('');
     const password = ref('');
     const passwordConfirm = ref('');
     const error = ref('');
-    
+
     const register = async () => {
       // Validate form
-      if (!name.value || !email.value || !password.value || !passwordConfirm.value) {
+      if (!name.value || !email.value ||!phone.value|| !password.value || !passwordConfirm.value) {
         error.value = 'All fields are required';
         return;
       }
-      
+
       if (password.value !== passwordConfirm.value) {
         error.value = 'Passwords do not match';
         return;
       }
-      
+
       try {
         error.value = '';
-        await store.dispatch('auth/register', {
+        const response= await store.dispatch('auth/register', {
           name: name.value,
           email: email.value,
-          password: password.value
+          password: password.value,
+          phone: phone.value,
         });
-        router.push('/login');
+        console.log('User ID:', response.userId);
+        localStorage.setItem("user", JSON.stringify({ name: response.name, userId: response.userId, token: response.token }));
+        router.push(`/home/${response.userId}`);
       } catch (err) {
         error.value = err.response?.data?.message || 'Registration failed';
       }
     };
-    
+
     return {
       name,
       email,
+      phone,
       password,
       passwordConfirm,
       error,
@@ -235,11 +222,11 @@ label {
   .register-content {
     flex-direction: column;
   }
-  
+
   .logo-container {
     padding: 2rem 0;
   }
-  
+
   .register-form {
     padding: 2rem 1rem;
   }

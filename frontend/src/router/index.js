@@ -12,6 +12,13 @@ const routes = [
     component: Home,
   },
   {
+    path: "/home/:userId",
+    name: "Userhome",
+    component: Home,
+    meta: { requiresAuth: true }
+
+  },
+  {
     path: "/login",
     name: "login",
     component: Login,
@@ -31,41 +38,41 @@ const routes = [
     path: "/report-lost",
     name: "report-lost",
     component: () => import("@/views/ReportLost.vue"),
-    // meta: {
-    //   requiresAuth: true
-    // }
+    meta: {
+      requiresAuth: true
+    }
   },
   {
     path: "/report-found",
     name: "report-found",
     component: () => import("@/views/ReportFound.vue"),
-    // meta: {
-    //   requiresAuth: true
-    // }
+    meta: {
+      requiresAuth: true
+    }
   },
   {
     path: "/profile",
     name: "profile",
     component: () => import("@/views/Profile.vue"),
-    // meta: {
-    //   requiresAuth: true
-    // }
+    meta: {
+      requiresAuth: true
+    }
   },
   {
     path: "/collections",
     name: "collection",
     component: () => import("@/views/Collection.vue"),
-    // meta: {
-    //   requiresAuth: true
-    // }
+    meta: {
+      requiresAuth: true
+    }
   },
   {
     path: "/report-success",
     name: "report-success",
     component: () => import("@/views/ReportSuccess.vue"),
-    // meta: {
-    //   requiresAuth: true
-    // }
+    meta: {
+      requiresAuth: true
+    }
   },
 ];
 

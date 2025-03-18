@@ -11,26 +11,32 @@ export const auth = {
   actions: {
     async login({ commit }, { email, password }) {
       try {
-        const user = await authService.login(email, password);
-        commit('loginSuccess', user);
-        return Promise.resolve(user);
+        const response = await authService.login(email, password);
+        commit('loginSuccess', { id: response.userId, email });
+        localStorage.setItem('token', response.token);
+        return Promise.resolve(response.userId);
       } catch (error) {
         commit('loginFailure');
         return Promise.reject(error);
       }
     },
-    
-    async register({ commit }, { name, email, password }) {
+
+    async register({ commit }, { name, email, password, phone }) {
       try {
-        const response = await authService.register(name, email, password);
-        commit('registerSuccess');
+        const response = await authService.register(name, email, password, phone);
+        localStorage.setItem(
+          'user',
+          JSON.stringify({ userId: response.userId, token: response.token })
+        );
+        commit('registerSuccess', { id: response.userId, email });
+        console.log('Backend Response:', response.data);
         return Promise.resolve(response.data);
       } catch (error) {
         commit('registerFailure');
         return Promise.reject(error);
       }
     },
-    
+
     logout({ commit }) {
       authService.logout();
       commit('logout');
@@ -46,7 +52,8 @@ export const auth = {
       state.user = null;
     },
     registerSuccess(state) {
-      state.status.loggedIn = false;
+      state.status.loggedIn =false;
+      
     },
     registerFailure(state) {
       state.status.loggedIn = false;
@@ -54,6 +61,7 @@ export const auth = {
     logout(state) {
       state.status.loggedIn = false;
       state.user = null;
+      localStorage.removeItem("token");
     }
   },
   getters: {

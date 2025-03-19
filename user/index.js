@@ -2,7 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import { db } from './firebase/firebase.js'; // Import Firestore reference
-import { collection, addDoc, doc, getDoc, getDocs } from "firebase/firestore";
+import { collection, addDoc, doc, query,where,getDoc, getDocs } from "firebase/firestore";
 import jwt from 'jsonwebtoken';
 
 dotenv.config();
@@ -55,14 +55,34 @@ app.get('/users/:id', async (req, res) => {
     const userDoc = await getDoc(userRef);
 
     if (!userDoc.exists()) {
-      return res.status(404).send({ message: 'User not found' });
+      throw new Error('User document does not exist');
     }
-    res.status(200).send({ user: userDoc.data() });
+    const user = userDoc.data();
+
+    const addressQuery = query(collection(db, 'userAddress'), where('userId', '==', userId));
+    const addressDocs = await getDocs(addressQuery);
+    const addressDoc = addressDocs.docs[0];
+
+    if (!addressDoc) {
+      throw new Error('Address document does not exist');
+    }
+    const address = addressDoc.data();
+
+    const userDetails = {
+      name: user.name,
+      city: address.city,
+      postalCode: address.postalCode,
+      streetAddress: address.streetAddress,
+      unitNumber: address.unitNumber,
+      userId: userId,
+    };
+    res.json(userDetails);
   } catch (error) {
-    console.error('Error fetching user:', error);
-    res.status(500).send({ message: 'Failed to fetch user', error: error.message });
+    console.error('Error fetching user details:', error);
+    res.status(404).send({ message: error.message });
   }
 });
+
 
 //Route to login 
 app.post('/login', async (req, res) => {

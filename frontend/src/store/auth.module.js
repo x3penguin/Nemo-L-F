@@ -12,8 +12,9 @@ export const auth = {
     async login({ commit }, { email, password }) {
       try {
         const response = await authService.login(email, password);
-        commit('loginSuccess', { id: response.userId, email });
-        localStorage.setItem('token', response.token);
+        const userData = { id: response.userId, email, token: response.token };
+        commit('loginSuccess', userData);
+        localStorage.setItem('user', JSON.stringify(userData));
         return Promise.resolve(response.userId);
       } catch (error) {
         commit('loginFailure');
@@ -23,6 +24,8 @@ export const auth = {
 
     async register({ commit }, { name, email, password, phone }) {
       try {
+
+        
         const response = await authService.register(name, email, password, phone);
         localStorage.setItem(
           'user',
@@ -52,8 +55,8 @@ export const auth = {
       state.user = null;
     },
     registerSuccess(state) {
-      state.status.loggedIn =false;
-      
+      state.status.loggedIn = false;
+
     },
     registerFailure(state) {
       state.status.loggedIn = false;

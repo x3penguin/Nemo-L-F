@@ -8,9 +8,7 @@ import './assets/styles/index.css';
 import './services/api';
 
 const app = createApp(App);
-window.addEventListener("beforeunload", () => {
-    localStorage.removeItem("user"); // Clear user session on tab close
-});
+
 
 app.use(router);
 app.use(store);

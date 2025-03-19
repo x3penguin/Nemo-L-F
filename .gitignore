@@ -78,3 +78,6 @@ node_modules/
 .venv
 /backend/__pycache__
 /backend/routes/__pycache__
+/location/services/__pycache__
+
+esd-nemo-firebase-adminsdk-fbsvc-fbe963cc58.json

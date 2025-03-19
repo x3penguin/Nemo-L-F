@@ -10,6 +10,9 @@ class EmailService {
       auth: {
         user: config.email.smtpUser,
         pass: config.email.smtpPassword
+      },
+      tls: {
+        rejectUnauthorized: false // Allows self-signed certificates
       }
     });
   }

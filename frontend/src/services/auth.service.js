@@ -1,8 +1,10 @@
-import api from './api';
+import axios from 'axios';
+
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3005';
 
 class AuthService {
   async login(email, password) {
-    const response = await api.post('/login', {
+    const response = await axios.post(`${API_BASE_URL}/login`, {
       email,
       password
     });
@@ -18,8 +20,8 @@ class AuthService {
     localStorage.removeItem('user');
   }
   
-  async register(name, email, password,phone) {
-    return api.post('/users', {
+  async register(name, email, password, phone) {
+    return axios.post(`${API_BASE_URL}/users`, {
       name,
       email,
       password,

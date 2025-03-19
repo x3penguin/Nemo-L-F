@@ -13,11 +13,11 @@ services:
     environment:
       KAFKA_ADVERTISED_HOST_NAME: localhost
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_CREATE_TOPICS: "found-items:1:1"
+      KAFKA_CREATE_TOPICS: "found-items:1:1,image-matching-jobs:1:1"
     container_name: kafka
     depends_on:
       - zookeeper
 
-  backend:
-    env_file:
-      - .env
+  # backend:
+  #   env_file:
+  #     - .env

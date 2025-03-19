@@ -884,8 +884,18 @@ export default {
           apiFormData.append("image", formData.value.imageFile);
         }
 
-        // Call API via Vuex action
-        await store.dispatch("items/reportFoundItem", apiFormData);
+        // Call API to report found item
+        await store.dispatch(
+          "items/reportFoundItem",
+          apiFormData
+        );
+
+        // Show a notification that matching is in progress
+        store.dispatch("notifications/add", {
+          type: "info",
+          message:
+            "Your item has been reported. We're now looking for potential matches.",
+        });
 
         // Redirect to success page
         router.push({

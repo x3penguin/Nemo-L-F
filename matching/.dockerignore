@@ -1,0 +1,11 @@
+# matching/.dockerignore
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+.env
+.venv
+.git
+.gitignore

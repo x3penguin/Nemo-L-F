@@ -1,5 +1,5 @@
-
-
+const { Kafka } = require('kafkajs');
+const config = require('../config');
 
 class KafkaProducer {
   constructor() {
@@ -78,5 +78,4 @@ class KafkaProducer {
   }
 }
 
-const producer = new KafkaProducer();
-export { producer };
+module.exports = new KafkaProducer();

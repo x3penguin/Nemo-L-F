@@ -2,56 +2,51 @@ let producer;
 let producerConnected = false;
 
 // Dynamically import and set up Kafka
-import("kafkajs")
-  .then((kafkaModule) => {
-    const { Kafka } = kafkaModule;
-
-    const kafka = new Kafka({
-      clientId: "storage-service",
-      brokers: ["localhost:9092"],
-    });
-
-    producer = kafka.producer();
-    producer
-      .connect()
-      .then(() => {
-        producerConnected = true;
-        console.log("Kafka producer connected");
-      })
-      .catch((err) => {
-        console.error("Failed to connect to Kafka:", err);
-      });
-  })
-  .catch((err) => {
-    console.error("Failed to import Kafka:", err);
+import('kafkajs').then(kafkaModule => {
+  const { Kafka } = kafkaModule;
+  
+  const kafka = new Kafka({
+    clientId: 'storage-service',
+    brokers: ['localhost:9092']
   });
+  
+  producer = kafka.producer();
+  producer.connect().then(() => {
+    producerConnected = true;
+    console.log('Kafka producer connected');
+  }).catch(err => {
+    console.error('Failed to connect to Kafka:', err);
+  });
+}).catch(err => {
+  console.error('Failed to import Kafka:', err);
+});
 
 // Function to publish image matching job
 async function publishMatchingJob(itemId, imageUrl) {
   if (!producerConnected || !producer) {
-    console.error("Kafka producer not connected");
+    console.error('Kafka producer not connected');
     return false;
   }
-
+  
   try {
     await producer.send({
-      topic: "image-matching-jobs",
+      topic: 'image-matching-jobs',
       messages: [
-        {
-          key: itemId,
+        { 
+          key: itemId, 
           value: JSON.stringify({
             itemId: itemId,
             imageUrl: imageUrl,
-            timestamp: new Date().toISOString(),
-          }),
-        },
-      ],
+            timestamp: new Date().toISOString()
+          })
+        }
+      ]
     });
-
+    
     console.log(`Published matching job for item ${itemId}`);
     return true;
   } catch (error) {
-    console.error("Error publishing to Kafka:", error);
+    console.error('Error publishing to Kafka:', error);
     return false;
   }
 }
@@ -287,13 +282,3 @@ app.get("/items/collection", async (req, res) => {
   }
 });
 
-// Connect to Kafka when the service starts
-(async () => {
-  try {
-    await producer.connect();
-    producerConnected = true;
-    console.log("Kafka producer connected on startup");
-  } catch (error) {
-    console.error("Failed to connect to Kafka:", error);
-  }
-})();

@@ -4,7 +4,6 @@
   },
   "scripts": {
     "dev": "concurrently \"cd storage && node index.js\" \"cd frontend && npm run serve\""
-
   },
   "devDependencies": {
     "concurrently": "^9.1.2"

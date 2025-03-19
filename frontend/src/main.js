@@ -8,11 +8,13 @@ import './assets/styles/index.css';
 import './services/api';
 
 const app = createApp(App);
+window.addEventListener("beforeunload", () => {
+    localStorage.removeItem("user"); // Clear user session on tab close
+});
 
 app.use(router);
 app.use(store);
 
-// Set global properties (Vue 3 way)
-app.config.globalProperties.$googleMapsApiKey = 'YOUR_GOOGLE_MAPS_API_KEY';
+//Vue.config.globalProperties.$googleMapsApiKey = 'YOUR_GOOGLE_MAPS_API_KEY';
 
 app.mount('#app');

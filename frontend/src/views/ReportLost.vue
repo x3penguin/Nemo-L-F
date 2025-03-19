@@ -2,56 +2,69 @@
   <div class="container">
     <div class="report-container">
       <h1 class="report-title">Report a Lost Item</h1>
-      
+
       <div class="report-card">
         <div class="form-progress">
-          <div class="progress-step" :class="{ 'active': currentStep >= 1, 'completed': currentStep > 1 }">
+          <div
+            class="progress-step"
+            :class="{ active: currentStep >= 1, completed: currentStep > 1 }"
+          >
             <div class="step-number">1</div>
             <div class="step-title">Item Details</div>
           </div>
-          <div class="progress-line" :class="{ 'active': currentStep > 1 }"></div>
-          <div class="progress-step" :class="{ 'active': currentStep >= 2, 'completed': currentStep > 2 }">
+          <div class="progress-line" :class="{ active: currentStep > 1 }"></div>
+          <div
+            class="progress-step"
+            :class="{ active: currentStep >= 2, completed: currentStep > 2 }"
+          >
             <div class="step-number">2</div>
             <div class="step-title">Location</div>
           </div>
-          <div class="progress-line" :class="{ 'active': currentStep > 2 }"></div>
-          <div class="progress-step" :class="{ 'active': currentStep >= 3, 'completed': currentStep > 3 }">
+          <div class="progress-line" :class="{ active: currentStep > 2 }"></div>
+          <div
+            class="progress-step"
+            :class="{ active: currentStep >= 3, completed: currentStep > 3 }"
+          >
             <div class="step-number">3</div>
             <div class="step-title">Image</div>
           </div>
-          <div class="progress-line" :class="{ 'active': currentStep > 3 }"></div>
-          <div class="progress-step" :class="{ 'active': currentStep >= 4 }">
+          <div class="progress-line" :class="{ active: currentStep > 3 }"></div>
+          <div class="progress-step" :class="{ active: currentStep >= 4 }">
             <div class="step-number">4</div>
             <div class="step-title">Confirmation</div>
           </div>
         </div>
-        
+
         <div class="form-content">
           <!-- Step 1: Item Details -->
           <div v-if="currentStep === 1" class="form-step">
             <h2 class="step-heading">Item Details</h2>
-            <p class="step-description">Please provide details about the item you've lost.</p>
-            
+            <p class="step-description">
+              Please provide details about the item you've lost.
+            </p>
+
             <div class="form-group">
               <label for="itemName">Item Name *</label>
-              <input 
-                type="text" 
-                id="itemName" 
+              <input
+                type="text"
+                id="itemName"
                 v-model="formData.name"
                 class="form-control"
-                :class="{ 'error': errors.name }"
+                :class="{ error: errors.name }"
                 placeholder="e.g. Black Leather Wallet"
-              >
-              <div v-if="errors.name" class="error-message">{{ errors.name }}</div>
+              />
+              <div v-if="errors.name" class="error-message">
+                {{ errors.name }}
+              </div>
             </div>
-            
+
             <div class="form-group">
               <label for="itemCategory">Category *</label>
-              <select 
-                id="itemCategory" 
+              <select
+                id="itemCategory"
                 v-model="formData.category"
                 class="form-control"
-                :class="{ 'error': errors.category }"
+                :class="{ error: errors.category }"
               >
                 <option value="">Select a category</option>
                 <option value="Electronics">Electronics</option>
@@ -62,117 +75,165 @@
                 <option value="Keys">Keys</option>
                 <option value="Other">Other</option>
               </select>
-              <div v-if="errors.category" class="error-message">{{ errors.category }}</div>
+              <div v-if="errors.category" class="error-message">
+                {{ errors.category }}
+              </div>
             </div>
-            
+
             <div class="form-group">
               <label for="itemDescription">Description *</label>
-              <textarea 
-                id="itemDescription" 
+              <textarea
+                id="itemDescription"
                 v-model="formData.description"
                 class="form-control"
-                :class="{ 'error': errors.description }"
+                :class="{ error: errors.description }"
                 placeholder="Provide any distinguishing details that might help identify your item..."
                 rows="4"
               ></textarea>
-              <div v-if="errors.description" class="error-message">{{ errors.description }}</div>
+              <div v-if="errors.description" class="error-message">
+                {{ errors.description }}
+              </div>
             </div>
           </div>
-          
+
           <!-- Step 2: Location -->
           <div v-if="currentStep === 2" class="form-step">
             <h2 class="step-heading">Location Details</h2>
-            <p class="step-description">Where and when did you lose the item?</p>
-            
+            <p class="step-description">
+              Where and when did you lose the item?
+            </p>
+
             <div class="form-group">
               <label for="venue">Venue/Location *</label>
-              <input 
-                type="text" 
-                id="venue" 
+              <input
+                type="text"
+                id="venue"
                 v-model="formData.venue"
                 class="form-control"
-                :class="{ 'error': errors.venue }"
+                :class="{ error: errors.venue }"
                 placeholder="e.g. Downtown Mall, Bus #36"
-              >
-              <div v-if="errors.venue" class="error-message">{{ errors.venue }}</div>
+              />
+              <div v-if="errors.venue" class="error-message">
+                {{ errors.venue }}
+              </div>
             </div>
-            
+
             <div class="form-group">
-              <label for="specificLocation">Specific Location (if applicable)</label>
-              <input 
-                type="text" 
-                id="specificLocation" 
+              <label for="specificLocation"
+                >Specific Location (if applicable)</label
+              >
+              <input
+                type="text"
+                id="specificLocation"
                 v-model="formData.specificLocation"
                 class="form-control"
                 placeholder="e.g. Food Court, 3rd Floor"
-              >
+              />
             </div>
-            
+
             <div class="form-group">
               <label for="lostDate">Date Lost *</label>
-              <input 
-                type="date" 
-                id="lostDate" 
+              <input
+                type="date"
+                id="lostDate"
                 v-model="formData.lostDate"
                 class="form-control"
-                :class="{ 'error': errors.lostDate }"
-              >
-              <div v-if="errors.lostDate" class="error-message">{{ errors.lostDate }}</div>
+                :class="{ error: errors.lostDate }"
+              />
+              <div v-if="errors.lostDate" class="error-message">
+                {{ errors.lostDate }}
+              </div>
             </div>
-            
+
             <div class="form-group">
               <label for="lostTime">Approximate Time</label>
-              <input 
-                type="time" 
-                id="lostTime" 
+              <input
+                type="time"
+                id="lostTime"
                 v-model="formData.lostTime"
                 class="form-control"
-              >
+              />
             </div>
           </div>
-          
+
           <!-- Step 3: Image Upload -->
           <div v-if="currentStep === 3" class="form-step">
             <h2 class="step-heading">Upload Images</h2>
-            <p class="step-description">Adding clear images will significantly improve the chances of finding your item.</p>
-            
-            <div class="image-upload-area" @click="triggerFileInput" @dragover.prevent @drop.prevent="onFileDrop">
-              <input 
-                type="file" 
-                ref="fileInput" 
-                accept="image/*" 
-                style="display: none" 
+            <p class="step-description">
+              Adding clear images will significantly improve the chances of
+              finding your item.
+            </p>
+
+            <div
+              class="image-upload-area"
+              @click="triggerFileInput"
+              @dragover.prevent
+              @drop.prevent="onFileDrop"
+            >
+              <input
+                type="file"
+                ref="fileInput"
+                accept="image/*"
+                style="display: none"
                 @change="onFileSelected"
-              >
-              
+              />
+
               <div v-if="!formData.imageFile" class="upload-placeholder">
                 <div class="upload-icon">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="48"
+                    height="48"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                    />
                   </svg>
                 </div>
                 <p>Click or drag & drop to upload an image</p>
                 <span class="upload-note">Max file size: 5MB</span>
               </div>
-              
+
               <div v-else class="image-preview">
-                <img :src="imagePreviewUrl" alt="Preview">
+                <img :src="imagePreviewUrl" alt="Preview" />
                 <button @click.stop="removeImage" class="remove-image-btn">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="20"
+                    height="20"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M6 18L18 6M6 6l12 12"
+                    />
                   </svg>
                 </button>
               </div>
             </div>
-            
-            <div v-if="errors.imageFile" class="error-message">{{ errors.imageFile }}</div>
+
+            <div v-if="errors.imageFile" class="error-message">
+              {{ errors.imageFile }}
+            </div>
           </div>
-          
+
           <!-- Step 4: Confirmation -->
           <div v-if="currentStep === 4" class="form-step">
             <h2 class="step-heading">Confirm Details</h2>
-            <p class="step-description">Please review the information below before submitting your report.</p>
-            
+            <p class="step-description">
+              Please review the information below before submitting your report.
+            </p>
+
             <div class="confirmation-summary">
               <div class="summary-section">
                 <h3>Item Details</h3>
@@ -189,7 +250,7 @@
                   <span class="summary-value">{{ formData.description }}</span>
                 </div>
               </div>
-              
+
               <div class="summary-section">
                 <h3>Location Details</h3>
                 <div class="summary-item">
@@ -198,58 +259,65 @@
                 </div>
                 <div v-if="formData.specificLocation" class="summary-item">
                   <span class="summary-label">Specific Location:</span>
-                  <span class="summary-value">{{ formData.specificLocation }}</span>
+                  <span class="summary-value">{{
+                    formData.specificLocation
+                  }}</span>
                 </div>
                 <div class="summary-item">
                   <span class="summary-label">Date Lost:</span>
-                  <span class="summary-value">{{ formatDate(formData.lostDate) }}</span>
+                  <span class="summary-value">{{
+                    formatDate(formData.lostDate)
+                  }}</span>
                 </div>
                 <div v-if="formData.lostTime" class="summary-item">
                   <span class="summary-label">Time:</span>
                   <span class="summary-value">{{ formData.lostTime }}</span>
                 </div>
               </div>
-              
+
               <div class="summary-section">
                 <h3>Image</h3>
                 <div v-if="formData.imageFile" class="summary-image">
-                  <img :src="imagePreviewUrl" alt="Item Image">
+                  <img :src="imagePreviewUrl" alt="Item Image" />
                 </div>
-                <div v-else class="summary-image-none">
-                  No image provided
-                </div>
+                <div v-else class="summary-image-none">No image provided</div>
               </div>
             </div>
-            
+
             <div class="confirmation-agreement">
               <label class="checkbox-container">
-                <input type="checkbox" v-model="formData.agreement">
-                <span class="checkbox-label">I confirm that all the information provided is accurate to the best of my knowledge.</span>
+                <input type="checkbox" v-model="formData.agreement" />
+                <span class="checkbox-label"
+                  >I confirm that all the information provided is accurate to
+                  the best of my knowledge.</span
+                >
               </label>
-              <div v-if="errors.agreement" class="error-message">{{ errors.agreement }}</div>
+              <div v-if="errors.agreement" class="error-message">
+                {{ errors.agreement }}
+              </div>
             </div>
           </div>
-          
+
           <!-- Form Buttons -->
           <div class="form-actions">
-            <button 
-              v-if="currentStep > 1" 
+            <button
+              v-if="currentStep > 1"
               @click="prevStep"
               class="btn btn-secondary"
             >
               Back
             </button>
-            
-            <button 
-              v-if="currentStep < 4" 
+
+            <button
+              v-if="currentStep < 4"
               @click="nextStep"
               class="btn btn-primary"
             >
               Next
             </button>
-            
-            <button 
-              v-else 
+
+            <button
+              v-else
               @click="submitForm"
               class="btn btn-primary"
               :disabled="isSubmitting"
@@ -265,187 +333,193 @@
 </template>
 
 <script>
-import { ref, computed } from 'vue';
-import { useRouter } from 'vue-router';
-import { useStore } from 'vuex';
-import GoogleAddressAutocomplete from 'vue3-google-address-autocomplete';
+import { ref, computed } from "vue";
+import { useRouter } from "vue-router";
+import { useStore } from "vuex";
+// import GoogleAddressAutocomplete from 'vue3-google-address-autocomplete';
 
 export default {
-  name: 'ReportLostView',
+  name: "ReportLostView",
   setup() {
     const router = useRouter();
     const store = useStore();
-    
+
     const currentStep = ref(1);
     const isSubmitting = ref(false);
     const fileInput = ref(null);
-    
+
     const formData = ref({
-      name: '',
-      category: '',
-      description: '',
-      venue: '',
-      specificLocation: '',
-      lostDate: '',
-      lostTime: '',
+      name: "",
+      category: "",
+      description: "",
+      venue: "",
+      specificLocation: "",
+      lostDate: "",
+      lostTime: "",
       imageFile: null,
-      agreement: false
+      agreement: false,
     });
-    
+
     const errors = ref({});
-    
+
     const imagePreviewUrl = computed(() => {
-      if (!formData.value.imageFile) return '';
+      if (!formData.value.imageFile) return "";
       return URL.createObjectURL(formData.value.imageFile);
     });
-    
+
     const validateStep = () => {
       errors.value = {};
-      
+
       if (currentStep.value === 1) {
         if (!formData.value.name) {
-          errors.value.name = 'Item name is required';
+          errors.value.name = "Item name is required";
         }
         if (!formData.value.category) {
-          errors.value.category = 'Please select a category';
+          errors.value.category = "Please select a category";
         }
         if (!formData.value.description) {
-          errors.value.description = 'Description is required';
+          errors.value.description = "Description is required";
         } else if (formData.value.description.length < 10) {
-          errors.value.description = 'Description should be at least 10 characters';
+          errors.value.description =
+            "Description should be at least 10 characters";
         }
-      } 
-      else if (currentStep.value === 2) {
+      } else if (currentStep.value === 2) {
         if (!formData.value.venue) {
-          errors.value.venue = 'Venue/location is required';
+          errors.value.venue = "Venue/location is required";
         }
         if (!formData.value.lostDate) {
-          errors.value.lostDate = 'Date lost is required';
+          errors.value.lostDate = "Date lost is required";
         }
-      }
-      else if (currentStep.value === 4) {
+      } else if (currentStep.value === 4) {
         if (!formData.value.agreement) {
-          errors.value.agreement = 'You must confirm that the information is accurate';
+          errors.value.agreement =
+            "You must confirm that the information is accurate";
         }
       }
-      
+
       return Object.keys(errors.value).length === 0;
     };
-    
+
     const nextStep = () => {
       if (validateStep()) {
         currentStep.value++;
       }
     };
-    
+
     const prevStep = () => {
       currentStep.value--;
     };
-    
+
     const triggerFileInput = () => {
       fileInput.value.click();
     };
-    
+
     const onFileSelected = (event) => {
       const file = event.target.files[0];
       if (file) {
         // Check file size (max 5MB)
         if (file.size > 5 * 1024 * 1024) {
-          errors.value.imageFile = 'File size should not exceed 5MB';
+          errors.value.imageFile = "File size should not exceed 5MB";
           return;
         }
-        
+
         // Check file type
-        if (!file.type.startsWith('image/')) {
-          errors.value.imageFile = 'Only image files are allowed';
+        if (!file.type.startsWith("image/")) {
+          errors.value.imageFile = "Only image files are allowed";
           return;
         }
-        
+
         formData.value.imageFile = file;
         errors.value.imageFile = null;
       }
     };
-    
+
     const onFileDrop = (event) => {
       const file = event.dataTransfer.files[0];
       if (file) {
         // Check file size (max 5MB)
         if (file.size > 5 * 1024 * 1024) {
-          errors.value.imageFile = 'File size should not exceed 5MB';
+          errors.value.imageFile = "File size should not exceed 5MB";
           return;
         }
-        
+
         // Check file type
-        if (!file.type.startsWith('image/')) {
-          errors.value.imageFile = 'Only image files are allowed';
+        if (!file.type.startsWith("image/")) {
+          errors.value.imageFile = "Only image files are allowed";
           return;
         }
-        
+
         formData.value.imageFile = file;
         errors.value.imageFile = null;
       }
     };
-    
+
     const removeImage = () => {
       formData.value.imageFile = null;
     };
-    
+
     const formatDate = (dateStr) => {
-      if (!dateStr) return '';
-      
+      if (!dateStr) return "";
+
       const date = new Date(dateStr);
-      return date.toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
+      return date.toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
       });
     };
-    
+
     const submitForm = async () => {
       if (!validateStep()) {
         return;
       }
-      
+
       isSubmitting.value = true;
-      
+
       try {
         // Create FormData object for API call
         const apiFormData = new FormData();
-        apiFormData.append('name', formData.value.name);
-        apiFormData.append('category', formData.value.category);
-        apiFormData.append('description', formData.value.description);
-        apiFormData.append('venue', formData.value.venue);
-        apiFormData.append('specific_location', formData.value.specificLocation);
-        
-        // Create a JavaScript Date object
-        const dateTime = formData.value.lostTime 
-          ? new `${formData.value.lostDate}T${formData.value.lostTime}:00` 
-          : new `${formData.value.lostDate}T00:00:00`;
+        apiFormData.append("name", formData.value.name);
+        apiFormData.append("category", formData.value.category);
+        apiFormData.append("description", formData.value.description);
+        apiFormData.append("venue", formData.value.venue);
+        apiFormData.append(
+          "specific_location",
+          formData.value.specificLocation
+        );
 
-        // Format as ISO string for transmission
-        apiFormData.append('date_time', dateTime);
-
-        
-        if (formData.value.imageFile) {
-          apiFormData.append('image', formData.value.imageFile);
+        let dateTime;
+        if (formData.value.lostTime) {
+          dateTime = `${formData.value.lostDate}T${formData.value.lostTime}:00`;
+        } else {
+          dateTime = `${formData.value.lostDate}T00:00:00`;
         }
-        
+
+        apiFormData.append("date_time", dateTime);
+
+        // Add hardcoded owner ID
+        apiFormData.append("userId", "1");
+
+        if (formData.value.imageFile) {
+          apiFormData.append("image", formData.value.imageFile);
+        }
+
         // Call API via Vuex action
-        await store.dispatch('items/reportLostItem', apiFormData);
-        
+        await store.dispatch("items/reportLostItem", apiFormData);
+
         // Redirect to success page
         router.push({
-          path: '/report-success',
-          query: { type: 'lost' }
+          path: "/report-success",
+          query: { type: "lost" },
         });
       } catch (error) {
-        console.error('Error submitting report:', error);
-        alert('There was an error submitting your report. Please try again.');
+        console.error("Error submitting report:", error);
+        alert("There was an error submitting your report. Please try again.");
       } finally {
         isSubmitting.value = false;
       }
     };
-    
+
     return {
       currentStep,
       formData,
@@ -460,9 +534,9 @@ export default {
       onFileDrop,
       removeImage,
       formatDate,
-      submitForm
+      submitForm,
     };
-  }
+  },
 };
 </script>
 
@@ -555,8 +629,14 @@ export default {
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .step-heading {
@@ -781,28 +861,30 @@ label {
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @media (max-width: 640px) {
   .form-progress {
     padding: 1rem 0.5rem;
   }
-  
+
   .step-number {
     width: 1.5rem;
     height: 1.5rem;
     font-size: 0.75rem;
   }
-  
+
   .step-title {
     font-size: 0.75rem;
   }
-  
+
   .progress-line {
     margin: 0 0.25rem 1rem;
   }
-  
+
   .form-content {
     padding: 1rem;
   }

@@ -593,6 +593,16 @@ export default {
     ItemCard,
   },
   setup() {
+    const viewItemDetails = (item) => {
+  selectedItem.value = item;
+  modalType.value = 'details';
+  showModal.value = true;
+  
+  // If you have a function to fetch collection details, call it here
+  if (item.status === 'COLLECTING' || item.status === 'MATCHED') {
+    fetchCollectionDetails(item.id);
+  }
+};
     const fetchMatchedItems = async () => {
       isLoading.value = true;
       error.value = null;
@@ -1007,6 +1017,7 @@ export default {
       processPayment,
       handleImageError,
       fetchItems,
+      viewItemDetails
     };
   },
 };

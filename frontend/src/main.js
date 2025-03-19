@@ -12,7 +12,4 @@ const app = createApp(App);
 
 app.use(router);
 app.use(store);
-
-//Vue.config.globalProperties.$googleMapsApiKey = 'YOUR_GOOGLE_MAPS_API_KEY';
-
 app.mount('#app');

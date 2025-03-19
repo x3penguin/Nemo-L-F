@@ -58,3 +58,13 @@ services:
       context: ./user
     ports:
       - "3004:3000"
+
+  location:
+    container_name: location
+    build: 
+      context: ./location
+    ports:
+      - "3005:3000"
+    environment:
+      - PORT=3005
+      - GOOGLE_MAPS_API_KEY=${GOOGLE_MAPS_API_KEY}

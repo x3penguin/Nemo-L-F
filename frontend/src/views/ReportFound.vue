@@ -99,25 +99,40 @@
           <!-- Step 2: Location -->
           <div v-if="currentStep === 2" class="form-step">
             <h2 class="step-heading">Location Details</h2>
-            <p class="step-description">
-              Where and when did you find the item?
-            </p>
+            <p class="step-description">Where and when did you find the item?</p>
 
             <div class="form-group">
               <label for="venue">Venue/Location *</label>
+              <div class="location-input-container">
               <input
                 type="text"
-                id="venue"
+                id="venue-input"
                 v-model="formData.venue"
                 class="form-control"
-                :class="{ error: errors.venue }"
+                :class="{ 'error': errors.venue }"
                 placeholder="e.g. Downtown Mall, Bus #36"
               />
-              <div v-if="errors.venue" class="error-message">
-                {{ errors.venue }}
+              <button 
+                  type="button" 
+                  @click="getCurrentLocation" 
+                  class="current-location-btn"
+                  title="Use my current location"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <circle cx="12" cy="12" r="3"></circle>
+                  </svg>
+                </button>
               </div>
+              <div v-if="errors.venue" class="error-message">{{ errors.venue }}</div>
             </div>
 
+            <!-- Map display -->
+            <div class="map-container">
+              <div ref="mapElement" class="google-map"></div>
+              <p class="map-instruction">You can drag the marker to adjust the location</p>
+            </div>
+            
             <div class="form-group">
               <label for="specificLocation"
                 >Specific Location (if applicable)</label
@@ -189,6 +204,7 @@
                 {{ errors.otherLocationDetails }}
               </div>
             </div>
+          
           </div>
 
           <!-- Step 3: Image Upload -->
@@ -372,20 +388,27 @@
 </template>
 
 <script>
-import { ref, computed } from "vue";
+import { ref, computed, onMounted, onUnmounted, watch } from "vue";
 import { useRouter } from "vue-router";
 import { useStore } from "vuex";
-// import GoogleAddressAutocomplete from 'vue3-google-address-autocomplete';
+import locationService from '@/services/location.service';
+import { getLoader } from '@/services/googleMapsLoader';
 
 export default {
   name: "ReportFoundView",
   setup() {
     const router = useRouter();
     const store = useStore();
+    const googleMapsApiKey = process.env.VUE_APP_GOOGLE_MAPS_API_KEY;
+    const loader = getLoader(googleMapsApiKey);
 
     const currentStep = ref(1);
     const isSubmitting = ref(false);
     const fileInput = ref(null);
+
+    const mapElement = ref(null);
+    let map = null;
+    let marker = null;
 
     const formData = ref({
       name: "",
@@ -393,12 +416,14 @@ export default {
       description: "",
       venue: "",
       specificLocation: "",
-      foundDate: "",
-      foundTime: "",
-      currentLocation: "",
-      otherLocationDetails: "",
+      lostDate: "",
+      lostTime: "",
       imageFile: null,
       agreement: false,
+      coordinates: {
+        lat: null,
+        lng: null
+      }
     });
 
     const errors = ref({});
@@ -419,6 +444,289 @@ export default {
       return locationMap[formData.value.currentLocation] || "";
     });
 
+    // Initialize map when component is mounted
+    onMounted(() => {
+      // Only attempt to load map if we're on step 2
+      if (currentStep.value !== 2) return;
+      
+      loader.load().then(() => {
+        initMap();
+        initAutocomplete();
+      }).catch(err => {
+        console.error("Error loading Google Maps API:", err);
+      });
+
+      // Add event listener for enter key on venue input
+      const venueInput = document.getElementById('venue-input');
+      if (venueInput) {
+        venueInput.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            geocodeAddress(formData.value.venue);
+          }
+        });
+      }
+    });
+
+
+    
+    // Clean up on component unmount
+    onUnmounted(() => {
+      if (map) {
+        // Clean up map resources if needed
+        map = null;
+        marker = null;
+      }
+    });
+    
+    // Watch for step changes to initialize map when reaching step 2
+    watch(currentStep, (newStep) => {
+      if (newStep === 2) {
+        // We're now on the location step
+        console.log("Now on step 2, initializing map");
+        
+        // Use setTimeout to ensure the DOM is updated
+        setTimeout(() => {
+          loader.load().then(() => {
+            console.log("Google Maps API loaded from step change");
+            initMap();
+            initAutocomplete();
+          }).catch(err => {
+            console.error("Error loading Google Maps API:", err);
+          });
+        }, 300);
+      }
+    });
+
+    // Add this geocodeAddress function to move pin when address is entered
+    const geocodeAddress = async (address) => {
+      try {
+        const result = await locationService.geocodeAddress(address);
+        if (result.results && result.results.length > 0) {
+          const location = result.results[0].geometry.location;
+          formData.value.coordinates.lat = location.lat;
+          formData.value.coordinates.lng = location.lng;
+          
+          // Update marker and center map
+          if (map && marker) {
+            const position = { lat: location.lat, lng: location.lng };
+            marker.setPosition(position);
+            map.setCenter(position);
+            map.setZoom(17);
+          }
+        }
+      } catch (error) {
+        console.error("Error geocoding address:", error);
+        
+        // Fallback to Google Maps API if the service fails
+        if (window.google && window.google.maps && address) {
+          const geocoder = new window.google.maps.Geocoder();
+          geocoder.geocode({ address: address }, (results, status) => {
+            if (status === "OK" && results[0] && results[0].geometry) {
+              const location = results[0].geometry.location;
+              const lat = location.lat();
+              const lng = location.lng();
+              
+              formData.value.coordinates.lat = lat;
+              formData.value.coordinates.lng = lng;
+              
+              // Update marker and center map
+              if (map && marker) {
+                const position = { lat, lng };
+                marker.setPosition(position);
+                map.setCenter(position);
+                map.setZoom(17);
+              }
+            } else {
+              console.error("Geocoder failed due to: " + status);
+            }
+          });
+        }
+      }
+    };
+
+
+    // Initialize Google Map
+    const initMap = async () => {
+      if (currentStep.value !== 2 || !mapElement.value) return;
+      
+      // Import required libraries
+      const { Map } = await window.google.maps.importLibrary("maps");
+      const { Marker } = await window.google.maps.importLibrary("marker");
+      
+      // Default to Singapore coordinates if no location is set
+      const defaultPosition = { lat: 1.3521, lng: 103.8198 };
+      const position = formData.value.coordinates.lat ? 
+        { lat: formData.value.coordinates.lat, lng: formData.value.coordinates.lng } : 
+        defaultPosition;
+      
+      try {
+        map = new Map(mapElement.value, {
+          center: position,
+          zoom: 15,
+          mapTypeControl: false,
+          streetViewControl: false,
+          fullscreenControl: false,
+          mapId: "DEMO_MAP_ID" // Required for advanced markers
+        });
+        
+        marker = new Marker({
+          position: position,
+          map: map,
+          draggable: true
+        });
+        
+        window.google.maps.event.addListener(marker, 'dragend', () => {
+          const position = marker.getPosition();
+          const lat = position.lat();
+          const lng = position.lng();
+          
+          console.log("Marker dragged to:", lat, lng);
+          formData.value.coordinates.lat = lat;
+          formData.value.coordinates.lng = lng;
+          
+          // Explicitly call reverseGeocode to update the venue field
+          reverseGeocode(lat, lng);
+        });
+
+        
+        // Update marker when clicking on map
+        window.google.maps.event.addListener(map, 'click', (event) => {
+          marker.setPosition(event.latLng);
+          formData.value.coordinates.lat = event.latLng.lat();
+          formData.value.coordinates.lng = event.latLng.lng();
+          
+          // Reverse geocode to get address
+          reverseGeocode(event.latLng.lat(), event.latLng.lng());
+        });
+        
+        console.log("Map initialized successfully");
+      } catch (error) {
+        console.error("Error initializing map:", error);
+      }
+    };
+
+    // In your setup function, add this method to initialize autocomplete
+    const initAutocomplete = () => {
+      if (!window.google || !window.google.maps || !window.google.maps.places) return;
+      
+      const input = document.getElementById('venue-input');
+      if (!input) return;
+      
+      const autocomplete = new window.google.maps.places.Autocomplete(input, {
+        fields: ['formatted_address', 'geometry', 'name'],
+        types: ['establishment', 'geocode'],
+        componentRestrictions: { country: 'sg' },
+        locationBias: new window.google.maps.LatLngBounds(
+          new window.google.maps.LatLng(1.1304753, 103.6020558), // Southwest corner of Singapore
+          new window.google.maps.LatLng(1.4504753, 104.0120558)  // Northeast corner of Singapore
+        )
+      });
+      
+      autocomplete.addListener('place_changed', async () => {
+        console.log("Place selected via Autocomplete");
+        const place = autocomplete.getPlace();
+        if (!place.geometry || !place.geometry.location) return;
+        
+        formData.value.venue = place.formatted_address || place.name;
+        formData.value.coordinates.lat = place.geometry.location.lat();
+        formData.value.coordinates.lng = place.geometry.location.lng();
+        
+        // Update map
+        if (map && marker) {
+          const position = { lat: place.geometry.location.lat(), lng: place.geometry.location.lng() };
+          marker.setPosition(position);
+          map.setCenter(position);
+          map.setZoom(17);
+        }
+      });
+    };
+    
+    // Update map when location is selected from autocomplete
+    const updateLocationFromAutocomplete = (place) => {
+      if (place && place.geometry && place.geometry.location) {
+        const lat = place.geometry.location.lat();
+        const lng = place.geometry.location.lng();
+        
+        formData.value.coordinates.lat = lat;
+        formData.value.coordinates.lng = lng;
+        
+        // Update marker and center map
+        if (map && marker) {
+          const position = { lat, lng };
+          marker.setPosition(position);
+          map.setCenter(position);
+          map.setZoom(17);
+        }
+      }
+    };
+    
+    // Get current location using browser's geolocation API
+    const getCurrentLocation = () => {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            const lat = position.coords.latitude;
+            const lng = position.coords.longitude;
+            
+            console.log("Got current location:", lat, lng);
+            formData.value.coordinates.lat = lat;
+            formData.value.coordinates.lng = lng;
+            
+            // Update marker and center map
+            if (map && marker) {
+              const pos = { lat, lng };
+              marker.setPosition(pos);
+              map.setCenter(pos);
+              map.setZoom(17);
+            }
+            
+            // Explicitly call reverseGeocode to update the venue field
+            reverseGeocode(lat, lng);
+          },
+          (error) => {
+            console.error("Error getting current location:", error);
+            alert("Unable to get your current location. Please enter it manually.");
+          },
+          { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+        );
+      } else {
+        alert("Geolocation is not supported by this browser.");
+      }
+    };
+
+    
+    // Convert coordinates to address using reverse geocoding
+    const reverseGeocode = async (lat, lng) => {
+      try {
+        console.log("Reverse geocoding coordinates:", lat, lng);
+        const result = await locationService.reverseGeocode(lat, lng);
+        console.log("Reverse geocode result:", result);
+        
+        if (result.results && result.results.length > 0) {
+          formData.value.venue = result.results[0].formatted_address;
+          console.log("Updated venue to:", formData.value.venue);
+        } else {
+          console.warn("No reverse geocoding results found");
+        }
+      } catch (error) {
+        console.error("Error reverse geocoding:", error);
+        
+        // Fallback to Google Maps API if the service fails
+        if (window.google && window.google.maps) {
+          const geocoder = new window.google.maps.Geocoder();
+          geocoder.geocode({ location: { lat, lng } }, (results, status) => {
+            if (status === "OK" && results[0]) {
+              formData.value.venue = results[0].formatted_address;
+              console.log("Updated venue via fallback to:", formData.value.venue);
+            } else {
+              console.error("Geocoder failed due to: " + status);
+            }
+          });
+        }
+      }
+    };
+
     const validateStep = () => {
       errors.value = {};
 
@@ -432,19 +740,20 @@ export default {
         if (!formData.value.description) {
           errors.value.description = "Description is required";
         } else if (formData.value.description.length < 10) {
-          errors.value.description =
-            "Description should be at least 10 characters";
+          errors.value.description = "Description should be at least 10 characters";
         }
       } else if (currentStep.value === 2) {
         if (!formData.value.venue) {
           errors.value.venue = "Venue/location is required";
         }
+        if (!formData.value.coordinates.lat || !formData.value.coordinates.lng) {
+          errors.value.venue = 'Please select a valid location on the map';
+        }
         if (!formData.value.foundDate) {
           errors.value.foundDate = "Date found is required";
         }
         if (!formData.value.currentLocation) {
-          errors.value.currentLocation =
-            "Current location of the item is required";
+          errors.value.currentLocation = "Current location of the item is required";
         }
         if (
           formData.value.currentLocation === "other" &&
@@ -455,8 +764,7 @@ export default {
         }
       } else if (currentStep.value === 4) {
         if (!formData.value.agreement) {
-          errors.value.agreement =
-            "You must confirm that the information is accurate";
+          errors.value.agreement = "You must confirm that the information is accurate";
         }
       }
 
@@ -550,6 +858,8 @@ export default {
           "specific_location",
           formData.value.specificLocation
         );
+        apiFormData.append('latitude', formData.value.coordinates.lat);
+        apiFormData.append('longitude', formData.value.coordinates.lng);
         apiFormData.append("current_location", formData.value.currentLocation);
 
         if (formData.value.currentLocation === "other") {
@@ -559,7 +869,6 @@ export default {
           );
         }
 
-        // Combine date and time
         let dateTime;
         if (formData.value.lostTime) {
           dateTime = `${formData.value.lostDate}T${formData.value.lostTime}:00`;
@@ -569,12 +878,13 @@ export default {
 
         apiFormData.append("date_time", dateTime);
 
+        apiFormData.append("userId", "1");
+
         if (formData.value.imageFile) {
           apiFormData.append("image", formData.value.imageFile);
         }
 
-        // Here would be the actual API call to submit the found item
-        // For now, we'll simulate a delay and success
+        // Call API via Vuex action
         await store.dispatch("items/reportFoundItem", apiFormData);
 
         // Redirect to success page
@@ -596,6 +906,9 @@ export default {
       errors,
       isSubmitting,
       fileInput,
+      mapElement,
+      googleMapsApiKey,
+      initAutocomplete,
       imagePreviewUrl,
       formatCurrentLocation,
       nextStep,
@@ -606,6 +919,8 @@ export default {
       removeImage,
       formatDate,
       submitForm,
+      updateLocationFromAutocomplete,
+      getCurrentLocation
     };
   },
 };
@@ -959,5 +1274,53 @@ label {
   .form-content {
     padding: 1rem;
   }
+}
+
+/* Map and location input styles */
+.location-input-container {
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.current-location-btn {
+  background-color: #f3f4f6;
+  border: 1px solid #d1d5db;
+  border-radius: 0.375rem;
+  padding: 0.75rem;
+  margin-left: 0.5rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.current-location-btn:hover {
+  background-color: #e5e7eb;
+}
+
+.map-container {
+  margin-top: 1rem;
+  margin-bottom: 1.5rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.375rem;
+  overflow: hidden;
+}
+
+.google-map {
+  width: 100%;
+  height: 250px;
+  background-color: #f9fafb
+}
+
+.map-instruction {
+  padding: 0.5rem;
+  background-color: #f9fafb;
+  color: #6b7280;
+  font-size: 0.875rem;
+  margin: 0;
+  text-align: center;
+  border-top: 1px solid #e5e7eb;
 }
 </style>

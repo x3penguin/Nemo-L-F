@@ -3,7 +3,11 @@
     "dotenv": "^16.4.7"
   },
   "scripts": {
-    "dev": "concurrently \"cd storage && node index.js\" \"cd frontend && npm run serve\""
+    "dev": "concurrently \"npm run dev:frontend\" \"npm run dev:storage\" \"npm run dev:location\"",
+    "dev:frontend": "cd frontend && npm run serve",
+    "dev:storage": "cd storage && node index.js",
+    "dev:location": "cd location && python index.py"
+
   },
   "devDependencies": {
     "concurrently": "^9.1.2"

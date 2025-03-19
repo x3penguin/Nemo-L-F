@@ -44,6 +44,8 @@ export const storeItemData = async (itemData) => {
       location: itemData.location,
       dateTime: Timestamp.fromDate(new Date(itemData.dateTime)),
       currentLocation: itemData.currentLocation,
+      latitude: itemData.latitude,
+      longitude: itemData.longitude,
       ownerId: itemData.ownerId || null,
       finderId: itemData.finderId || null,
       matchingConfidence: itemData.matchingConfidence || null,

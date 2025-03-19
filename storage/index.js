@@ -65,6 +65,8 @@ app.post('/api/items/lost', upload.single('image'), async (req, res) => {
       status: 'LOST',
       location: `${req.body.venue} | ${req.body.specific_location || ''}`,
       dateTime: req.body.date_time,
+      latitude: req.body.latitude,
+      longitude: req.body.longitude,
       currentLocation: 'NA',
       ownerId: req.body.userId ?? null, //remember to delete 1 once user service set
       finderId: null
@@ -111,6 +113,8 @@ app.post('/api/items/found', upload.single('image'), async (req, res) => {
       location: `${req.body.venue} | ${req.body.specific_location || ''}`,      
       dateTime: req.body.date_time,
       currentLocation: currentLocation,
+      latitude: req.body.latitude,
+      longitude: req.body.longitude,
       ownerId: null,
       finderId: req.body.userId ?? null //rmb delete 
     };

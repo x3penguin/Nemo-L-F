@@ -79,5 +79,6 @@ node_modules/
 /backend/__pycache__
 /backend/routes/__pycache__
 
-matching/esd-nemo-firebase-adminsdk-fbsvc-fbe963cc58.json
+match/esd-nemo-firebase-adminsdk-fbsvc-fbe963cc58.json
+
 **/__pycache__/

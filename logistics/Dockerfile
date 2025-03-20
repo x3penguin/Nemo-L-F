@@ -14,7 +14,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # Expose the port your service runs on
-EXPOSE 3001
+EXPOSE 3010
 
 # Command to run the application
 # CMD ["python", "app.py"]

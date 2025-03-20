@@ -814,7 +814,6 @@ export default {
 
         apiFormData.append("date_time", dateTime);
 
-        // Add hardcoded owner ID
         apiFormData.append("userId", "1");
 
         if (formData.value.imageFile) {

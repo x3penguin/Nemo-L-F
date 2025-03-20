@@ -2,12 +2,14 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import { db } from './firebase/firebase.js'; // Import Firestore reference
-import { collection, addDoc, doc, query,where,getDoc, getDocs } from "firebase/firestore";
+import { collection, addDoc, doc, query, where, getDoc, getDocs } from "firebase/firestore";
 import jwt from 'jsonwebtoken';
+import bcrypt from 'bcrypt';
 
 dotenv.config();
 
 const app = express();
+
 app.use(cors());
 app.use(express.json());
 
@@ -25,11 +27,12 @@ app.post('/users', async (req, res) => {
   }
 
   try {
+    const hashedPassword = await bcrypt.hash(password, 10);
     // Save user data in Firestore
     const docRef = await addDoc(collection(db, 'users'), {
       name,
       email,
-      password,
+      password: hashedPassword,
       phone,
       createdAt: new Date(),
     });
@@ -99,7 +102,7 @@ app.post('/login', async (req, res) => {
     let user = null;
 
     querySnapshot.forEach((doc) => {
-      if (doc.data().email === email && doc.data().password === password) {
+      if (doc.data().email === email) {
         user = { id: doc.id, ...doc.data() };
       }
     });
@@ -108,6 +111,12 @@ app.post('/login', async (req, res) => {
       return res.status(401).send({ message: 'Invalid email or password' });
     }
 
+    // Verify the password
+    const isValidPassword = await bcrypt.compare(password, user.password);
+
+    if (!isValidPassword) {
+      return res.status(401).send({ message: 'Invalid email or password' });
+    }
     // Generate JWT token
     const token = jwt.sign({ id: user.id, email: user.email }, process.env.JWT_SECRET, { expiresIn: '1h' });
     res.status(200).send({ message: 'Login successful', userId: user.id, token });

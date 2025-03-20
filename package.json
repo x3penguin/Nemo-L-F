@@ -4,12 +4,13 @@
     "kafkajs": "^2.2.4"
   },
   "scripts": {
-    "dev": "concurrently \"npm run dev:frontend\" \"npm run dev:storage\" \"npm run dev:location\" \"npm run dev:match\" \"npm run dev:email\"",
+    "dev": "concurrently \"npm run dev:frontend\" \"npm run dev:storage\" \"npm run dev:location\" \"npm run dev:match\" \"npm run dev:email\" \"npm run dev:user\"",
     "dev:frontend": "cd frontend && npm run serve",
     "dev:storage": "cd storage && node index.js",
     "dev:location": "cd location && python index.py",
     "dev:match": "cd match && python main.py",
-    "dev:email": "cd email/src && node index.js"
+    "dev:email": "cd email/src && node index.js",
+    "dev:user": "cd user && node index.js"
   },
   "devDependencies": {
     "concurrently": "^9.1.2"

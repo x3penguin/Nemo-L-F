@@ -1,7 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import { db } from './firebase/firebase.js'; // Import Firestore reference
+import { db } from './firebase.js'; // Import Firestore reference
 import { collection, addDoc, doc, query, where, getDoc, getDocs } from "firebase/firestore";
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
@@ -127,7 +127,7 @@ app.post('/login', async (req, res) => {
 });
 
 // Start the server
-const PORT = process.env.PORT || 3005;
+const PORT = process.env.PORT || 3004;
 app.listen(PORT, () => {
   console.log(`User service is running on port ${PORT}`);
 });

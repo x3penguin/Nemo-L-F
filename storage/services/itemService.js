@@ -1,5 +1,5 @@
 // itemService.js
-import { db, storage } from "../firebase/firebase.js";
+import { db, storage } from "../firebase.js";
 import {
   Timestamp,
   collection,

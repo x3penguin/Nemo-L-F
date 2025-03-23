@@ -43,7 +43,7 @@ def get_lost_items():
 
 
 def update_matched_items(found_item_id, lost_item_id, confidence):
-    """Update both items as matched"""
+    """Update both items as matched with notification flags"""
     # Get a new transaction
     transaction = db.transaction()
 
@@ -68,6 +68,8 @@ def update_matched_items(found_item_id, lost_item_id, confidence):
                 "matchingConfidence": conf,
                 "matchedDate": firestore.SERVER_TIMESTAMP,
                 "ownerId": owner_id,  # Add owner ID to found item
+                "notificationSeen": False,  # Add notification flags
+                "notificationRead": False,
             },
         )
 
@@ -80,13 +82,15 @@ def update_matched_items(found_item_id, lost_item_id, confidence):
                 "matchingConfidence": conf,
                 "matchedDate": firestore.SERVER_TIMESTAMP,
                 "finderId": finder_id,  # Add finder ID to lost item
+                "notificationSeen": False,  # Add notification flags
+                "notificationRead": False,
             },
         )
 
     # Execute the transaction
     update_in_transaction(transaction, found_item_id, lost_item_id, confidence)
 
-    print(f"Updated items {found_item_id} and {lost_item_id} as matched")
+    print(f"Updated items {found_item_id} and {lost_item_id} as matched with notification flags")
 
 
 def get_owner_details(item_id):

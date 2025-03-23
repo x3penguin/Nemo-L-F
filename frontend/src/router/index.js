@@ -15,8 +15,7 @@ const routes = [
     path: "/home/:userId",
     name: "Userhome",
     component: Home,
-    meta: { requiresAuth: true }
-
+    meta: { requiresAuth: true },
   },
   {
     path: "/login",
@@ -39,46 +38,62 @@ const routes = [
     name: "report-lost",
     component: () => import("@/views/ReportLost.vue"),
     meta: {
-      requiresAuth: true
-    }
+      requiresAuth: true,
+    },
   },
   {
     path: "/report-found",
     name: "report-found",
     component: () => import("@/views/ReportFound.vue"),
     meta: {
-      requiresAuth: true
-    }
+      requiresAuth: true,
+    },
   },
   {
     path: "/profile",
     name: "profile",
     component: () => import("@/views/Profile.vue"),
     meta: {
-      requiresAuth: true
-    }
+      requiresAuth: true,
+    },
   },
   {
     path: "/collections",
     name: "collection",
     component: () => import("@/views/Collection.vue"),
     meta: {
-      requiresAuth: true
-    }
+      requiresAuth: true,
+    },
   },
   {
     path: "/report-success",
     name: "report-success",
     component: () => import("@/views/ReportSuccess.vue"),
     meta: {
-      requiresAuth: true
-    }
+      requiresAuth: true,
+    },
   },
   {
-    path: '/logistics-form',
-    name: 'LogisticsForm',
-    component: () => import('@/views/LogisticsForm.vue')
-  }
+    path: "/logistics-form",
+    name: "LogisticsForm",
+    component: () => import("@/views/LogisticsForm.vue"),
+  },
+  {
+    path: "/potential-matches/:id",
+    name: "potential-matches",
+    component: () => import("@/views/PotentialMatches.vue"),
+    meta: {
+      requiresAuth: true,
+    },
+  },
+  {
+    path: "/items/:id",
+    name: "item-details",
+    component: () => import("@/views/ItemDetail.vue"),
+    meta: {
+      requiresAuth: true,
+    },
+  },
 ];
 
 const router = createRouter({

@@ -74,6 +74,11 @@ const routes = [
       requiresAuth: true
     }
   },
+  {
+    path: '/logistics-form',
+    name: 'LogisticsForm',
+    component: () => import('@/views/LogisticsForm.vue')
+  }
 ];
 
 const router = createRouter({

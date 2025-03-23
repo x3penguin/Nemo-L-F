@@ -121,11 +121,7 @@ def start_consumer():
                             
                             print(f"Match completed: Found item {best_match['foundItemId']} matches with lost item {best_match['lostItemId']} with confidence {best_match['weightedConfidence']:.2f}%")
                         else:
-                            print("No matches above threshold after weighting")
-
-                        # else:
-                        #     print(f"No matches found above threshold for item {item_id}")
-            
+                            print (f"No matches above threshold for item {item_id} after weighting")
             # Commit offset after successful processing
             consumer.commit()
             

@@ -80,9 +80,7 @@ def match_images(found_item_id, image_url):
         # Get all lost items
         lost_items = get_lost_items()
         
-        best_match = None
-        best_score = 0
-        best_id = None
+        best_image_matches = []
         
         # Compare with each lost item
         for lost_item in lost_items:
@@ -98,18 +96,13 @@ def match_images(found_item_id, image_url):
                 confidence = compare_images(found_img, lost_img)
                 print(f"Comparison with {lost_item['id']}: {confidence:.2f}%")
                 
-                if confidence > best_score and confidence > 60:  # 60% threshold
-                    best_score = confidence
-                    best_match = lost_item
-                    best_id = lost_item['id']
+                if confidence > 85:  # 85% threshold
+                    best_image_matches.append({'id':lost_item['id'],'image_confidence':confidence})
             except Exception as e:
                 print(f"Error comparing with item {lost_item.get('id')}: {e}")
         
-        if best_match:
-            return {
-                'matched_item_id': best_id,
-                'confidence': best_score
-            }
+        if best_image_matches:
+            return best_image_matches
         
         return None
         

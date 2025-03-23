@@ -20,8 +20,8 @@ services:
     depends_on:
       - zookeeper
       
-  matching-service:
-    build: ./matching
+  match:
+    build: ./match
     depends_on:
       - kafka
     env_file:

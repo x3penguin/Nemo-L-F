@@ -3,7 +3,8 @@ from kafka import KafkaConsumer, KafkaProducer
 import json
 import os
 import datetime
-from image_matcher import match_images
+from image_match.image_matcher import match_images
+from location_match.location_matcher import match_locations
 from firebase_client import update_matched_items
 
 def create_producer():
@@ -59,7 +60,8 @@ def start_consumer():
             # Extract fields based on your team's message format
             item_id = data.get('itemId')
             image_url = data.get('imageUrl')
-            
+            coordinates = data.get('coordinates')
+
             if not item_id or not image_url:
                 print(f"Missing required fields in message: {data}")
                 consumer.commit()
@@ -68,30 +70,61 @@ def start_consumer():
             print(f"Processing image matching for item {item_id}")
             
             # Run image matching algorithm
-            match_result = match_images(item_id, image_url)
+            best_image_matches = match_images(item_id, image_url)
             
-            if match_result and match_result.get('matched_item_id'):
-                matched_item_id = match_result['matched_item_id']
-                confidence = match_result['confidence']
+            if best_image_matches:
+                print(f"Found {len(best_image_matches)} potential image matches")
+                # Convert coordinates from array to tuple
+                coordinates_tuple = tuple(coordinates) if coordinates and len(coordinates) == 2 else None
                 
-                print(f"Match found! Item {item_id} matches with {matched_item_id} with confidence {confidence:.2f}%")
-                
-                # Update items as matched in Firebase
-                update_matched_items(
-                    item_id, 
-                    matched_item_id,
-                    confidence
-                )
-                
-                # Publish match notification event to Kafka
-                publish_match_notification({
-                    'lostItemId': matched_item_id,
-                    'foundItemId': item_id,
-                    'confidence': confidence,
-                    'timestamp': datetime.datetime.now().isoformat()
-                })
-            else:
-                print(f"No matches found above threshold for item {item_id}")
+                if coordinates_tuple:
+                    best_location_matches = match_locations(best_image_matches, coordinates)
+                    
+                    if best_location_matches:
+                        print(f"Found {len(best_location_matches)} potential location matches")
+                        final_matches = []
+                        for match in best_location_matches:
+                            image_confidence = float(match['image_confidence'])
+                            location_confidence = match['location_confidence']
+                            weighted_confidence = (0.7 * image_confidence) + (0.3 * location_confidence)
+                            if weighted_confidence > 80:
+                                final_matches.append({
+                                    'lostItemId': match['id'],
+                                    'foundItemId': item_id,
+                                    'imageConfidence': image_confidence,
+                                    'locationConfidence': location_confidence,
+                                    'weightedConfidence': weighted_confidence,
+                                    'distance': match['distance'],
+                                    'timestamp': datetime.datetime.now().isoformat()
+                                })
+                        
+                        if final_matches:
+                            print(f"Final matches after weighting: {len(final_matches)}")
+                            # Sort by weighted confidence (highest first)
+                            final_matches.sort(key=lambda x: x['weightedConfidence'], reverse=True)
+
+                            # Update the best match in Firebase
+                            best_match = final_matches[0]
+                            update_matched_items(
+                                best_match['foundItemId'],
+                                best_match['lostItemId'],
+                                best_match['weightedConfidence']
+                            )
+
+                            # Publish match notification event to Kafka
+                            publish_match_notification({
+                                'lostItemId': best_match['foundItemId'],
+                                'foundItemId': item_id,
+                                'confidence': best_match['weightedConfidence'],
+                                'timestamp': datetime.datetime.now().isoformat()
+                            })
+                            
+                            print(f"Match completed: Found item {best_match['foundItemId']} matches with lost item {best_match['lostItemId']} with confidence {best_match['weightedConfidence']:.2f}%")
+                        else:
+                            print("No matches above threshold after weighting")
+
+                        # else:
+                        #     print(f"No matches found above threshold for item {item_id}")
             
             # Commit offset after successful processing
             consumer.commit()

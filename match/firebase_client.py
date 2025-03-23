@@ -1,6 +1,7 @@
 import firebase_admin
 from firebase_admin import credentials, firestore, storage
 import os
+from google.cloud.firestore_v1.base_query import FieldFilter
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -30,16 +31,15 @@ def get_item_by_id(item_id):
 
 def get_lost_items():
     """Get all LOST items from Firestore"""
-    query = db.collection("items").where("status", "==", "LOST")
+    query = db.collection("items").where(filter=FieldFilter("status", "==", "LOST"))
     docs = query.stream()
-
     items = []
     for doc in docs:
         item_data = doc.to_dict()
         item_data["id"] = doc.id
         items.append(item_data)
-
     return items
+
 
 
 def update_matched_items(found_item_id, lost_item_id, confidence):

@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify
 from dotenv import load_dotenv
 import os
+from flask_cors import CORS
 import requests
 import json
 
@@ -9,6 +10,7 @@ load_dotenv()
 
 app = Flask(__name__)
 EASYPARCEL_API_KEY = os.getenv('EASYPARCEL_API_KEY')
+CORS(app)  # Add CORS support to the Flask app
 
 @app.route('/rate-check', methods=['POST'])
 def rate_check():

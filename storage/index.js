@@ -22,7 +22,7 @@ import('kafkajs').then(kafkaModule => {
 });
 
 // Function to publish image matching job
-async function publishMatchingJob(itemId, imageUrl) {
+async function publishMatchingJob(itemId, imageUrl, latitude, longitude) {
   if (!producerConnected || !producer) {
     console.error('Kafka producer not connected');
     return false;
@@ -37,7 +37,8 @@ async function publishMatchingJob(itemId, imageUrl) {
           value: JSON.stringify({
             itemId: itemId,
             imageUrl: imageUrl,
-            timestamp: new Date().toISOString()
+            timestamp: new Date().toISOString(),
+            coordinates: [latitude,longitude],
           })
         }
       ]
@@ -194,7 +195,7 @@ app.post("/api/items/found", upload.single("image"), async (req, res) => {
       // NEW: Send item for image matching
       if (imageUrl) {
         try {
-          await publishMatchingJob(result.itemId, imageUrl);
+          await publishMatchingJob(result.itemId, imageUrl, itemData.latitude, itemData.longitude);
         } catch (err) {
           console.log("Failed to send matching job, continuing anyway:", err);
         }

@@ -135,7 +135,7 @@ app.post("/api/items/lost", upload.single("image"), async (req, res) => {
       latitude: req.body.latitude,
       longitude: req.body.longitude,
       currentLocation: 'NA',
-      ownerId: req.body.userId ?? null, //remember to delete 1 once user service set
+      ownerId: req.body.userId,
       finderId: null,
     };
 
@@ -186,7 +186,7 @@ app.post("/api/items/found", upload.single("image"), async (req, res) => {
       latitude: req.body.latitude,
       longitude: req.body.longitude,
       ownerId: null,
-      finderId: req.body.userId ?? null, //rmb delete
+      finderId: req.body.userId , //rmb delete
     };
 
     const result = await storeItemData(itemData);

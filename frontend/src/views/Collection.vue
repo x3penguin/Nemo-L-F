@@ -587,34 +587,59 @@
 import { ref, computed, onMounted } from "vue";
 import itemService from "@/services/item.service";
 import ItemCard from "@/components/ItemCard.vue";
+import { useStore } from 'vuex';
 export default {
   name: "CollectionView",
   components: {
     ItemCard,
   },
   setup() {
+    const store = useStore();
+    
     const viewItemDetails = (item) => {
-  selectedItem.value = item;
-  modalType.value = 'details';
-  showModal.value = true;
-  
-  // If you have a function to fetch collection details, call it here
-  if (item.status === 'COLLECTING' || item.status === 'MATCHED') {
-    fetchCollectionDetails(item.id);
-  }
-};
+      selectedItem.value = item;
+      modalType.value = "details";
+      showModal.value = true;
+
+      // If you have a function to fetch collection details, call it here
+      if (item.status === "COLLECTING" || item.status === "MATCHED") {
+        fetchCollectionDetails(item.id);
+      }
+    };
     const fetchMatchedItems = async () => {
       isLoading.value = true;
       error.value = null;
 
       try {
         // Use the correct endpoint with query parameter
-        const response = await itemService.getLostItems();
-        matchedItems.value = response.data;
-        console.log("Items fetched:", matchedItems.value); // For debugging
+        const userId = store.getters["auth/user"]?.id || 1; // Fallback to 1 for testing
+
+        // Fetch items for all relevant statuses
+        const [
+          lostResponse,
+          matchedResponse,
+          collectingResponse,
+          retrievedResponse,
+        ] = await Promise.all([
+          itemService.getLostItems(),
+          itemService.getMatchedItems(),
+          itemService.getCollectingItems(),
+          itemService.getRetrievedItems(),
+        ]);
+
+        // Combine all items and filter by user ID
+        const allItems = [
+          ...lostResponse.data,
+          ...matchedResponse.data,
+          ...collectingResponse.data,
+          ...retrievedResponse.data,
+        ].filter((item) => item.ownerId === userId || item.finderId === userId);
+
+        matchedItems.value = allItems;
+        console.log("Items fetched:", matchedItems.value);
       } catch (err) {
-        console.error("Error fetching matched items:", err);
-        error.value = "Failed to load your matched items. Please try again.";
+        console.error("Error fetching items:", err);
+        error.value = "Failed to load your items. Please try again.";
       } finally {
         isLoading.value = false;
       }
@@ -747,7 +772,7 @@ export default {
         items = items.filter(
           (item) =>
             item.name.toLowerCase().includes(query) ||
-            item.description.toLowerCase().includes(query)
+            (item.description && item.description.toLowerCase().includes(query))
         );
       }
 
@@ -1017,7 +1042,7 @@ export default {
       processPayment,
       handleImageError,
       fetchItems,
-      viewItemDetails
+      viewItemDetails,
     };
   },
 };

@@ -13,8 +13,12 @@ class ItemService {
     return api.get('/items?status=MATCHED');
   }
   
-  getItemById(id) {
-    return api.get(`/items/${id}`);
+  getCollectingItems() {
+    return api.get('/items?status=COLLECTING');
+  }
+  
+  getRetrievedItems() {
+    return api.get('/items?status=RETRIEVED');
   }
   
   reportLostItem(itemData) {

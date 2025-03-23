@@ -50,32 +50,6 @@ class KafkaProducer {
     }
   }
 
-  // New method for sending image matching job
-  async sendImageMatchingJob(itemId, imageUrl) {
-    try {
-      await this.connect();
-      
-      const message = {
-        key: itemId,
-        value: JSON.stringify({
-          itemId: itemId,
-          imageUrl: imageUrl,
-          timestamp: new Date().toISOString()
-        })
-      };
-      
-      const result = await this.producer.send({
-        topic: 'image-matching-jobs', // Or use config.kafka.topics.matchingJobs
-        messages: [message]
-      });
-      
-      console.log(`Image matching job sent for item ${itemId}`);
-      return { success: true, result };
-    } catch (error) {
-      console.error('Error sending image matching job:', error);
-      return { success: false, error: error.message };
-    }
-  }
 }
 
 module.exports = new KafkaProducer();

@@ -130,8 +130,6 @@ export const getItemsByStatus = async (status) => {
     const q = query(collection(db, 'items'), where('status', '==', status));
     const querySnapshot = await getDocs(q);
     
-    console.log("Query snapshot size:", querySnapshot.size);
-    
     const items = [];
     // Check if querySnapshot has a forEach method
     if (querySnapshot.forEach) {
@@ -139,7 +137,6 @@ export const getItemsByStatus = async (status) => {
         // Make sure to use the correct method to access data
         if (typeof docSnapshot.data === 'function') {
           const itemData = docSnapshot.data();
-          console.log("Document data:", docSnapshot.id, itemData);
           items.push({
             id: docSnapshot.id,
             ...itemData
@@ -168,7 +165,6 @@ export const getItemsByStatus = async (status) => {
       });
     }
     
-    console.log(`Found ${items.length} items with status ${status}:`, items);
     
     return {
       success: true,

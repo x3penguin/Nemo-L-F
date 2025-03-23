@@ -3,6 +3,7 @@ const bodyParser = require('body-parser');
 const config = require('./config');
 const kafkaProducer = require('./kafka/producer');
 const kafkaConsumer = require('./kafka/consumer');
+const matchNotificationConsumer = require('./kafka/match-notification-consumer');
 
 // Initialize Express app
 const app = express();
@@ -51,14 +52,7 @@ const PORT = config.api.port;
 app.listen(PORT, async () => {
   console.log(`Server running on port ${PORT}`);
   
-  // Start Kafka consumer
+  // Start Kafka consumers
   await kafkaConsumer.startListening();
-});
-
-// Handle shutdown 
-process.on('SIGINT', async () => {
-  console.log('Shutting down...');
-  await kafkaProducer.disconnect();
-  await kafkaConsumer.disconnect();
-  process.exit(0);
+  await matchNotificationConsumer.startListening();
 });

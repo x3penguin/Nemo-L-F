@@ -7,7 +7,9 @@
 
       <div class="login-form">
         <h1 class="title">Sign In To Nemo Portal</h1>
-
+        <div v-if="error" class="alert alert-danger">
+          {{ error }}
+        </div>
         <div class="form-group">
           <label for="email">Email</label>
           <input type="email" id="email" v-model="email" placeholder="name@example.com" class="form-control" />
@@ -50,7 +52,11 @@ export default {
         console.log('User ID:', userId);
         router.push(`/home/${userId}`);
       } catch (err) {
-        error.value = err.response?.data?.message || 'Login failed';
+        if (err.response?.status === 401) {
+        error.value = 'Incorrect email or password. Please try again.';
+      } else {
+        error.value = err.response?.data?.message || 'Login failed. Please try again later.';
+    }
       }
     };
 
@@ -99,6 +105,19 @@ export default {
   max-width: 28rem;
   margin: 0 auto;
 }
+.alert {
+  padding: 0.75rem 1.25rem;
+  margin-bottom: 1rem;
+  border: 1px solid transparent;
+  border-radius: 0.375rem;
+}
+
+.alert-danger {
+  color: #842029;
+  background-color: #f8d7da;
+  border-color: #f5c2c7;
+}
+
 
 .title {
   font-size: 1.875rem;

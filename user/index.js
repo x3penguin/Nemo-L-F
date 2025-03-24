@@ -20,13 +20,17 @@ app.get('/', (req, res) => {
 
 // Route to create a new user (POST)
 app.post('/users', async (req, res) => {
-  const { email, password, phone, name } = req.body;
+  const { email, password, phone, name, city,
+    postalCode,
+    streetAddress,
+    unitNumber } = req.body;
 
-  if (!email || !password || !phone || !name) {
+  if (!email || !password || !phone || !name || !city || !postalCode || !streetAddress || !unitNumber) {
     return res.status(400).send({ message: 'All fields are required' });
   }
 
   try {
+    
     const hashedPassword = await bcrypt.hash(password, 10);
     // Save user data in Firestore
     const docRef = await addDoc(collection(db, 'users'), {
@@ -34,6 +38,12 @@ app.post('/users', async (req, res) => {
       email,
       password: hashedPassword,
       phone,
+      address: {
+        city,
+        postalCode,
+        streetAddress,
+        unitNumber
+      },
       createdAt: new Date(),
     });
     const userId = docRef.id;
@@ -132,32 +142,32 @@ app.get('/api/users/:id/matches/new', async (req, res) => {
   try {
     // Query Firestore for matched items where this user is involved
     const itemsRef = collection(db, 'items');
-    
+
     // Query for items where user is the owner (lost items that were found)
     const ownerQuery = query(
-      itemsRef, 
+      itemsRef,
       where('status', '==', 'MATCHED'),
       where('ownerId', '==', userId),
       where('notificationSeen', '==', false)
     );
-    
+
     // Query for items where user is the finder (found items that were matched)
     const finderQuery = query(
-      itemsRef, 
+      itemsRef,
       where('status', '==', 'MATCHED'),
       where('finderId', '==', userId),
       where('notificationSeen', '==', false)
     );
-    
+
     // Run both queries
     const [ownerQuerySnapshot, finderQuerySnapshot] = await Promise.all([
       getDocs(ownerQuery),
       getDocs(finderQuery)
     ]);
-    
+
     // Combine the results
     const matches = [];
-    
+
     ownerQuerySnapshot.forEach((doc) => {
       const data = doc.data();
       matches.push({
@@ -171,7 +181,7 @@ app.get('/api/users/:id/matches/new', async (req, res) => {
         seen: false
       });
     });
-    
+
     finderQuerySnapshot.forEach((doc) => {
       const data = doc.data();
       matches.push({
@@ -185,25 +195,25 @@ app.get('/api/users/:id/matches/new', async (req, res) => {
         seen: false
       });
     });
-    
+
     // If there are matches, mark them as seen
     if (matches.length > 0) {
       const batch = writeBatch(db);
-      
+
       // Mark all as seen in Firestore
       [...ownerQuerySnapshot.docs, ...finderQuerySnapshot.docs].forEach((doc) => {
         batch.update(doc.ref, { notificationSeen: true });
       });
-      
+
       // Commit the batch
       await batch.commit();
     }
-    
+
     res.json({ matches });
   } catch (error) {
     console.error('Error fetching matches:', error);
-    res.status(500).json({ 
-      success: false, 
+    res.status(500).json({
+      success: false,
       error: error.message || 'Failed to fetch matches'
     });
   }
@@ -212,16 +222,16 @@ app.get('/api/users/:id/matches/new', async (req, res) => {
 // Route to mark a notification as read
 app.put('/api/notifications/:id/read', async (req, res) => {
   const notificationId = req.params.id;
-  
+
   try {
     const notificationRef = doc(db, 'items', notificationId);
     await updateDoc(notificationRef, { notificationRead: true });
-    
+
     res.json({ success: true });
   } catch (error) {
     console.error('Error marking notification as read:', error);
-    res.status(500).json({ 
-      success: false, 
+    res.status(500).json({
+      success: false,
       error: error.message || 'Failed to update notification'
     });
   }
@@ -229,43 +239,43 @@ app.put('/api/notifications/:id/read', async (req, res) => {
 
 app.post('/api/test/create-match', async (req, res) => {
   const { lostItemId, foundItemId, confidence = 90 } = req.body;
-  
+
   if (!lostItemId || !foundItemId) {
     return res.status(400).json({
       success: false,
       error: 'Both lostItemId and foundItemId are required'
     });
   }
-  
+
   try {
     // Get the lost item
     const lostItemRef = doc(db, 'items', lostItemId);
     const lostItemDoc = await getDoc(lostItemRef);
-    
+
     if (!lostItemDoc.exists()) {
       return res.status(404).json({
         success: false,
         error: `Lost item with ID ${lostItemId} not found`
       });
     }
-    
+
     // Get the found item
     const foundItemRef = doc(db, 'items', foundItemId);
     const foundItemDoc = await getDoc(foundItemRef);
-    
+
     if (!foundItemDoc.exists()) {
       return res.status(404).json({
         success: false,
         error: `Found item with ID ${foundItemId} not found`
       });
     }
-    
+
     const lostItem = lostItemDoc.data();
     const foundItem = foundItemDoc.data();
-    
+
     // Update both items as matched
     const batch = writeBatch(db);
-    
+
     // Update lost item
     batch.update(lostItemRef, {
       status: 'MATCHED',
@@ -276,7 +286,7 @@ app.post('/api/test/create-match', async (req, res) => {
       notificationSeen: false,
       notificationRead: false
     });
-    
+
     // Update found item
     batch.update(foundItemRef, {
       status: 'MATCHED',
@@ -287,10 +297,10 @@ app.post('/api/test/create-match', async (req, res) => {
       notificationSeen: false,
       notificationRead: false
     });
-    
+
     // Commit the batch
     await batch.commit();
-    
+
     res.json({
       success: true,
       message: 'Match created successfully',
@@ -300,7 +310,7 @@ app.post('/api/test/create-match', async (req, res) => {
         confidence
       }
     });
-    
+
   } catch (error) {
     console.error('Error creating test match:', error);
     res.status(500).json({

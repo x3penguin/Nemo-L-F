@@ -79,6 +79,11 @@ const routes = [
     component: () => import("@/views/LogisticsForm.vue"),
   },
   {
+    path: "/payment-form",
+    name: "PaymentForm",
+    component: () => import("@/views/PaymentForm.vue"),
+  },
+  {
     path: "/potential-matches/:id",
     name: "potential-matches",
     component: () => import("@/views/PotentialMatches.vue"),

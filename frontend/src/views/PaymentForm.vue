@@ -69,11 +69,6 @@
                   @input="formatCardNumber"
                   maxlength="19"
                 />
-                <div class="card-icons">
-                  <!-- <img src="../assets/visa.svg" alt="Visa" class="card-icon" />
-                  <img src="../assets/mastercard.svg" alt="Mastercard" class="card-icon" />
-                  <img src="../assets/amex.svg" alt="American Express" class="card-icon" /> -->
-                </div>
               </div>
               <div v-if="errors.cardNumber" class="error-message">
                 {{ errors.cardNumber }}

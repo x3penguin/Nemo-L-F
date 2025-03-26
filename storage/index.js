@@ -281,21 +281,6 @@ app.get("/health", (req, res) => {
   res.status(200).json({ status: "UP" });
 });
 
-
-
-// app.get("/items/collection", async (req, res) => {
-//   const status = req.query.status;
-//   console.log("API called with status:", status);
-//   const userId = req.query.userId || 1; // Default to 1 for testing
-
-//   const result = await getCollectionItems(userId);
-//   if (result.success) {
-//     res.status(200).json(result.items);
-//   } else {
-//     res.status(400).json(result);
-//   }
-// });
-
 app.get("/api/items/:id/potential-matches", async (req, res) => {
   const itemId = req.params.id;
 
@@ -331,21 +316,21 @@ app.get("/api/items/:id/potential-matches", async (req, res) => {
         .json({ error: "Failed to retrieve potential matches" });
     }
 
-    const potentialMatches = matchingItemsResult.items.map((item) => {
-      // Add confidence and distance - note we're using existing data if available
-      return {
-        ...item,
-        confidence:
-          item.matchingConfidence || Math.floor(Math.random() * 40) + 60, // Use existing or random fallback
-        distance: item.distance || null, // Use existing or null
-      };
-    });
+    // Process up to 5 potential matches
+    const potentialMatches = matchingItemsResult.items
+      .map((item) => {
+        return {
+          ...item,
+          confidence: item.matchingConfidence || Math.floor(Math.random() * 40) + 60,
+          sourceItemId: itemId,
+          distance: item.distance || null
+        };
+      })
+      .sort((a, b) => b.confidence - a.confidence)
+      .slice(0, 5); // Limit to top 5 matches
 
-    // Sort by confidence (highest first)
-    potentialMatches.sort((a, b) => b.confidence - a.confidence);
-
-    // Return the matches (limit to 10)
-    res.status(200).json(potentialMatches.slice(0, 10));
+    // Return the matches
+    res.status(200).json(potentialMatches);
   } catch (error) {
     console.error("Error getting potential matches:", error);
     res.status(500).json({ error: error.message || "Internal server error" });

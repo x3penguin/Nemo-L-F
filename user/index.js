@@ -196,7 +196,7 @@ app.get('/api/users/:id/matches/new', async (req, res) => {
       });
     });
 
-    // If there are matches, mark them as seen
+    // Mark notifications as seen but don't auto-remove them
     if (matches.length > 0) {
       const batch = writeBatch(db);
 
@@ -233,6 +233,118 @@ app.put('/api/notifications/:id/read', async (req, res) => {
     res.status(500).json({
       success: false,
       error: error.message || 'Failed to update notification'
+    });
+  }
+});
+
+// Route to fetch potential matches (up to 5)
+app.get('/api/users/:id/potential-matches', async (req, res) => {
+  const userId = req.params.id;
+
+  try {
+    // Query for user's items that might have potential matches
+    const itemsRef = collection(db, 'items');
+    const userItems = query(
+      itemsRef,
+      where('ownerId', '==', userId),
+      where('status', 'in', ['LOST', 'FOUND'])
+    );
+
+    const itemsSnapshot = await getDocs(userItems);
+    const potentialMatches = [];
+
+    // For each item, find potential matches
+    for (const itemDoc of itemsSnapshot.docs) {
+      const item = itemDoc.data();
+      const itemId = itemDoc.id;
+      
+      // Query for matching items (if lost, find found items; if found, find lost items)
+      const matchStatus = item.status === 'LOST' ? 'FOUND' : 'LOST';
+      const matchQuery = query(
+        itemsRef,
+        where('status', '==', matchStatus)
+      );
+      
+      const matchesSnapshot = await getDocs(matchQuery);
+      
+      // Calculate matches (simplified - in a real app, you'd use your actual matching algorithm)
+      const matches = matchesSnapshot.docs
+        .map(matchDoc => {
+          // Calculate a confidence score (simplified)
+          const confidence = Math.floor(Math.random() * 40) + 60; // Random score between 60-99
+          
+          return {
+            id: matchDoc.id,
+            itemId: matchDoc.id,
+            sourceItemId: itemId,
+            itemName: matchDoc.data().name,
+            category: matchDoc.data().category,
+            description: matchDoc.data().description,
+            location: matchDoc.data().location,
+            imageUrl: matchDoc.data().imageUrl,
+            confidence: confidence,
+            dateTime: matchDoc.data().dateTime
+          };
+        })
+        .sort((a, b) => b.confidence - a.confidence) // Sort by confidence
+        .slice(0, 5); // Take top 5
+      
+      potentialMatches.push(...matches);
+    }
+    
+    // Return the top potential matches across all user items
+    res.json({
+      success: true,
+      matches: potentialMatches.sort((a, b) => b.confidence - a.confidence).slice(0, 5)
+    });
+    
+  } catch (error) {
+    console.error('Error fetching potential matches:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to fetch potential matches'
+    });
+  }
+});
+
+app.get('/api/users/:id/lost-items-with-matches', async (req, res) => {
+  const userId = req.params.id;
+
+  try {
+    // Query for lost items by this user
+    const itemsRef = collection(db, 'items');
+    const lostItemsQuery = query(
+      itemsRef,
+      where('status', '==', 'LOST'),
+      where('ownerId', '==', userId)
+    );
+    
+    const lostItemsSnapshot = await getDocs(lostItemsQuery);
+    const lostItems = [];
+    
+    lostItemsSnapshot.forEach(doc => {
+      const item = doc.data();
+      lostItems.push({
+        id: doc.id,
+        name: item.name,
+        description: item.description,
+        category: item.category,
+        location: item.location,
+        dateTime: item.dateTime,
+        imageUrl: item.imageUrl,
+        status: item.status
+      });
+    });
+
+    res.json({ 
+      success: true,
+      items: lostItems
+    });
+  } catch (error) {
+    console.error('Error fetching lost items:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to fetch lost items'
     });
   }
 });

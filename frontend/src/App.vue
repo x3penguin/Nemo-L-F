@@ -49,12 +49,14 @@ export default {
                 match.confidence
               )}%`;
 
+        // Add notification without auto-removal timeout
         store.dispatch("notifications/add", {
           type: notificationType,
           message: message,
           itemId: match.itemId,
           matchedItemId: match.matchedItemId,
           confidence: match.confidence,
+          isPersistent: true  // Flag to indicate notification should persist
         });
       });
     };

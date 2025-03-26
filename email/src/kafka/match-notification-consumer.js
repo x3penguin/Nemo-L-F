@@ -5,10 +5,10 @@ const emailService = require('../services/emailService');
 const admin = require('firebase-admin');
 
 // Initialize Firebase if not already done elsewhere
-console.log(process.env.FIREBASE_DATABASE_URL)
+
 if (!admin.apps.length) {
   admin.initializeApp({
-    credential: admin.credential.cert(require('../esd-nemo-firebase-adminsdk-fbsvc-fbe963cc58.json')),
+    credential: admin.credential.cert(require(process.env.FILE_PATH)),
     storageBucket: process.env.STORAGE_BUCKET
   });
 }

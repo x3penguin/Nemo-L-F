@@ -28,6 +28,26 @@ def get_item_by_id(item_id):
 
     return None
 
+def store_potential_matches(found_item_id, lost_item_id, confidence, distance=None):
+    """Store potential match data for UI display"""
+    try:
+        # Create a potential match document
+        potential_match_ref = db.collection("potential_matches").document()
+        
+        potential_match_ref.set({
+            "foundItemId": found_item_id,
+            "lostItemId": lost_item_id,
+            "confidence": confidence,
+            "distance": distance,
+            "createdAt": firestore.SERVER_TIMESTAMP,
+            "viewed": False
+        })
+        
+        print(f"Stored potential match between {found_item_id} and {lost_item_id}")
+        return True
+    except Exception as e:
+        print(f"Error storing potential match: {e}")
+        return False
 
 def get_lost_items():
     """Get all LOST items from Firestore"""

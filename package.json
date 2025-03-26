@@ -4,7 +4,7 @@
     "kafkajs": "^2.2.4"
   },
   "scripts": {
-    "dev": "concurrently \"npm run dev:frontend\" \"npm run dev:storage\" \"npm run dev:location\" \"npm run dev:match\" \"npm run dev:email\" \"npm run dev:user\" ",
+    "dev": "concurrently \"npm run dev:frontend\" \"npm run dev:storage\"  ",
     "dev:frontend": "cd frontend && npm run serve",
     "dev:storage": "cd storage && node index.js",
     "dev:location": "cd location && python index.py",

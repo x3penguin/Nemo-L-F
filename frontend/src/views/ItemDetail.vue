@@ -90,9 +90,17 @@
                   <span class="detail-value">{{ formatDate(item.dateTime) }}</span>
                 </div>
                 
-                <div v-if="item.latitude && item.longitude" class="map-section">
+                <div v-if="hasCoordinates" class="map-section">
                   <h3 class="subsection-title">Item Location</h3>
                   <div ref="mapElement" class="map-container"></div>
+                  <div v-if="mapError" class="map-error">
+                    <p>{{ mapError }}</p>
+                    <button @click="initMap" class="btn btn-primary btn-sm mt-2">Retry</button>
+                  </div>
+                  <div v-if="mapLoading" class="map-loading">
+                    <div class="spinner small"></div>
+                    <span>Loading map...</span>
+                  </div>
                 </div>
               </div>
   
@@ -123,18 +131,37 @@
               </div>
             </div>
           </div>
+
+          <!-- Add potential matches carousel if query has showMatches=true and item is of status LOST -->
+          <div v-if="shouldShowMatches && potentialMatches.length > 0" class="potential-matches-section">
+            <h2 class="section-title">Potential Matches</h2>
+            <p class="section-description">These items might be a match for your lost item.</p>
+            <ItemCarousel :items="potentialMatches" />
+          </div>
+          <div v-else-if="shouldShowMatches && isLoadingMatches" class="loading-matches">
+            <div class="spinner"></div>
+            <p>Loading potential matches...</p>
+          </div>
+          <div v-else-if="shouldShowMatches && potentialMatches.length === 0 && !isLoadingMatches" class="no-matches">
+            <p>No potential matches found for this item.</p>
+          </div>
         </div>
       </div>
     </div>
   </template>
   
   <script>
-  import { ref, onMounted, computed } from 'vue';
+  import { ref, onMounted, computed, watch, onUnmounted } from 'vue';
   import { useRoute, useRouter } from 'vue-router';
   import itemService from '@/services/item.service';
+  import ItemCarousel from '@/components/ItemCarousel.vue';
+  import { getLoader } from '@/services/googleMapsLoader';
   
   export default {
     name: 'ItemDetailView',
+    components: {
+      ItemCarousel
+    },
     setup() {
       const route = useRoute();
       const router = useRouter();
@@ -142,8 +169,15 @@
       
       const item = ref(null);
       const matchedItem = ref(null);
+      const potentialMatches = ref([]);
       const isLoading = ref(true);
+      const isLoadingMatches = ref(false);
       const error = ref(null);
+      
+      // Map-specific state
+      const mapLoading = ref(false);
+      const mapLoaded = ref(false);
+      const mapError = ref(null);
       let map = null;
       let marker = null;
       
@@ -151,6 +185,50 @@
       const sourceItemId = computed(() => {
         return route.query.sourceId || '';
       });
+
+      // Determine if we should show potential matches
+      const shouldShowMatches = computed(() => {
+        return route.query.showMatches === 'true' && item.value && item.value.status === 'LOST';
+      });
+
+      // Add a computed property to check if coordinates are valid
+      const hasCoordinates = computed(() => {
+        return (
+          item.value && 
+          item.value.coordinates && 
+          item.value.coordinates.lat && 
+          item.value.coordinates.lng
+        ) || (
+          item.value && 
+          item.value.latitude && 
+          item.value.longitude
+        );
+      });
+
+      // Get coordinates helper function
+      const getCoordinates = () => {
+        if (!item.value) return null;
+        
+        let lat, lng;
+        
+        if (item.value.coordinates && item.value.coordinates.lat && item.value.coordinates.lng) {
+          lat = parseFloat(item.value.coordinates.lat);
+          lng = parseFloat(item.value.coordinates.lng);
+        } else if (item.value.latitude && item.value.longitude) {
+          lat = parseFloat(item.value.latitude);
+          lng = parseFloat(item.value.longitude);
+        } else {
+          return null;
+        }
+        
+        // Verify coordinates are valid numbers
+        if (isNaN(lat) || isNaN(lng)) {
+          console.error('Invalid coordinates:', lat, lng);
+          return null;
+        }
+        
+        return { lat, lng };
+      };
   
       const fetchItemDetails = async () => {
         const itemId = route.params.id;
@@ -167,6 +245,8 @@
           const response = await itemService.getItemById(itemId);
           item.value = response.data;
           
+          console.log('Fetched item:', item.value);
+          
           // If the item is matched, fetch the matched item details
           if (item.value.matchedItemId) {
             try {
@@ -178,9 +258,9 @@
             }
           }
           
-          // Initialize map if coordinates are available
-          if (item.value.latitude && item.value.longitude) {
-            initMap();
+          // If showMatches is true and the item is LOST, fetch potential matches
+          if (shouldShowMatches.value) {
+            fetchPotentialMatches(itemId);
           }
         } catch (err) {
           console.error('Error fetching item details:', err);
@@ -190,48 +270,134 @@
         }
       };
       
-      const initMap = async () => {
-        if (!mapElement.value || !item.value.latitude || !item.value.longitude) return;
-        
-        // Load Google Maps API
+      const fetchPotentialMatches = async (itemId) => {
         try {
-          const googleMapsApiKey = process.env.VUE_APP_GOOGLE_MAPS_API_KEY;
-          const { getLoader } = await import('@/services/googleMapsLoader');
-          const loader = getLoader(googleMapsApiKey);
+          isLoadingMatches.value = true;
+          const response = await itemService.getPotentialMatches(itemId);
+          potentialMatches.value = response.data || [];
+        } catch (err) {
+          console.error('Error fetching potential matches:', err);
+          // Don't set main error, just log it
+        } finally {
+          isLoadingMatches.value = false;
+        }
+      };
+      
+      const initMap = async () => {
+        if (!mapElement.value) {
+          console.error('Map element ref not available');
+          return;
+        }
+        
+        if (!hasCoordinates.value) {
+          console.error('Item has no valid coordinates');
+          return;
+        }
+        
+        try {
+          // Reset map state
+          mapError.value = null;
+          mapLoading.value = true;
           
+          // Get API key from environment
+          const googleMapsApiKey = process.env.VUE_APP_GOOGLE_MAPS_API_KEY;
+          
+          if (!googleMapsApiKey) {
+            console.error('Google Maps API key not found in environment variables');
+            mapError.value = 'Map API key not configured';
+            mapLoading.value = false;
+            return;
+          }
+          
+          console.log('Loading Google Maps with API key:', googleMapsApiKey);
+          
+          // Load Google Maps API
+          const loader = getLoader(googleMapsApiKey);
           await loader.load();
           
-          // Get Map and Marker classes
+          // Check if Google Maps is loaded
+          if (!window.google || !window.google.maps) {
+            throw new Error('Google Maps failed to load');
+          }
+          
+          console.log('Google Maps API loaded successfully');
+          
+          // Get Map class - we'll use standard Marker instead of importing from library
           const { Map } = await window.google.maps.importLibrary("maps");
-          const { Marker } = await window.google.maps.importLibrary("marker");
+          
+          // Get coordinates
+          const coords = getCoordinates();
+          if (!coords) {
+            throw new Error('Could not determine coordinates');
+          }
+          
+          console.log('Creating map with coordinates:', coords);
           
           // Create map
-          const position = {
-            lat: parseFloat(item.value.latitude),
-            lng: parseFloat(item.value.longitude)
-          };
-          
           map = new Map(mapElement.value, {
-            center: position,
+            center: coords,
             zoom: 15,
             mapTypeControl: false,
             streetViewControl: false,
             fullscreenControl: false,
           });
           
-          // Add marker
-          marker = new Marker({
-            position: position,
+          // Create marker using the standard Marker class
+          marker = new window.google.maps.Marker({
+            position: coords,
             map: map,
-            title: item.value.name
+            title: item.value.name || 'Item location'
           });
-
-          return marker;
+          
+          // Store the marker in a variable so it's "used"
+          if (!marker) {
+            console.error('Failed to create marker');
+            return;
+          }
+          
+          mapLoaded.value = true;
+          console.log('Map initialized successfully with marker at:', marker.getPosition().toString());
+          
+          // Add event listener to marker to show it's used
+          marker.addListener('click', () => {
+            console.log('Marker clicked');
+            // Optionally add some interaction with the marker
+            const infoWindow = new window.google.maps.InfoWindow({
+              content: `<div><strong>${item.value.name}</strong><p>${item.value.location || ''}</p></div>`
+            });
+            infoWindow.open(map, marker);
+          });
+          
         } catch (err) {
-          console.error('Error loading map:', err);
-          // Don't set an error, the map is non-critical
+          console.error('Error initializing map:', err);
+          mapError.value = 'Failed to load map: ' + (err.message || 'Unknown error');
+          mapLoaded.value = false;
+        } finally {
+          mapLoading.value = false;
         }
       };
+      
+      // Clean up map resources when component is unmounted
+      onUnmounted(() => {
+        if (map) {
+          // Google Maps doesn't have explicit destroy methods, but we can
+          // help garbage collection by removing references
+          map = null;
+          marker = null;
+        }
+      });
+      
+      // Watch for changes to coordinates and map element
+      watch([() => hasCoordinates.value, () => mapElement.value], 
+        ([hasCoords, mapEl]) => {
+          console.log('Watch triggered - hasCoordinates:', hasCoords, 'mapElement exists:', !!mapEl);
+          if (hasCoords && mapEl && !mapLoaded.value && !mapLoading.value) {
+            console.log('Initializing map from watcher');
+            initMap();
+          }
+        },
+        { immediate: false }
+      );
       
       const viewMatchedItem = () => {
         if (matchedItem.value && matchedItem.value.id) {
@@ -283,20 +449,30 @@
       
       onMounted(() => {
         fetchItemDetails();
+        
+        // We'll initialize the map in the watcher after item details are loaded
       });
       
       return {
         item,
         matchedItem,
+        potentialMatches,
         isLoading,
+        isLoadingMatches,
         error,
         mapElement,
         sourceItemId,
+        shouldShowMatches,
+        hasCoordinates,
+        mapLoading,
+        mapLoaded,
+        mapError,
         fetchItemDetails,
         viewMatchedItem,
         handleImageError,
         formatStatus,
-        formatDate
+        formatDate,
+        initMap
       };
     }
   };
@@ -308,7 +484,7 @@
     margin: 2rem auto;
   }
   
-  .loading-indicator {
+  .loading-indicator, .loading-matches {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -470,6 +646,39 @@
     overflow: hidden;
     margin-top: 0.5rem;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    background-color: #f3f4f6;
+  }
+  
+  .map-error {
+    color: #dc2626;
+    font-size: 0.875rem;
+    margin-top: 0.5rem;
+    text-align: center;
+    padding: 0.5rem;
+  }
+  
+  .map-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.875rem;
+    color: #6b7280;
+    margin-top: 0.5rem;
+  }
+  
+  .spinner.small {
+    width: 1rem;
+    height: 1rem;
+    border: 2px solid rgba(17, 24, 39, 0.1);
+    border-top-color: #111827;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-right: 0.5rem;
+  }
+  
+  .mt-2 {
+    margin-top: 0.5rem;
   }
   
   .action-section {
@@ -515,6 +724,24 @@
   
   .mt-4 {
     margin-top: 1rem;
+  }
+
+  /* Potential matches section */
+  .potential-matches-section {
+    border-top: 1px solid #e5e7eb;
+    padding: 1.5rem;
+  }
+  
+  .section-description {
+    color: #6b7280;
+    margin-bottom: 1.5rem;
+  }
+  
+  .no-matches {
+    padding: 2rem;
+    text-align: center;
+    color: #6b7280;
+    border-top: 1px solid #e5e7eb;
   }
   
   @media (max-width: 768px) {

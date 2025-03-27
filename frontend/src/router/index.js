@@ -4,6 +4,8 @@ import store from "@/store";
 // Views
 import Home from "@/views/Home.vue";
 import Login from "@/views/Login.vue";
+import ItemCarousel from '@/components/ItemCarousel.vue';
+import ItemDetail from '@/views/ItemDetail.vue';
 
 const routes = [
   {
@@ -92,12 +94,9 @@ const routes = [
     component: () => import("@/views/PaymentForm.vue"),
   },
   {
-    path: "/potential-matches/:id",
-    name: "potential-matches",
-    component: () => import("@/views/PotentialMatches.vue"),
-    meta: {
-      requiresAuth: true,
-    },
+    path: '/potential-matches/:id',
+    name: 'ItemCarousel',
+    component: ItemCarousel,
   },
   {
     path: "/items/:id",
@@ -106,6 +105,12 @@ const routes = [
     meta: {
       requiresAuth: true,
     },
+  },
+  {
+    path: '/items/:id',
+    name: 'ItemDetail',
+    component: ItemDetail,
+    props: true
   },
 ];
 

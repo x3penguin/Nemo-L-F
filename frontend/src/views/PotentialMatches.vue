@@ -97,7 +97,7 @@
               <p class="item-date">{{ formatDate(item.dateTime) }}</p>
             </div>
             <div class="item-actions">
-              <button class="btn btn-primary">View Potential Matches</button>
+              <button class="btn btn-primary" @click.stop="viewItem(item)">View Potential Matches</button>
             </div>
           </div>
         </div>
@@ -108,7 +108,7 @@
 
 <script>
 import { ref, onMounted } from "vue";
-import { useRoute,useRouter } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import itemService from "@/services/item.service";
 // import MatchCarousel from "@/components/ItemCarousel.vue";
 // import authService from "@/services/auth.service";
@@ -217,7 +217,12 @@ export default {
     };
 
     const viewItem = (item) => {
-      router.push(`/potential-matches/${item.id}`);
+      // Navigate to the item detail page with potential matches
+      router.push({ 
+        name: "ItemDetail", 
+        params: { id: item.id },
+        query: { showMatches: 'true' }  // Changed from true to 'true' to ensure it's passed as a string in the URL
+      });
     };
 
     onMounted(() => {
@@ -234,7 +239,7 @@ export default {
       formatStatus,
       formatDate,
       truncateDescription,
-      viewItem
+      viewItem,
     };
   },
 };
@@ -317,6 +322,27 @@ export default {
   margin-bottom: 1rem;
   padding-bottom: 0.5rem;
   border-bottom: 1px solid #e5e7eb;
+}
+
+.items-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+.item-card {
+  background-color: white;
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  transition: transform 0.2s, box-shadow 0.2s;
+  cursor: pointer;
+}
+
+.item-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 .source-item-container {

@@ -1,7 +1,14 @@
+// frontend/src/views/PotentialMatches.vue
 <template>
   <div class="container">
     <div class="matches-container">
-      <h1 class="matches-title">Potential Matches</h1>
+      <h1 class="matches-title">
+        {{
+          itemId
+            ? "Potential Matches for " + (sourceItem?.name || "Item")
+            : "Potential Matches"
+        }}
+      </h1>
 
       <div v-if="isLoading" class="loading-indicator">
         <div class="spinner"></div>
@@ -15,30 +22,75 @@
         </button>
       </div>
 
-      <div v-else-if="!matches.length" class="empty-state">
-        <div class="empty-icon">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="64"
-            height="64"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
-          </svg>
+      <!-- When we have a specific item ID -->
+      <div v-else-if="itemId" class="item-matches">
+        <!-- Display source item information -->
+        <div v-if="sourceItem" class="source-item-container">
+          <div class="source-item-card">
+            <div class="item-image">
+              <img
+                :src="sourceItem.imageUrl || '/img/placeholder-image.jpg'"
+                :alt="sourceItem.name"
+                @error="handleImageError"
+              />
+              <div
+                class="item-status"
+                :class="`status-${sourceItem.status.toLowerCase()}`"
+              >
+                {{ formatStatus(sourceItem.status) }}
+              </div>
+            </div>
+            <div class="item-details">
+              <h3 class="item-name">{{ sourceItem.name }}</h3>
+              <p class="item-category">{{ sourceItem.category }}</p>
+              <p class="item-description">
+                {{ truncateDescription(sourceItem.description) }}
+              </p>
+              <p class="item-location">Location: {{ sourceItem.location }}</p>
+              <p class="item-date">{{ formatDate(sourceItem.dateTime) }}</p>
+            </div>
+          </div>
         </div>
-        <h2>No Potential Matches</h2>
-        <p>There are currently no potential matches for your items.</p>
-        <router-link to="/" class="btn btn-primary">Back to Home</router-link>
+
+        <!-- Display potential matches carousel -->
+        <div v-if="matches.length > 0" class="matches-carousel-container">
+          <h2 class="section-title">Potential Matches</h2>
+          <ItemCarousel :items="matches" />
+        </div>
+
+        <div v-else class="empty-state">
+          <div class="empty-icon">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="64"
+              height="64"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+          </div>
+          <h2>No Potential Matches</h2>
+          <p>There are currently no potential matches for this item.</p>
+          <router-link to="/potential-matches" class="btn btn-primary"
+            >All Items</router-link
+          >
+        </div>
+
+        <div class="actions">
+          <router-link to="/potential-matches" class="btn btn-secondary">
+            Back to All Items
+          </router-link>
+        </div>
       </div>
 
-      <!-- When displaying lost items (no itemId) -->
+      <!-- When displaying lost items (no specific itemId) -->
       <div v-else class="matches-content">
         <h2 class="section-title">Your Lost Items</h2>
 
@@ -97,7 +149,9 @@
               <p class="item-date">{{ formatDate(item.dateTime) }}</p>
             </div>
             <div class="item-actions">
-              <button class="btn btn-primary" @click.stop="viewItem(item)">View Potential Matches</button>
+              <button class="btn btn-primary" @click.stop="viewItem(item)">
+                View Potential Matches
+              </button>
             </div>
           </div>
         </div>
@@ -107,19 +161,18 @@
 </template>
 
 <script>
-import { ref, onMounted } from "vue";
+import { ref, computed, onMounted, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import itemService from "@/services/item.service";
-// import MatchCarousel from "@/components/ItemCarousel.vue";
-// import authService from "@/services/auth.service";
+import ItemCarousel from "@/components/ItemCarousel.vue";
 import { useStore } from "vuex";
 import axios from "axios";
 
 export default {
   name: "PotentialMatchesView",
-  // components: {
-  //   MatchCarousel,
-  // },
+  components: {
+    ItemCarousel,
+  },
   setup() {
     const route = useRoute();
     const router = useRouter();
@@ -129,20 +182,23 @@ export default {
     const isLoading = ref(true);
     const error = ref(null);
 
-    const fetchMatches = async () => {
-      const itemId = route.params.id;
+    // Determine if we're looking at a specific item's matches
+    const itemId = computed(() => route.params.id);
 
+    const fetchMatches = async () => {
       try {
         isLoading.value = true;
         error.value = null;
 
-        if (itemId) {
+        if (itemId.value) {
           // If we have a specific item ID, fetch that item and its matches
-          const sourceResponse = await itemService.getItemById(itemId);
+          const sourceResponse = await itemService.getItemById(itemId.value);
           sourceItem.value = sourceResponse.data;
 
           // Then fetch potential matches for this specific item
-          const matchesResponse = await itemService.getPotentialMatches(itemId);
+          const matchesResponse = await itemService.getPotentialMatches(
+            itemId.value
+          );
           matches.value = matchesResponse.data || [];
         } else {
           // No itemId - show the user's lost items that have potential matches
@@ -171,6 +227,16 @@ export default {
         isLoading.value = false;
       }
     };
+
+    // Watch for route parameter changes to reload data
+    watch(
+      () => route.params.id,
+      (newId) => {
+        if (newId !== undefined) {
+          fetchMatches();
+        }
+      }
+    );
 
     const handleImageError = (event) => {
       event.target.src = "/img/placeholder-image.jpg";
@@ -218,10 +284,10 @@ export default {
 
     const viewItem = (item) => {
       // Navigate to the item detail page with potential matches
-      router.push({ 
-        name: "ItemDetail", 
+      router.push({
+        name: "item-details",
         params: { id: item.id },
-        query: { showMatches: 'true' }  // Changed from true to 'true' to ensure it's passed as a string in the URL
+        query: { showMatches: "true" },
       });
     };
 
@@ -234,6 +300,7 @@ export default {
       sourceItem,
       isLoading,
       error,
+      itemId,
       fetchMatches,
       handleImageError,
       formatStatus,

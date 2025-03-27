@@ -22,16 +22,19 @@ export const auth = {
       }
     },
 
-    async register({ commit }, { name, email, password, phone }) {
+    async register({ commit }, userData) {
       try {
-
+        const { name, email, password, phone, city, postalCode, streetAddress, unitNumber } = userData;
         
-        const response = await authService.register(name, email, password, phone);
+        const response = await authService.register(
+          name, email, password, phone, city, postalCode, streetAddress, unitNumber
+        );
+        
         localStorage.setItem(
           'user',
-          JSON.stringify({ userId: response.userId, token: response.token })
+          JSON.stringify({ userId: response.data.userId, token: response.data.token })
         );
-        commit('registerSuccess', { id: response.userId, email });
+        commit('registerSuccess', { id: response.data.userId, email });
         console.log('Backend Response:', response.data);
         return Promise.resolve(response.data);
       } catch (error) {

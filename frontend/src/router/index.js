@@ -1,11 +1,12 @@
+// frontend/src/router/index.js
 import { createRouter, createWebHistory } from "vue-router";
 import store from "@/store";
 
 // Views
 import Home from "@/views/Home.vue";
 import Login from "@/views/Login.vue";
-import ItemCarousel from '@/components/ItemCarousel.vue';
 import ItemDetail from '@/views/ItemDetail.vue';
+import PotentialMatches from '@/views/PotentialMatches.vue';
 
 const routes = [
   {
@@ -99,7 +100,7 @@ const routes = [
   {
     path: "/potential-matches",
     name: "all-potential-matches",
-    component: () => import("@/views/PotentialMatches.vue"),
+    component: PotentialMatches,
     meta: {
       requiresAuth: true,
     },
@@ -110,23 +111,13 @@ const routes = [
     component: () => import("@/views/PaymentForm.vue"),
   },
   {
-    path: '/potential-matches/:id',
-    name: 'ItemCarousel',
-    component: ItemCarousel,
-  },
-  {
     path: "/items/:id",
     name: "item-details",
-    component: () => import("@/views/ItemDetail.vue"),
+    component: ItemDetail,
+    props: true,
     meta: {
       requiresAuth: true,
     },
-  },
-  {
-    path: '/items/:id',
-    name: 'ItemDetail',
-    component: ItemDetail,
-    props: true
   },
 ];
 

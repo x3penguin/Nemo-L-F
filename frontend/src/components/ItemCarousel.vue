@@ -2,29 +2,37 @@
   <div class="match-carousel">
     <div class="carousel-container">
       <!-- Left arrow navigation -->
-      <button 
-        v-if="items.length > 1" 
-        class="carousel-arrow carousel-arrow-left" 
+      <button
+        v-if="items && items.length > 1"
+        class="carousel-arrow carousel-arrow-left"
         @click="prevSlide"
         :disabled="currentIndex === 0"
       >
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
           <polyline points="15 18 9 12 15 6"></polyline>
         </svg>
       </button>
 
       <!-- Carousel slides -->
       <div class="carousel-slides">
-        <div 
-          v-for="(item, index) in items" 
+        <div
+          v-for="(item, index) in items || []"
           :key="item.id"
           class="carousel-slide"
           :class="{ active: index === currentIndex }"
         >
           <div class="carousel-item">
             <div class="item-image">
-              <img 
-                :src="item.imageUrl || '/img/placeholder-image.jpg'" 
+              <img
+                :src="item.imageUrl || '/img/placeholder-image.jpg'"
                 :alt="item.name"
                 @error="handleImageError"
               />
@@ -35,14 +43,13 @@
             <div class="item-details">
               <h3 class="item-name">{{ item.name }}</h3>
               <p class="item-category">{{ item.category }}</p>
-              <p class="item-description">{{ truncateDescription(item.description) }}</p>
+              <p class="item-description">
+                {{ truncateDescription(item.description) }}
+              </p>
               <p class="item-location">Location: {{ item.location }}</p>
               <p class="item-date">{{ formatDate(item.dateTime) }}</p>
 
-              <button 
-                @click="viewDetails(item)" 
-                class="btn btn-primary mt-3"
-              >
+              <button @click="viewDetails(item)" class="btn btn-primary mt-3">
                 View Details
               </button>
             </div>
@@ -51,22 +58,30 @@
       </div>
 
       <!-- Right arrow navigation -->
-      <button 
-        v-if="items.length > 1" 
-        class="carousel-arrow carousel-arrow-right" 
+      <button
+        v-if="items && items.length > 1"
+        class="carousel-arrow carousel-arrow-right"
         @click="nextSlide"
-        :disabled="currentIndex === items.length - 1"
+        :disabled="currentIndex === (items ? items.length - 1 : 0)"
       >
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
           <polyline points="9 18 15 12 9 6"></polyline>
         </svg>
       </button>
     </div>
 
     <!-- Slide indicators -->
-    <div v-if="items.length > 1" class="carousel-indicators">
-      <button 
-        v-for="(item, index) in items" 
+    <div v-if="items && items.length > 1" class="carousel-indicators">
+      <button
+        v-for="(item, index) in items"
         :key="`indicator-${index}`"
         class="carousel-indicator"
         :class="{ active: index === currentIndex }"
@@ -77,23 +92,28 @@
 </template>
 
 <script>
-import { ref } from 'vue';
-import { useRouter } from 'vue-router';
+import { ref, onMounted } from "vue";
+import { useRouter } from "vue-router";
 
 export default {
-  name: 'MatchCarousel',
+  name: "MatchCarousel",
   props: {
     items: {
       type: Array,
-      required: true
-    }
+      default: () => [],
+    },
   },
   setup(props) {
     const router = useRouter();
     const currentIndex = ref(0);
 
+    onMounted(() => {
+      // Reset the index when items change
+      currentIndex.value = 0;
+    });
+
     const nextSlide = () => {
-      if (currentIndex.value < props.items.length - 1) {
+      if (props.items && currentIndex.value < props.items.length - 1) {
         currentIndex.value++;
       }
     };
@@ -109,39 +129,45 @@ export default {
     };
 
     const viewDetails = (item) => {
-      // Navigate to item details
-      router.push(`/items/${item.id}?sourceId=${item.sourceItemId || ''}`);
+      if (!item) return;
+      // Navigate to item details, passing the source item ID
+      router.push({
+        path: `/items/${item.id}`,
+        query: {
+          sourceId: item.sourceItemId || "",
+        },
+      });
     };
 
     const handleImageError = (event) => {
-      event.target.src = '/img/placeholder-image.jpg';
+      event.target.src = "/img/placeholder-image.jpg";
     };
 
     const truncateDescription = (description, maxLength = 100) => {
-      if (!description) return '';
+      if (!description) return "";
       if (description.length <= maxLength) return description;
-      return description.substring(0, maxLength) + '...';
+      return description.substring(0, maxLength) + "...";
     };
 
     const formatDate = (dateTime) => {
-      if (!dateTime) return 'N/A';
-      
+      if (!dateTime) return "N/A";
+
       // Handle Firebase timestamp
       if (dateTime.seconds) {
         const date = new Date(dateTime.seconds * 1000);
-        return date.toLocaleDateString('en-US', {
-          year: 'numeric',
-          month: 'short',
-          day: 'numeric'
+        return date.toLocaleDateString("en-US", {
+          year: "numeric",
+          month: "short",
+          day: "numeric",
         });
       }
-      
+
       // Handle regular date string
       const date = new Date(dateTime);
-      return date.toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric'
+      return date.toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
       });
     };
 
@@ -153,9 +179,9 @@ export default {
       viewDetails,
       handleImageError,
       truncateDescription,
-      formatDate
+      formatDate,
     };
-  }
+  },
 };
 </script>
 
@@ -347,22 +373,22 @@ export default {
   .carousel-item {
     flex-direction: column;
   }
-  
+
   .item-image {
     width: 100%;
     margin-right: 0;
     margin-bottom: 1rem;
   }
-  
+
   .carousel-arrow {
     width: 32px;
     height: 32px;
   }
-  
+
   .carousel-arrow-left {
     left: 10px;
   }
-  
+
   .carousel-arrow-right {
     right: 10px;
   }

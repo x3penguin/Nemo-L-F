@@ -52,6 +52,9 @@
               <button @click="viewDetails(item)" class="btn btn-primary mt-3">
                 View Details
               </button>
+              <button @click="confirmMatch(item)" class="btn btn-success mt-2">
+                Confirm This Is My Item
+              </button>
             </div>
           </div>
         </div>
@@ -94,6 +97,8 @@
 <script>
 import { ref, onMounted } from "vue";
 import { useRouter } from "vue-router";
+import { useStore } from "vuex";
+import axios from "axios";
 
 export default {
   name: "MatchCarousel",
@@ -106,6 +111,89 @@ export default {
   setup(props) {
     const router = useRouter();
     const currentIndex = ref(0);
+    const store = useStore();
+    const confirmMatch = async (item) => {
+      if (!item) return;
+
+      if (!confirm("Are you sure this is your lost item?")) {
+        return;
+      }
+
+      try {
+        // We need the IDs of both items
+        const lostItemId = item.sourceItemId; // The source item is the lost item
+        const foundItemId = item.id; // The current item is the found item
+
+        // First, check if both IDs are valid
+        if (!lostItemId || !foundItemId) {
+          alert("Unable to confirm match: missing item information");
+          return;
+        }
+        const currentUser = store.getters["auth/user"];
+    if (!currentUser) {
+      alert("You must be logged in to confirm a match");
+      return;
+    }
+    
+    // Get user email
+    let userEmail = currentUser.email;
+    if (!userEmail) {
+      console.warn("User email not found in store, fetching from API");
+      try {
+        // Fetch user details if email is not in the store
+        const userResponse = await axios.get(`http://localhost:3004/users/${currentUser.id}`);
+        if (userResponse.data && userResponse.data.email) {
+          userEmail = userResponse.data.email;
+        } else {
+          throw new Error("Could not retrieve user email");
+        }
+      } catch (userError) {
+        console.error("Error fetching user data:", userError);
+        // Continue with flow but log the error
+      }
+    }
+        // Call the API to confirm the match
+        const response = await axios.post(
+          "http://localhost:3004/api/test/create-match",
+          {
+            lostItemId,
+            foundItemId,
+            confidence: item.confidence || 90,
+          }
+        );
+
+        if (response.data.success) {
+          // Show success message
+          alert("Match confirmed! You can now arrange to collect your item.");
+
+          // Attempt to explicitly notify the email service
+          try {
+            // This is optional but can help ensure notification is sent
+            await axios.post("http://localhost:3001/api/found-items/notify", {
+              itemId: foundItemId,
+              itemName: item.name || "Found Item",
+              itemDescription: item.description || "No description",
+              ownerEmail: userEmail
+            });
+            console.log("Email notification request sent");
+          } catch (emailErr) {
+            console.error("Error sending email notification:", emailErr);
+            // Don't block the process if email fails
+          }
+
+          // Redirect to the matched item view
+          router.push({
+            path: `/items/${lostItemId}`,
+            query: { matched: "true" },
+          });
+        } else {
+          throw new Error(response.data.error || "Failed to confirm match");
+        }
+      } catch (error) {
+        console.error("Error confirming match:", error);
+        alert("Failed to confirm match: " + (error.message || "Unknown error"));
+      }
+    };
 
     onMounted(() => {
       // Reset the index when items change
@@ -130,7 +218,10 @@ export default {
 
     const viewDetails = (item) => {
       if (!item) return;
-      // Navigate to item details, passing the source item ID
+
+      console.log("Viewing item details with sourceId:", item.sourceItemId);
+
+      // Navigate to item details
       router.push({
         path: `/items/${item.id}`,
         query: {
@@ -180,12 +271,27 @@ export default {
       handleImageError,
       truncateDescription,
       formatDate,
+      confirmMatch,
     };
   },
 };
 </script>
 
 <style scoped>
+.btn-success {
+  background-color: #10b981;
+  color: white;
+  border: none;
+}
+
+.btn-success:hover {
+  background-color: #059669;
+}
+
+.mt-2 {
+  margin-top: 0.5rem;
+}
+
 .match-carousel {
   width: 100%;
   max-width: 900px;

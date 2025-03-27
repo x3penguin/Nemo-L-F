@@ -1,3 +1,4 @@
+const cors = require('cors');
 const express = require('express');
 const bodyParser = require('body-parser');
 const config = require('./config');
@@ -12,7 +13,7 @@ const app = express();
 app.use(bodyParser.json());
 
 require('dotenv').config();
-
+app.use(cors());
 // post notifcation
 app.post('/api/found-items/notify', async (req, res) => {
   try {

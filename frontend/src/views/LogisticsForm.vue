@@ -4,7 +4,6 @@
       <h1 class="report-title">Delivery Form</h1>
 
       <div class="report-card">
-        <!-- Progress steps remain unchanged -->
         <div class="form-progress">
           <div
             class="progress-step"
@@ -37,7 +36,7 @@
         </div>
 
         <div class="form-content">
-          <!-- Step 1: Your Details (Simplified) -->
+          <!-- Step 1: Your Details (Delivery Address) -->
           <div v-if="currentStep === 1" class="form-step">
             <h2 class="step-heading">Your Details</h2>
             <p class="step-description">
@@ -75,17 +74,54 @@
             </div>
 
             <div class="form-group">
-              <label for="receiverUnit">Your Full Address *</label>
+              <label for="receiverUnit">Address Line 1 *</label>
               <input
                 type="text"
                 id="receiverUnit"
                 v-model="formData.receiverUnit"
                 class="form-control"
                 :class="{ error: errors.receiverUnit }"
-                placeholder="e.g. Block 123, #01-45, Main Street"
+                placeholder="e.g. Block 123, #01-45"
               />
               <div v-if="errors.receiverUnit" class="error-message">
                 {{ errors.receiverUnit }}
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="receiverAddr1">Address Line 2 *</label>
+              <input
+                type="text"
+                id="receiverAddr1"
+                v-model="formData.receiverAddr1"
+                class="form-control"
+                :class="{ error: errors.receiverAddr1 }"
+                placeholder="e.g. Main Street"
+              />
+              <div v-if="errors.receiverAddr1" class="error-message">
+                {{ errors.receiverAddr1 }}
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="receiverState">Area/Region *</label>
+              <select
+                id="receiverState"
+                v-model="formData.receiverState"
+                class="form-control"
+                :class="{ error: errors.receiverState }"
+              >
+                <option value="">Select an area</option>
+                <option value="north">North</option>
+                <option value="south">South</option>
+                <option value="east">East</option>
+                <option value="west">West</option>
+                <option value="central">Central</option>
+                <option value="northeast">North-East</option>
+                <option value="northwest">North-West</option>
+              </select>
+              <div v-if="errors.receiverState" class="error-message">
+                {{ errors.receiverState }}
               </div>
             </div>
 
@@ -116,7 +152,7 @@
             </div>
           </div>
 
-          <!-- Step 2: Pickup Location (Finder's Details) - remains unchanged -->
+          <!-- Step 2: Pickup Location (Finder's Details) -->
           <div v-if="currentStep === 2" class="form-step">
             <h2 class="step-heading">Pickup Location</h2>
             <p class="step-description">
@@ -198,7 +234,7 @@
             </div>
           </div>
 
-          <!-- Step 3: Package Details (Simplified with Weight Slider) -->
+          <!-- Step 3: Package Details (Lost Item and Shipping Options) -->
           <div v-if="currentStep === 3" class="form-step">
             <h2 class="step-heading">Package Details</h2>
             <p class="step-description">
@@ -221,38 +257,48 @@
             </div>
 
             <div class="form-group">
-              <label>Package Weight: {{ formData.weight }}kg *</label>
-              <div class="weight-slider-container">
-                <input
-                  type="range"
-                  v-model="formData.weight"
-                  min="0.1"
-                  max="10"
-                  step="0.1"
-                  class="weight-slider"
-                />
-                <div class="weight-slider-labels">
-                  <span>0.1kg</span>
-                  <span>5kg</span>
-                  <span>10kg</span>
-                </div>
-                <div class="weight-examples">
-                  <div class="weight-example">
-                    <span class="example-icon">📄</span>
-                    <span class="example-label">Documents<br>(~0.5kg)</span>
-                  </div>
-                  <div class="weight-example">
-                    <span class="example-icon">📱</span>
-                    <span class="example-label">Phone/Wallet<br>(~1kg)</span>
-                  </div>
-                  <div class="weight-example">
-                    <span class="example-icon">💼</span>
-                    <span class="example-label">Laptop<br>(~3kg)</span>
-                  </div>
-                  <div class="weight-example">
-                    <span class="example-icon">🧳</span>
-                    <span class="example-label">Larger Items<br>(5kg+)</span>
-                  </div>
+              <label for="content">Item Description *</label>
+              <textarea
+                id="content"
+                v-model="formData.content"
+                class="form-control"
+                :class="{ error: errors.content }"
+                placeholder="Please describe your item in detail..."
+                rows="3"
+              ></textarea>
+              <div v-if="errors.content" class="error-message">
+                {{ errors.content }}
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="itemValue">Estimated Value (SGD) *</label>
+              <input
+                type="number"
+                id="itemValue"
+                v-model="formData.value"
+                class="form-control"
+                :class="{ error: errors.value }"
+                placeholder="e.g. 50"
+                min="1"
+              />
+              <div v-if="errors.value" class="error-message">
+                {{ errors.value }}
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>Weight Estimate *</label>
+              <div class="weight-selector">
+                <div 
+                  v-for="option in weightOptions" 
+                  :key="option.value"
+                  :class="['weight-option', { selected: formData.weight === option.value }]"
+                  @click="formData.weight = option.value"
+                >
+                  <div class="weight-icon">{{ option.icon }}</div>
+                  <div class="weight-label">{{ option.label }}</div>
+                  <div class="weight-value">{{ option.value }}kg</div>
                 </div>
               </div>
               <div v-if="errors.weight" class="error-message">
@@ -308,7 +354,7 @@
             </div>
           </div>
 
-          <!-- Step 4: Confirmation (Updated to reflect the simplified fields) -->
+          <!-- Step 4: Confirmation -->
           <div v-if="currentStep === 4" class="form-step">
             <h2 class="step-heading">Confirm Your Delivery Details</h2>
             <p class="step-description">
@@ -330,8 +376,13 @@
                   <span class="summary-label">Address:</span>
                   <span class="summary-value">
                     {{ formData.receiverUnit }}<br>
-                    Singapore {{ formData.receiverPostalCode }}
+                    {{ formData.receiverAddr1 }}<br>
+                    {{ formData.receiverState }}
                   </span>
+                </div>
+                <div class="summary-item">
+                  <span class="summary-label">Postal Code:</span>
+                  <span class="summary-value">{{ formData.receiverPostalCode }}</span>
                 </div>
                 <div class="summary-item" v-if="formData.deliveryInstructions">
                   <span class="summary-label">Instructions:</span>
@@ -351,10 +402,11 @@
                 </div>
                 <div class="summary-item">
                   <span class="summary-label">Address:</span>
-                  <span class="summary-value">
-                    {{ formData.senderUnit }}<br>
-                    Singapore {{ formData.senderPostalCode }}
-                  </span>
+                  <span class="summary-value">{{ formData.senderUnit }}</span>
+                </div>
+                <div class="summary-item">
+                  <span class="summary-label">Postal Code:</span>
+                  <span class="summary-value">{{ formData.senderPostalCode }}</span>
                 </div>
                 <div class="summary-item" v-if="formData.pickupInstructions">
                   <span class="summary-label">Instructions:</span>
@@ -363,10 +415,18 @@
               </div>
 
               <div class="summary-section">
-                <h3>Package Details</h3>
+                <h3>Lost Item Details</h3>
                 <div class="summary-item">
                   <span class="summary-label">Item Name:</span>
                   <span class="summary-value">{{ formData.itemName }}</span>
+                </div>
+                <div class="summary-item">
+                  <span class="summary-label">Description:</span>
+                  <span class="summary-value">{{ formData.content }}</span>
+                </div>
+                <div class="summary-item">
+                  <span class="summary-label">Value:</span>
+                  <span class="summary-value">${{ formData.value }}</span>
                 </div>
                 <div class="summary-item">
                   <span class="summary-label">Weight:</span>
@@ -393,7 +453,7 @@
 
             <div class="payment-info">
               <h3>Payment Information</h3>
-              <p>You'll need to make payment for the shipping costs before your item is shipped. After submitting this form, you'll proceed to payment.</p>
+              <p>You'll need to make payment for the shipping costs before your item is shipped. After submitting this form, you'll receive payment instructions.</p>
             </div>
 
             <div class="confirmation-agreement">
@@ -420,7 +480,7 @@
             </div>
           </div>
 
-          <!-- Form Buttons (unchanged) -->
+          <!-- Form Buttons -->
           <div class="form-actions">
             <button
               v-if="currentStep > 1"
@@ -457,429 +517,327 @@
 <script>
   export default {
     data() {
-      return {
+    return {
         currentStep: 1,
         isSubmitting: false,
         formData: {
-          // Delivery address - Your details (Step 1)
-          receiverName: '',
-          receiverContact: '',
-          receiverUnit: '',
-          receiverPostalCode: '',
-          deliveryInstructions: '',
-          
-          // Pickup location - Finder's details (Step 2)
-          senderName: '',
-          senderContact: '',
-          senderUnit: '',
-          senderPostalCode: '',
-          pickupInstructions: '',
-          
-          // Package details (Step 3)
-          itemName: '',
-          weight: '1',
-          selectedService: null,
-          
-          // Agreement (Step 4)
-          agreement: false
+        // Delivery address - Your details (Step 1)
+        receiverName: '',
+        receiverContact: '',
+        receiverUnit: '',
+        receiverAddr1: '',
+        receiverState: '',
+        receiverPostalCode: '',
+        deliveryInstructions: '',
+        
+        // Pickup location - Finder's details (Step 2)
+        senderName: '',
+        senderContact: '',
+        senderUnit: '',
+        senderPostalCode: '',
+        pickupInstructions: '',
+        
+        // Package details (Step 3)
+        itemName: '',
+        content: '',
+        value: '50',
+        weight: '1',
+        selectedService: null,
+        
+        // Agreement (Step 4)
+        agreement: false
         },
         errors: {},
         availableServices: [],
         loading: {
-          rateCheck: false
-        }
-      }
-    },
-
-    created() {
-      // Load saved form data for testing
-      const savedData = localStorage.getItem('logisticsFormData');
-      if (savedData) {
-        try {
-          const data = JSON.parse(savedData);
-          this.currentStep = data.currentStep || 1;
-          this.formData = { ...this.formData, ...data.formData };
-          if (data.availableServices && data.availableServices.length) {
-            this.availableServices = data.availableServices;
-          }
-          console.log('Development: Form data loaded for testing');
-        } catch (error) {
-          console.error('Error loading saved form data:', error);
-        }
-      }
-    },
-
-    // Updated to beforeUnmount (Vue 3) from beforeDestroy
-    beforeUnmount() {
-      localStorage.setItem('logisticsFormData', JSON.stringify({
-        currentStep: this.currentStep,
-        formData: this.formData,
-        availableServices: this.availableServices
-      }));
-    },
-
-    computed: {
-      // Direct store getters without using mapGetters
-      storeIsLoading() {
-        return this.$store.getters['logistics/isLoading'];
-      },
-      storeIsSubmitting() {
-        return this.$store.getters['logistics/isSubmitting'];
-      },
-      storeAvailableServices() {
-        return this.$store.getters['logistics/getAvailableServices'];
-      },
-      storeSelectedService() {
-        return this.$store.getters['logistics/getSelectedService'];
-      },
-      storeError() {
-        return this.$store.getters['logistics/getError'];
-      },
-      
-      // Keep your existing computed property
-      selectedServiceDetails() {
-        // First try to get from Vuex store
-        if (this.storeSelectedService) {
-          return this.storeSelectedService;
-        }
-        
-        // Fall back to component state
-        if (!this.formData.selectedService || this.availableServices.length === 0) return null;
-        return this.availableServices.find(
-          service => service.service_id === this.formData.selectedService
-        );
-      },
-      
-      // Development mode check
-      isDevelopment() {
-        return process.env.NODE_ENV === 'development';
-      }
-    },
-
-    watch: {
-      // Watch for store errors and update local errors
-      storeError(newError) {
-        if (newError) {
-          this.errors.api = newError;
-        }
-      },
-      
-      // Watch for available services from store
-      storeAvailableServices: {
-        handler(newServices) {
-          if (newServices && newServices.length > 0) {
-            this.availableServices = newServices;
-            // Set first service as default if available
-            if (this.availableServices.length > 0) {
-              this.formData.selectedService = this.availableServices[0].service_id;
-            }
-          }
+        rateCheck: false
         },
-        immediate: true
-      },
+        weightOptions: [
+        { value: '0.5', label: 'Light', icon: '📄', description: 'Documents, Cards' },
+        { value: '1', label: 'Small', icon: '📱', description: 'Phone, Wallet, Keys' },
+        { value: '3', label: 'Medium', icon: '💼', description: 'Laptop, Backpack' },
+        { value: '5', label: 'Large', icon: '🧳', description: 'Large Items' },
+        ]
+    }
     },
-
-    methods: {
-      // Direct store actions without using mapActions
-      storeFetchRates(payload) {
-        return this.$store.dispatch('logistics/fetchShippingRates', payload);
-      },
-      
-      storeSubmitOrder(payload) {
-        return this.$store.dispatch('logistics/submitOrder', payload);
-      },
-
-      // Navigation functions
-      nextStep() {
+computed: {
+  selectedServiceDetails() {
+    if (!this.formData.selectedService || this.availableServices.length === 0) return null;
+    return this.availableServices.find(
+      service => service.service_id === this.formData.selectedService
+    );
+  }
+},
+methods: {
+    // Navigation functions
+    nextStep() {
         // Validate current step before proceeding
         if (this.validateCurrentStep()) {
-          // If on step 2, fetch shipping rates before proceeding to step 3
-          if (this.currentStep === 2) {
+        // If on step 2, fetch shipping rates before proceeding to step 3
+        if (this.currentStep === 2) {
             this.fetchShippingRates();
-          } else {
-            this.currentStep++;
-            this.scrollToTop();
-          }
         }
-      },
-      
-      scrollToTop() {
+        this.currentStep++;
+        // Scroll to top of form
         this.$nextTick(() => {
-          const formContent = document.querySelector('.form-content');
-          if (formContent) {
+            const formContent = document.querySelector('.form-content');
+            if (formContent) {
             formContent.scrollTop = 0;
-          }
-        });
-      },
-      
-      prevStep() {
-        if (this.currentStep > 1) {
-          this.currentStep--;
-          this.scrollToTop();
-        }
-      },  
-      
-      // Validation function
-      validateCurrentStep() {
-        this.errors = {};
-        let isValid = true;
-        
-        // Step 1: Delivery Address validation
-        if (this.currentStep === 1) {
-          if (!this.formData.receiverName?.trim()) {
-            this.errors.receiverName = 'Your full name is required';
-            isValid = false;
-          }
-          
-          if (!this.formData.receiverContact?.trim()) {
-            this.errors.receiverContact = 'Contact number is required';
-            isValid = false;
-          } else if (!/^\d{8}$/.test(this.formData.receiverContact)) {
-            this.errors.receiverContact = 'Please enter a valid 8-digit phone number';
-            isValid = false;
-          }
-          
-          if (!this.formData.receiverUnit?.trim()) {
-            this.errors.receiverUnit = 'Address is required';
-            isValid = false;
-          }
-          
-          if (!this.formData.receiverPostalCode?.trim()) {
-            this.errors.receiverPostalCode = 'Postal code is required';
-            isValid = false;
-          } else if (!/^\d{6}$/.test(this.formData.receiverPostalCode)) {
-            this.errors.receiverPostalCode = 'Please enter a valid 6-digit postal code';
-            isValid = false;
-          }
-        }
-        
-        // Step 2: Pickup Location validation
-        else if (this.currentStep === 2) {
-          if (!this.formData.senderName?.trim()) {
-            this.errors.senderName = 'Finder\'s name is required';
-            isValid = false;
-          }
-          
-          if (!this.formData.senderContact?.trim()) {
-            this.errors.senderContact = 'Finder\'s contact number is required';
-            isValid = false;
-          } else if (!/^\d{8}$/.test(this.formData.senderContact)) {
-            this.errors.senderContact = 'Please enter a valid 8-digit phone number';
-            isValid = false;
-          }
-          
-          if (!this.formData.senderUnit?.trim()) {
-            this.errors.senderUnit = 'Pickup address is required';
-            isValid = false;
-          }
-          
-          if (!this.formData.senderPostalCode?.trim()) {
-            this.errors.senderPostalCode = 'Pickup postal code is required';
-            isValid = false;
-          } else if (!/^\d{6}$/.test(this.formData.senderPostalCode)) {
-            this.errors.senderPostalCode = 'Please enter a valid 6-digit postal code';
-            isValid = false;
-          }
-        }
-        
-        // Step 3: Package Details validation
-        else if (this.currentStep === 3) {
-          if (!this.formData.itemName?.trim()) {
-            this.errors.itemName = 'Item name is required';
-            isValid = false;
-          }
-          
-          if (!this.formData.weight || parseFloat(this.formData.weight) <= 0) {
-            this.errors.weight = 'Please specify a valid weight';
-            isValid = false;
-          }
-          
-          if (!this.formData.selectedService && this.availableServices.length > 0) {
-            this.errors.selectedService = 'Please select a delivery service';
-            isValid = false;
-          }
-        }
-        
-        // Step 4: Confirmation validation
-        else if (this.currentStep === 4) {
-          if (!this.formData.agreement) {
-            this.errors.agreement = 'You must agree to the terms before submitting';
-            isValid = false;
-          }
-        }
-        
-        // If not valid, scroll to first error
-        if (!isValid) {
-          this.$nextTick(() => {
-            const firstError = document.querySelector('.error-message');
-            if (firstError) {
-              firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
             }
-          });
+        });
+        }
+    },
+    
+    prevStep() {
+        if (this.currentStep > 1) {
+        this.currentStep--;
+        // Scroll to top of form
+        this.$nextTick(() => {
+            const formContent = document.querySelector('.form-content');
+            if (formContent) {
+            formContent.scrollTop = 0;
+            }
+        });
+        }
+    },  
+    // Validation function
+    validateCurrentStep() {
+    this.errors = {};
+    let isValid = true;
+    
+    // Step 1: Delivery Address validation
+    if (this.currentStep === 1) {
+        if (!this.formData.receiverName?.trim()) {
+        this.errors.receiverName = 'Your full name is required';
+        isValid = false;
         }
         
-        return isValid;
-      },
-      
-      // API call to fetch shipping rates
-      async fetchShippingRates() {
-        this.loading.rateCheck = true;
-        this.errors.api = null;
+        if (!this.formData.receiverContact?.trim()) {
+        this.errors.receiverContact = 'Contact number is required';
+        isValid = false;
+        } else if (!/^\d{8}$/.test(this.formData.receiverContact)) {
+        this.errors.receiverContact = 'Please enter a valid 8-digit phone number';
+        isValid = false;
+        }
         
-        try {
-          // Make sure we have both postal codes
-          if (!this.formData.senderPostalCode || !this.formData.receiverPostalCode) {
-            this.errors.api = 'Both pickup and delivery postal codes are required to calculate shipping rates';
-            this.loading.rateCheck = false;
-            return;
-          }
-          
-          // Save form data for easier testing
-          if (this.isDevelopment) {
-            localStorage.setItem('logisticsFormData', JSON.stringify({
-              currentStep: this.currentStep,
-              formData: this.formData
-            }));
-          }
-          
-          // Dispatch the Vuex action
-          const result = await this.storeFetchRates({
-            pick_code: this.formData.senderPostalCode,
+        if (!this.formData.receiverUnit?.trim()) {
+        this.errors.receiverUnit = 'Address line 1 is required';
+        isValid = false;
+        }
+        
+        if (!this.formData.receiverAddr1?.trim()) {
+        this.errors.receiverAddr1 = 'Address line 2 is required';
+        isValid = false;
+        }
+        
+        if (!this.formData.receiverState) {
+        this.errors.receiverState = 'Please select an area/region';
+        isValid = false;
+        }
+        
+        if (!this.formData.receiverPostalCode?.trim()) {
+        this.errors.receiverPostalCode = 'Postal code is required';
+        isValid = false;
+        } else if (!/^\d{6}$/.test(this.formData.receiverPostalCode)) {
+        this.errors.receiverPostalCode = 'Please enter a valid 6-digit postal code';
+        isValid = false;
+        }
+    }
+    
+    // Step 2: Pickup Location validation
+    else if (this.currentStep === 2) {
+        if (!this.formData.senderName?.trim()) {
+        this.errors.senderName = 'Finder\'s name is required';
+        isValid = false;
+        }
+        
+        if (!this.formData.senderContact?.trim()) {
+        this.errors.senderContact = 'Finder\'s contact number is required';
+        isValid = false;
+        } else if (!/^\d{8}$/.test(this.formData.senderContact)) {
+        this.errors.senderContact = 'Please enter a valid 8-digit phone number';
+        isValid = false;
+        }
+        
+        if (!this.formData.senderUnit?.trim()) {
+        this.errors.senderUnit = 'Pickup address is required';
+        isValid = false;
+        }
+        
+        if (!this.formData.senderPostalCode?.trim()) {
+        this.errors.senderPostalCode = 'Pickup postal code is required';
+        isValid = false;
+        } else if (!/^\d{6}$/.test(this.formData.senderPostalCode)) {
+        this.errors.senderPostalCode = 'Please enter a valid 6-digit postal code';
+        isValid = false;
+        }
+    }
+    
+    // Step 3: Package Details validation
+    else if (this.currentStep === 3) {
+        if (!this.formData.itemName?.trim()) {
+        this.errors.itemName = 'Item name is required';
+        isValid = false;
+        }
+        
+        if (!this.formData.content?.trim()) {
+        this.errors.content = 'Item description is required';
+        isValid = false;
+        }
+        
+        if (!this.formData.value) {
+        this.errors.value = 'Item value is required';
+        isValid = false;
+        } else if (parseFloat(this.formData.value) <= 0) {
+        this.errors.value = 'Item value must be greater than 0';
+        isValid = false;
+        }
+        
+        if (!this.formData.weight) {
+        this.errors.weight = 'Please select a weight estimate';
+        isValid = false;
+        }
+        
+        if (!this.formData.selectedService && this.availableServices.length > 0) {
+        this.errors.selectedService = 'Please select a delivery service';
+        isValid = false;
+        }
+    }
+    
+    // Step 4: Confirmation validation
+    else if (this.currentStep === 4) {
+        if (!this.formData.agreement) {
+        this.errors.agreement = 'You must agree to the terms before submitting';
+        isValid = false;
+        }
+    }
+    
+    // If not valid, scroll to first error
+    if (!isValid) {
+        this.$nextTick(() => {
+        const firstError = document.querySelector('.error-message');
+        if (firstError) {
+            firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        });
+    }
+    
+    return isValid;
+    },
+    // API call to fetch shipping rates
+    async fetchShippingRates() {
+    this.loading.rateCheck = true;
+    this.availableServices = [];
+    this.errors.api = null;
+    
+    try {
+        // Make sure we have both postal codes
+        if (!this.formData.senderPostalCode || !this.formData.receiverPostalCode) {
+        this.errors.api = 'Both pickup and delivery postal codes are required to calculate shipping rates';
+        return;
+        }
+        
+        const response = await fetch('http://localhost:3010/rate-check', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            pick_code: this.formData.senderPostalCode, // Finder's postal code (pickup)
             pick_country: 'SG',
-            send_code: this.formData.receiverPostalCode,
+            send_code: this.formData.receiverPostalCode, // Your postal code (delivery)
             send_country: 'SG',
             weight: this.formData.weight
-          });
-          
-          // The action will update the Vuex store, and the watcher will update the local component
-          // If we have services and no errors, proceed to the next step
-          if (result && this.availableServices.length > 0) {
-            this.currentStep++;
-            this.scrollToTop();
-          }
-        } catch (error) {
-          console.error('Error fetching shipping rates:', error);
-          this.errors.api = error.message || 'Failed to fetch shipping rates. Please try again later.';
-        } finally {
-          this.loading.rateCheck = false;
-        }
-      },
-      
-      // Submit delivery order
-      async submitDeliveryOrder() {
-        if (!this.validateCurrentStep()) {
-          return;
+        })
+        });
+    //       body: JSON.stringify({
+    //         pick_code: "059893", 
+    //         pick_country: "SG",
+    //         send_code: "059897",
+    //         send_country: "SG",
+    //         weight: "1"
+    //     })
+    // });
+        
+        if (!response.ok) {
+        throw new Error(`API request failed with status ${response.status}`);
         }
         
-        this.isSubmitting = true;
-        this.errors.api = null;
+        const data = await response.json();
         
-        try {
-          // Prepare order data for the store action
-          const orderData = {
-            orderId: 'ORDER-' + Math.floor(Math.random() * 10000000),
-            serviceName: this.selectedServiceDetails?.service_name || 'Standard Delivery',
-            pickupLocation: `${this.formData.senderPostalCode}, Singapore`,
-            deliveryLocation: `${this.formData.receiverPostalCode}, Singapore`,
-            itemName: this.formData.itemName,
-            price: this.selectedServiceDetails?.price || '0',
-            
-            // Add all form fields for future API integration
-            senderName: this.formData.senderName,
-            senderContact: this.formData.senderContact,
-            senderUnit: this.formData.senderUnit,
-            senderPostalCode: this.formData.senderPostalCode,
-            pickupInstructions: this.formData.pickupInstructions,
-            
-            receiverName: this.formData.receiverName,
-            receiverContact: this.formData.receiverContact,
-            receiverUnit: this.formData.receiverUnit,
-            receiverPostalCode: this.formData.receiverPostalCode,
-            deliveryInstructions: this.formData.deliveryInstructions,
-            
-            weight: this.formData.weight,
-            selectedService: this.formData.selectedService
-          };
-          
-          // Dispatch to store - this will save to localStorage
-          await this.storeSubmitOrder(orderData);
-          
-          // Redirect to payment page
-          this.$router.push('/payment-form');
-        } catch (error) {
-          console.error('Error preparing order data:', error);
-          this.errors.api = error.message || 'An error occurred while preparing your order. Please try again.';
-        } finally {
-          this.isSubmitting = false;
+        if (data.result === 1 && data.rates && data.rates.length > 0) {
+        this.availableServices = data.rates;
+        
+        // Set first service as default if available
+        if (this.availableServices.length > 0) {
+            this.formData.selectedService = this.availableServices[0].service_id;
         }
-      },
-      
-      // Development testing helpers
-      saveFormData() {
-        localStorage.setItem('logisticsFormData', JSON.stringify({
-          currentStep: this.currentStep,
-          formData: this.formData,
-          availableServices: this.availableServices
-        }));
-        console.log('Form data saved for testing');
-      },
-      
-      loadSavedFormData() {
-        const savedData = localStorage.getItem('logisticsFormData');
-        if (savedData) {
-          try {
-            const data = JSON.parse(savedData);
-            this.currentStep = data.currentStep || 1;
-            this.formData = { ...this.formData, ...data.formData };
-            if (data.availableServices && data.availableServices.length) {
-              this.availableServices = data.availableServices;
-            }
-            console.log('Form data loaded for testing');
-          } catch (error) {
-            console.error('Error loading saved form data:', error);
-          }
+        } else {
+        console.error('No rates returned or API error:', data);
+        this.errors.api = data.error_remark || 'No delivery services available for the provided locations.';
         }
-      },
-      
-      clearSavedFormData() {
-        localStorage.removeItem('logisticsFormData');
-        console.log('Saved form data cleared');
-        // Reload the page to reset the form
-        window.location.reload();
-      },
-      
-      // Helper methods for display
-      formatPrice(price) {
+    } catch (error) {
+        console.error('Error fetching shipping rates:', error);
+        this.errors.api = 'Failed to fetch shipping rates. Please try again later.';
+    } finally {
+        this.loading.rateCheck = false;
+    }
+    },
+    
+    // Submit the delivery order
+    async submitDeliveryOrder() {
+  if (!this.validateCurrentStep()) {
+    return;
+  }
+  
+  this.isSubmitting = true;
+  this.errors.api = null;
+  
+  try {
+    // Simply prepare order data for payment page
+    const orderData = {
+      orderId: 'ORDER-' + Math.floor(Math.random() * 10000000),
+      serviceName: this.selectedServiceDetails?.service_name || 'Standard Delivery',
+      pickupLocation: `${this.formData.senderPostalCode}, Singapore`,
+      deliveryLocation: `${this.formData.receiverPostalCode}, Singapore`,
+      itemName: this.formData.itemName,
+      price: this.selectedServiceDetails?.price || '0'
+    };
+    
+    // Save to localStorage
+    localStorage.setItem('orderData', JSON.stringify(orderData));
+    console.log('Order data saved to localStorage:', orderData);
+    
+    // Redirect to payment page
+    this.$router.push('/payment-form');
+  } catch (error) {
+    console.error('Error preparing order data:', error);
+    this.errors.api = 'An error occurred while preparing your order. Please try again.';
+  } finally {
+    this.isSubmitting = false;
+  }
+},
+    
+    // Helper methods for display
+    formatPrice(price) {
         return `$${parseFloat(price).toFixed(2)}`;
-      },
-      
-      formatServiceProvider(service) {
+    },
+    
+    formatServiceProvider(service) {
         // Extract the courier name from the service name if available
         if (service.service_name && service.service_name.includes(' - ')) {
-          return service.service_name.split(' - ')[0];
+        return service.service_name.split(' - ')[0];
         }
         return service.service_name || 'Courier Service';
-      },
-      
-      getDeliveryEstimate(service) {
-        if (!service) return 'Standard Delivery';
-        
-        if (service.delivery) {
-          return service.delivery;
-        }
-        
-        // If no specific delivery estimate, provide a generic one based on service name
-        const serviceName = service.service_name?.toLowerCase() || '';
-        if (serviceName.includes('express') || serviceName.includes('same day')) {
-          return '1-2 days';
-        } else if (serviceName.includes('standard')) {
-          return '3-5 days';
-        } else {
-          return '2-4 days';
-        }
-      }
+    },
+    
+    getDeliveryEstimate(service) {
+        // Format delivery timing from the service info
+        return service.delivery || 'Standard Delivery';
     }
-  }
+    }
+}
+  
 </script>
   
 <style scoped>
@@ -1240,6 +1198,16 @@
     margin-top: 0.5rem;
     }
 
+    .weight-option {
+    flex: 1;
+    min-width: 100px;
+    border: 1px solid #d1d5db;
+    border-radius: 0.375rem;
+    padding: 1rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    }
 
     .weight-option:hover {
     border-color: #9ca3af;
@@ -1283,89 +1251,4 @@
     color: #4b5563;
     margin: 0;
     }
-
-    /* New styles for weight slider */
-  .weight-slider-container {
-    margin-top: 1rem;
-    margin-bottom: 1rem;
-  }
-  
-  .weight-slider {
-    width: 100%;
-    height: 8px;
-    -webkit-appearance: none;
-    appearance: none;
-    background: #d1d5db;
-    border-radius: 4px;
-    outline: none;
-    margin: 1rem 0;
-  }
-  
-  .weight-slider::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 22px;
-    height: 22px;
-    border-radius: 50%;
-    background: #111827;
-    cursor: pointer;
-    border: 2px solid white;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
-  }
-  
-  .weight-slider::-moz-range-thumb {
-    width: 22px;
-    height: 22px;
-    border-radius: 50%;
-    background: #111827;
-    cursor: pointer;
-    border: 2px solid white;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
-  }
-  
-  .weight-slider-labels {
-    display: flex;
-    justify-content: space-between;
-    font-size: 0.875rem;
-    color: #6b7280;
-    margin-bottom: 1rem;
-  }
-  
-  .weight-examples {
-    display: flex;
-    justify-content: space-between;
-    margin-top: 1rem;
-    background-color: #f9fafb;
-    border-radius: 0.375rem;
-    padding: 0.75rem;
-  }
-  
-  .weight-example {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-  }
-  
-  .example-icon {
-    font-size: 1.25rem;
-    margin-bottom: 0.25rem;
-  }
-  
-  .example-label {
-    font-size: 0.75rem;
-    color: #6b7280;
-    line-height: 1.2;
-  }
-
-  @media (max-width: 640px) {
-    .weight-examples {
-      flex-wrap: wrap;
-    }
-    
-    .weight-example {
-      width: 50%;
-      margin-bottom: 0.5rem;
-    }
-  }
 </style>

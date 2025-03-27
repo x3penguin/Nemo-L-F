@@ -1,7 +1,14 @@
 from fastapi import WebSocket, WebSocketDisconnect
 from typing import Dict, Set, List
+from datetime import datetime
 import json
 import asyncio
+
+def convert_datetime(obj):
+    try:
+        return obj.isoformat()
+    except Exception:
+        return str(obj)
 
 class ConnectionManager:
     def __init__(self):
@@ -30,12 +37,12 @@ class ConnectionManager:
             
             if websocket in self.connection_user:
                 del self.connection_user[websocket]
-    
+
     async def send_personal_message(self, message: dict, user_id: str):
         """Send a message to a specific user on all their active connections"""
         if user_id in self.active_connections:
             # Convert message to JSON
-            message_json = json.dumps(message)
+            message_json = json.dumps(message, default=convert_datetime)
             
             # Send to all connections for this user
             websockets = self.active_connections[user_id]

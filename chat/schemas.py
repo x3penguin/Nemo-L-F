@@ -17,9 +17,9 @@ class ChatMetadata(BaseModel):
     id: str
     participants: List[str]
     item_id: str
-    created_at: datetime
-    last_message: str
-    last_message_time: datetime
+    createdAt: datetime
+    lastMessage: str
+    lastMessageTime: datetime
 
 class Chat(ChatMetadata):
     messages: List[Message] = []

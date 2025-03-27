@@ -19,11 +19,13 @@ def create_chat(user1_id, user2_id, item_id):
     
     # Create new chat
     chat_data = {
+        "id": chat_id,
         "participants": [user1_id, user2_id],
+        "matchedItemId": item_id,
         "itemId": item_id,
         "created_at": firestore.SERVER_TIMESTAMP,
-        "last_message": "",
-        "last_message_time": firestore.SERVER_TIMESTAMP
+        "lastMessage": "",
+        "lastMessageTime": firestore.SERVER_TIMESTAMP
     }
     chats_ref.document(chat_id).set(chat_data)
     
@@ -37,6 +39,7 @@ def get_chat(chat_id):
     if chat.exists:
         chat_data = chat.to_dict()
         chat_data["id"] = chat.id
+        print("chatid", chat.id)
         return chat_data
     return None
 
@@ -58,8 +61,8 @@ def save_message(chat_id, sender_id, receiver_id, content):
     
     # Update chat metadata
     db.collection("chats").document(chat_id).update({
-        "last_message": content,
-        "last_message_time": firestore.SERVER_TIMESTAMP
+        "lastMessage": content,
+        "lastMessageTime": firestore.SERVER_TIMESTAMP
     })
     
     return message_id
@@ -87,6 +90,12 @@ def get_user_chats(user_id):
     for doc in query.stream():
         chat_data = doc.to_dict()
         chat_data["id"] = doc.id
+
+        chat_data["item_id"] = chat_data.pop("matchedItemId", None)
+        chat_data["lastMessage"] = chat_data.pop("lastMessage", "")
+        chat_data["lastMessageTime"] = chat_data.pop("lastMessageTime", None)
+        chat_data["createdAt"] = chat_data.get("createdAt") or datetime.now()
+        
         chats.append(chat_data)
     
     return chats

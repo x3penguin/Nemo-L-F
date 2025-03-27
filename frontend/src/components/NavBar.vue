@@ -10,6 +10,7 @@
         <router-link to="/report-found" class="navbar-link">Report Found</router-link>
         <router-link to="/collections" class="navbar-link">Collections</router-link>
         <router-link to="/potential-matches" class="navbar-link">Potential Matches</router-link>
+        <router-link to="/chat" class="navbar-link">Chat</router-link>
       </div>
 
       <div class="navbar-auth">

@@ -12,54 +12,103 @@
           {{ error }}
         </div>
 
-      <!-- Two-column layout -->
-      <div class="form-grid">
-        <div class="form-group">
-          <label for="name">Full Name</label>
-          <input type="text" id="name" v-model="name" placeholder="Jacob Milles" class="form-control" />
-        </div>
-        <div class="form-group">
-          <label for="streetAddress">Street Address</label>
-          <input type="text" id="streetAddress" v-model="streetAddress" placeholder="23 Bukit Merah St" class="form-control" />
-        </div>
-        <div class="form-group">
-          <label for="email">Email</label>
-          <input type="email" id="email" v-model="email" placeholder="JacobMilles@gmail.com" class="form-control" />
-        
-        </div>
-        <div class="form-group">
-          <label for="city">City</label>
-          <input type="text" id="city" v-model="city" placeholder="Singapore" class="form-control" />
-        </div>
-      
-        
+        <!-- Two-column layout -->
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="name">Full Name</label>
+            <input
+              type="text"
+              id="name"
+              v-model="name"
+              placeholder="Jacob Milles"
+              class="form-control"
+            />
+          </div>
+          <div class="form-group">
+            <label for="streetAddress">Street Address</label>
+            <input
+              type="text"
+              id="streetAddress"
+              v-model="streetAddress"
+              placeholder="23 Bukit Merah St"
+              class="form-control"
+            />
+          </div>
+          <div class="form-group">
+            <label for="email">Email</label>
+            <input
+              type="email"
+              id="email"
+              v-model="email"
+              placeholder="JacobMilles@gmail.com"
+              class="form-control"
+            />
+          </div>
+          <div class="form-group">
+            <label for="city">City</label>
+            <input
+              type="text"
+              id="city"
+              v-model="city"
+              placeholder="Singapore"
+              class="form-control"
+            />
+          </div>
 
-        <!-- Address Details -->
-        
-        
-        <div class="form-group">
-          <label for="phone">Phone</label>
-          <input type="text" id="phone" v-model="phone" placeholder="82930191" class="form-control" />
+          <!-- Address Details -->
+
+          <div class="form-group">
+            <label for="phone">Phone</label>
+            <input
+              type="text"
+              id="phone"
+              v-model="phone"
+              placeholder="82930191"
+              class="form-control"
+            />
+          </div>
+          <div class="form-group">
+            <label for="password">Postal Code</label>
+            <input
+              type="text"
+              id="postalCode"
+              v-model="postalCode"
+              placeholder="081999"
+              class="form-control"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="password">Password</label>
+            <input
+              type="password"
+              id="password"
+              v-model="password"
+              placeholder="Password"
+              class="form-control"
+            />
+          </div>
+          <div class="form-group">
+            <label for="unitNumber">Unit Number</label>
+            <input
+              type="text"
+              id="unitNumber"
+              v-model="unitNumber"
+              placeholder="#15-01"
+              class="form-control"
+            />
+          </div>
+          <div class="form-group">
+            <label for="passwordConfirm">Confirm Password</label>
+            <input
+              type="password"
+              id="passwordConfirm"
+              v-model="passwordConfirm"
+              placeholder="Confirm Password"
+              class="form-control"
+            />
+          </div>
         </div>
-        <div class="form-group">
-          <label for="postalCode">Postal Code</label>
-          <input type="text" id="postalCode" v-model="postalCode" placeholder="081999" class="form-control" />
-        </div>
-        
-        <div class="form-group">
-          <label for="password">Password</label>
-          <input type="password" id="password" v-model="password" placeholder="Password" class="form-control" />
-        </div>
-        <div class="form-group">
-          <label for="unitNumber">Unit Number</label>
-          <input type="text" id="unitNumber" v-model="unitNumber" placeholder="#15-01" class="form-control" />
-        </div>
-        <div class="form-group">
-          <label for="passwordConfirm">Confirm Password</label>
-          <input type="password" id="passwordConfirm" v-model="passwordConfirm" placeholder="Confirm Password"
-            class="form-control" />
-        </div>
-      </div>
 
         <button @click="register" class="btn-register">Create Account</button>
 
@@ -73,66 +122,103 @@
 </template>
 
 <script>
-import { ref,watch } from 'vue';
-import { useRouter } from 'vue-router';
-import { useStore } from 'vuex';
-
+import { ref, watch } from "vue";
+import { useRouter } from "vue-router";
+import { useStore } from "vuex";
 
 export default {
-  name: 'RegisterView',
+  name: "RegisterView",
   setup() {
     const router = useRouter();
     const store = useStore();
 
-    const name = ref('');
-    const email = ref('');
-    const phone = ref('');
-    const password = ref('');
-    const passwordConfirm = ref('');
-    const error = ref('');
-    
+    // Inside the setup function in Register.vue, add these refs:
+    const name = ref("");
+    const email = ref("");
+    const phone = ref("");
+    const password = ref("");
+    const passwordConfirm = ref("");
+    const error = ref("");
+    const city = ref("");
+    const postalCode = ref("");
+    const streetAddress = ref("");
+    const unitNumber = ref("");
 
     // Email validation regex
     const emailPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-      watch(email, (newEmail) => {
+    watch(email, (newEmail) => {
       if (!newEmail) {
-        error.value = 'Email is required.';
+        error.value = "Email is required.";
       } else if (!emailPattern.test(newEmail)) {
-        error.value = 'Invalid email format. Please enter a valid email.';
+        error.value = "Invalid email format. Please enter a valid email.";
       } else {
-       error.value = ''; // Clear error when valid
+        error.value = ""; // Clear error when valid
       }
     });
     const register = async () => {
-      // Validate form
-      if (!name.value || !email.value ||!phone.value|| !password.value || !passwordConfirm.value) {
-        error.value = 'All fields are required';
-        return;
-      }
-
-      if (password.value !== passwordConfirm.value) {
-        error.value = 'Passwords do not match';
-        return;
-      }
-      if (!emailPattern.test(email.value)) {
-    error.value = 'Invalid email format. Please enter a valid email.';
-    return;
-  }
-
-
       try {
-        error.value = '';
-        const response= await store.dispatch('auth/register', {
+        // Validate form
+        if (
+          !name.value ||
+          !email.value ||
+          !phone.value ||
+          !password.value ||
+          !passwordConfirm.value ||
+          !city.value ||
+          !postalCode.value ||
+          !streetAddress.value ||
+          !unitNumber.value
+        ) {
+          error.value = "All fields are required";
+          return;
+        }
+
+        if (password.value !== passwordConfirm.value) {
+          error.value = "Passwords do not match";
+          return;
+        }
+
+        if (!emailPattern.test(email.value)) {
+          error.value = "Invalid email format. Please enter a valid email.";
+          return;
+        }
+        // Inside the register function, add this right before the validation
+        error.value = "";
+        console.log("Sending registration data:", {
           name: name.value,
           email: email.value,
           password: password.value,
           phone: phone.value,
+          city: city.value,
+          postalCode: postalCode.value,
+          streetAddress: streetAddress.value,
+          unitNumber: unitNumber.value,
         });
-        console.log('User ID:', response.userId);
-        localStorage.setItem("user", JSON.stringify({ name: response.name, userId: response.userId, token: response.token }));
+
+        const response = await store.dispatch("auth/register", {
+          name: name.value,
+          email: email.value,
+          password: password.value,
+          phone: phone.value,
+          city: city.value,
+          postalCode: postalCode.value,
+          streetAddress: streetAddress.value,
+          unitNumber: unitNumber.value,
+        });
+
+        console.log("User ID:", response.userId);
+        localStorage.setItem(
+          "user",
+          JSON.stringify({
+            name: response.name,
+            userId: response.userId,
+            token: response.token,
+          })
+        );
         router.push(`/home/${response.userId}`);
       } catch (err) {
-        error.value = err.response?.data?.message || 'Registration failed';
+        console.error("Registration error:", err);
+        error.value = err.response?.data?.message || "Registration failed";
       }
     };
 
@@ -143,9 +229,13 @@ export default {
       password,
       passwordConfirm,
       error,
-      register
+      register,
+      city,
+      postalCode,
+      streetAddress,
+      unitNumber,
     };
-  }
+  },
 };
 </script>
 
@@ -167,7 +257,8 @@ export default {
 }
 .register-content {
   display: flex;
-  flex: 1;}
+  flex: 1;
+}
 
 .logo-container {
   flex: 1;

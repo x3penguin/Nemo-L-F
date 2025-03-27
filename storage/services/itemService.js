@@ -50,6 +50,7 @@ export const storeItemData = async (itemData) => {
       finderId: itemData.finderId || null,
       matchingConfidence: itemData.matchingConfidence || null,
       reportedDateTime: Timestamp.now(),
+      reportType: itemData.reportType || (itemData.status === "LOST" ? "LOST" : "FOUND")
     };
 
     // Store in Firestore

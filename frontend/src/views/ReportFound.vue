@@ -910,6 +910,7 @@ export default {
         const userId = currentUser ? currentUser.id : "1";
 
         apiFormData.append("userId", userId);
+        apiFormData.append("reportType", "FOUND");
 
         if (formData.value.imageFile) {
           apiFormData.append("image", formData.value.imageFile);

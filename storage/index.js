@@ -149,6 +149,7 @@ app.post("/api/items/lost", upload.single("image"), async (req, res) => {
       currentLocation: "NA",
       ownerId: req.body.userId,
       finderId: null,
+      reportType: req.body.reportType || "LOST"
     };
 
     const result = await storeItemData(itemData);
@@ -198,7 +199,8 @@ app.post("/api/items/found", upload.single("image"), async (req, res) => {
       latitude: req.body.latitude,
       longitude: req.body.longitude,
       ownerId: null,
-      finderId: req.body.userId, //rmb delete
+      finderId: req.body.userId,
+      reportType: req.body.reportType || "LOST" 
     };
 
     const result = await storeItemData(itemData);

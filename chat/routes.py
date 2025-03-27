@@ -1,6 +1,7 @@
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Depends, HTTPException, status, Query
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from firebase_admin import auth
+from chat.firebase_client import get_item_by_id
 from typing import List, Optional
 import json
 
@@ -58,7 +59,6 @@ async def get_chat(
 # Create a new chat
 @router.post("/", response_model=schemas.ChatMetadata)
 async def create_chat(request: schemas.ChatCreateRequest, user_id: str = Depends(get_current_user)):
-    from firebase_client import get_item_by_id
     
     # Get item details
     item = get_item_by_id(request.item_id)

@@ -1,7 +1,7 @@
 <template>
   <div class="container">
     <div class="report-container">
-      <h1 class="report-title">Return Delivery Form</h1>
+      <h1 class="report-title">Delivery Form</h1>
 
       <div class="report-card">
         <div class="form-progress">
@@ -505,7 +505,7 @@
               :disabled="isSubmitting"
             >
               <span v-if="isSubmitting" class="spinner"></span>
-              Submit Delivery Request
+              Proceed to Payment
             </button>
           </div>
         </div>
@@ -750,6 +750,14 @@ methods: {
             weight: this.formData.weight
         })
         });
+    //       body: JSON.stringify({
+    //         pick_code: "059893", 
+    //         pick_country: "SG",
+    //         send_code: "059897",
+    //         send_country: "SG",
+    //         weight: "1"
+    //     })
+    // });
         
         if (!response.ok) {
         throw new Error(`API request failed with status ${response.status}`);
@@ -778,80 +786,37 @@ methods: {
     
     // Submit the delivery order
     async submitDeliveryOrder() {
-        if (!this.validateCurrentStep()) {
-        return;
-        }
-        
-        this.isSubmitting = true;
-        this.errors.api = null;
-        
-        try {
-        // Get current date for collect_date (tomorrow)
-        const tomorrow = new Date();
-        tomorrow.setDate(tomorrow.getDate() + 1);
-        const collectDate = tomorrow.toISOString().split('T')[0]; // YYYY-MM-DD format
-        
-        // Prepare the order data for API
-        const orderData = {
-        // Item details
-        weight: this.formData.weight,
-        content: this.formData.content,
-        value: this.formData.value,
-        service_id: this.formData.selectedService,
-        
-        // Sender details (finder's details - pickup location)
-        pick_name: this.formData.senderName,
-        pick_contact: this.formData.senderContact,
-        pick_unit: this.formData.senderUnit,
-        pick_code: this.formData.senderPostalCode,
-        pick_country: 'SG',
-        pick_instruction: this.formData.pickupInstructions,
-        
-        // Receiver details (your details - delivery address)
-        send_name: this.formData.receiverName,
-        send_contact: this.formData.receiverContact,
-        send_unit: `${this.formData.receiverUnit}, ${this.formData.receiverAddr1}`,
-        send_addr1: this.formData.receiverState,
-        send_state: this.formData.receiverState,
-        send_code: this.formData.receiverPostalCode,
-        send_country: 'SG',
-        send_instruction: this.formData.deliveryInstructions,
-        
-        // Collection date (tomorrow)
-        collect_date: collectDate
-        };
-        
-        const response = await fetch('http://localhost:3010/submit-order', {
-            method: 'POST',
-            headers: {
-            'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(orderData)
-        });
-        
-        if (!response.ok) {
-            throw new Error(`API request failed with status ${response.status}`);
-        }
-        
-        const data = await response.json();
-        
-        if (data.result === 1) {
-            // Success! Redirect to success page or show success message
-            // You can adjust this based on your application flow
-            alert(`Delivery order submitted successfully! Order Number: ${data.order_number || 'N/A'}`);
-            
-            // Optionally redirect to a success page
-            // this.$router.push('/delivery-success');
-        } else {
-            this.errors.api = data.error_remark || 'Failed to submit delivery order. Please try again.';
-        }
-        } catch (error) {
-        console.error('Error submitting delivery order:', error);
-        this.errors.api = 'Network error when submitting order. Please try again later.';
-        } finally {
-        this.isSubmitting = false;
-        }
-    },
+  if (!this.validateCurrentStep()) {
+    return;
+  }
+  
+  this.isSubmitting = true;
+  this.errors.api = null;
+  
+  try {
+    // Simply prepare order data for payment page
+    const orderData = {
+      orderId: 'ORDER-' + Math.floor(Math.random() * 10000000),
+      serviceName: this.selectedServiceDetails?.service_name || 'Standard Delivery',
+      pickupLocation: `${this.formData.senderPostalCode}, Singapore`,
+      deliveryLocation: `${this.formData.receiverPostalCode}, Singapore`,
+      itemName: this.formData.itemName,
+      price: this.selectedServiceDetails?.price || '0'
+    };
+    
+    // Save to localStorage
+    localStorage.setItem('orderData', JSON.stringify(orderData));
+    console.log('Order data saved to localStorage:', orderData);
+    
+    // Redirect to payment page
+    this.$router.push('/payment-form');
+  } catch (error) {
+    console.error('Error preparing order data:', error);
+    this.errors.api = 'An error occurred while preparing your order. Please try again.';
+  } finally {
+    this.isSubmitting = false;
+  }
+},
     
     // Helper methods for display
     formatPrice(price) {

@@ -2,52 +2,57 @@ let producer;
 let producerConnected = false;
 
 // Dynamically import and set up Kafka
-import('kafkajs').then(kafkaModule => {
-  const { Kafka } = kafkaModule;
-  
-  const kafka = new Kafka({
-    clientId: 'storage-service',
-    brokers: ['localhost:9092']
+import("kafkajs")
+  .then((kafkaModule) => {
+    const { Kafka } = kafkaModule;
+
+    const kafka = new Kafka({
+      clientId: "storage-service",
+      brokers: ["localhost:9092"],
+    });
+
+    producer = kafka.producer();
+    producer
+      .connect()
+      .then(() => {
+        producerConnected = true;
+        console.log("Kafka producer connected");
+      })
+      .catch((err) => {
+        console.error("Failed to connect to Kafka:", err);
+      });
+  })
+  .catch((err) => {
+    console.error("Failed to import Kafka:", err);
   });
-  
-  producer = kafka.producer();
-  producer.connect().then(() => {
-    producerConnected = true;
-    console.log('Kafka producer connected');
-  }).catch(err => {
-    console.error('Failed to connect to Kafka:', err);
-  });
-}).catch(err => {
-  console.error('Failed to import Kafka:', err);
-});
 
 // Function to publish image matching job
 async function publishMatchingJob(itemId, imageUrl, latitude, longitude) {
   if (!producerConnected || !producer) {
-    console.error('Kafka producer not connected');
+    console.error("Kafka producer not connected");
     return false;
   }
-  
+
   try {
     await producer.send({
-      topic: 'image-matching-jobs',
+      topic: "image-matching-jobs",
       messages: [
-        { 
-          key: itemId, 
+        {
+          key: itemId,
           value: JSON.stringify({
             itemId: itemId,
             imageUrl: imageUrl,
             timestamp: new Date().toISOString(),
-            coordinates: [latitude,longitude],
-          })
-        }
-      ]
+            coordinates: [latitude, longitude],
+          }),
+        },
+      ],
     });
-    
+
     console.log(`Published matching job for item ${itemId}`);
     return true;
   } catch (error) {
-    console.error('Error publishing to Kafka:', error);
+    console.error("Error publishing to Kafka:", error);
     return false;
   }
 }
@@ -67,6 +72,12 @@ import {
 const app = express();
 app.use(cors());
 app.use(express.json());
+
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Lost and Found Item Service running on port ${PORT}`);
+});
 
 // Configure multer for file uploads
 const upload = multer({
@@ -135,7 +146,7 @@ app.post("/api/items/lost", upload.single("image"), async (req, res) => {
       dateTime: req.body.date_time,
       latitude: req.body.latitude,
       longitude: req.body.longitude,
-      currentLocation: 'NA',
+      currentLocation: "NA",
       ownerId: req.body.userId,
       finderId: null,
     };
@@ -187,7 +198,7 @@ app.post("/api/items/found", upload.single("image"), async (req, res) => {
       latitude: req.body.latitude,
       longitude: req.body.longitude,
       ownerId: null,
-      finderId: req.body.userId , //rmb delete
+      finderId: req.body.userId, //rmb delete
     };
 
     const result = await storeItemData(itemData);
@@ -195,7 +206,12 @@ app.post("/api/items/found", upload.single("image"), async (req, res) => {
       // NEW: Send item for image matching
       if (imageUrl) {
         try {
-          await publishMatchingJob(result.itemId, imageUrl, itemData.latitude, itemData.longitude);
+          await publishMatchingJob(
+            result.itemId,
+            imageUrl,
+            itemData.latitude,
+            itemData.longitude
+          );
         } catch (err) {
           console.log("Failed to send matching job, continuing anyway:", err);
         }
@@ -265,21 +281,58 @@ app.get("/health", (req, res) => {
   res.status(200).json({ status: "UP" });
 });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`Lost and Found Item Service running on port ${PORT}`);
-});
+app.get("/api/items/:id/potential-matches", async (req, res) => {
+  const itemId = req.params.id;
 
-app.get("/items/collection", async (req, res) => {
-  const status = req.query.status;
-  console.log("API called with status:", status);
-  const userId = req.query.userId || 1; // Default to 1 for testing
+  try {
+    // Get the source item
+    const sourceItemResult = await getItemById(itemId);
 
-  const result = await getCollectionItems(userId);
-  if (result.success) {
-    res.status(200).json(result.items);
-  } else {
-    res.status(400).json(result);
+    if (!sourceItemResult.success) {
+      return res.status(404).json({ error: "Item not found" });
+    }
+
+    const sourceItem = sourceItemResult.data;
+
+    // Determine what kind of matches to look for
+    const status = sourceItem.status;
+    let matchingStatus;
+
+    if (status === "LOST") {
+      matchingStatus = "FOUND";
+    } else if (status === "FOUND") {
+      matchingStatus = "LOST";
+    } else {
+      // If the item is already matched, just return an empty array
+      return res.status(200).json([]);
+    }
+
+    // Get all items of the matching status
+    const matchingItemsResult = await getItemsByStatus(matchingStatus);
+
+    if (!matchingItemsResult.success) {
+      return res
+        .status(500)
+        .json({ error: "Failed to retrieve potential matches" });
+    }
+
+    // Process up to 5 potential matches
+    const potentialMatches = matchingItemsResult.items
+      .map((item) => {
+        return {
+          ...item,
+          confidence: item.matchingConfidence || Math.floor(Math.random() * 40) + 60,
+          sourceItemId: itemId,
+          distance: item.distance || null
+        };
+      })
+      .sort((a, b) => b.confidence - a.confidence)
+      .slice(0, 5); // Limit to top 5 matches
+
+    // Return the matches
+    res.status(200).json(potentialMatches);
+  } catch (error) {
+    console.error("Error getting potential matches:", error);
+    res.status(500).json({ error: error.message || "Internal server error" });
   }
 });
-

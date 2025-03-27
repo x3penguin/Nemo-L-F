@@ -2,7 +2,7 @@
   <div class="register-container">
     <div class="register-content">
       <div class="logo-container">
-        <h1 class="logo-text">All-In-One</h1>
+        <h1 class="logo-text">Nemo</h1>
       </div>
 
       <div class="register-form">
@@ -12,30 +12,54 @@
           {{ error }}
         </div>
 
+      <!-- Two-column layout -->
+      <div class="form-grid">
         <div class="form-group">
           <label for="name">Full Name</label>
-          <input type="text" id="name" v-model="name" placeholder="John Doe" class="form-control" />
+          <input type="text" id="name" v-model="name" placeholder="Jacob Milles" class="form-control" />
         </div>
-        
+        <div class="form-group">
+          <label for="streetAddress">Street Address</label>
+          <input type="text" id="streetAddress" v-model="streetAddress" placeholder="23 Bukit Merah St" class="form-control" />
+        </div>
         <div class="form-group">
           <label for="email">Email</label>
-          <input type="email" id="email" v-model="email" placeholder="name@example.com" class="form-control" />
+          <input type="email" id="email" v-model="email" placeholder="JacobMilles@gmail.com" class="form-control" />
+        
         </div>
         <div class="form-group">
-          <label for="phone">Phone</label>
-          <input type="text" id="phone" v-model="phone" placeholder="85928384" class="form-control" />
+          <label for="city">City</label>
+          <input type="text" id="city" v-model="city" placeholder="Singapore" class="form-control" />
         </div>
+      
+        
 
+        <!-- Address Details -->
+        
+        
+        <div class="form-group">
+          <label for="phone">Phone</label>
+          <input type="text" id="phone" v-model="phone" placeholder="82930191" class="form-control" />
+        </div>
+        <div class="form-group">
+          <label for="postalCode">Postal Code</label>
+          <input type="text" id="postalCode" v-model="postalCode" placeholder="081999" class="form-control" />
+        </div>
+        
         <div class="form-group">
           <label for="password">Password</label>
           <input type="password" id="password" v-model="password" placeholder="Password" class="form-control" />
         </div>
-
+        <div class="form-group">
+          <label for="unitNumber">Unit Number</label>
+          <input type="text" id="unitNumber" v-model="unitNumber" placeholder="#15-01" class="form-control" />
+        </div>
         <div class="form-group">
           <label for="passwordConfirm">Confirm Password</label>
           <input type="password" id="passwordConfirm" v-model="passwordConfirm" placeholder="Confirm Password"
             class="form-control" />
         </div>
+      </div>
 
         <button @click="register" class="btn-register">Create Account</button>
 
@@ -49,7 +73,7 @@
 </template>
 
 <script>
-import { ref } from 'vue';
+import { ref,watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useStore } from 'vuex';
 
@@ -66,7 +90,19 @@ export default {
     const password = ref('');
     const passwordConfirm = ref('');
     const error = ref('');
+    
 
+    // Email validation regex
+    const emailPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+      watch(email, (newEmail) => {
+      if (!newEmail) {
+        error.value = 'Email is required.';
+      } else if (!emailPattern.test(newEmail)) {
+        error.value = 'Invalid email format. Please enter a valid email.';
+      } else {
+       error.value = ''; // Clear error when valid
+      }
+    });
     const register = async () => {
       // Validate form
       if (!name.value || !email.value ||!phone.value|| !password.value || !passwordConfirm.value) {
@@ -78,6 +114,11 @@ export default {
         error.value = 'Passwords do not match';
         return;
       }
+      if (!emailPattern.test(email.value)) {
+    error.value = 'Invalid email format. Please enter a valid email.';
+    return;
+  }
+
 
       try {
         error.value = '';
@@ -114,11 +155,19 @@ export default {
   min-height: 100vh;
   background-color: #f9f9f9;
 }
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr); /* Two equal-width columns */
+  gap: 15px; /* Space between fields */
+}
 
+.form-group {
+  display: flex;
+  flex-direction: column;
+}
 .register-content {
   display: flex;
-  flex: 1;
-}
+  flex: 1;}
 
 .logo-container {
   flex: 1;
@@ -140,7 +189,7 @@ export default {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  max-width: 28rem;
+  max-width: 35rem;
   margin: 0 auto;
 }
 

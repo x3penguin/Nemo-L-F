@@ -4,6 +4,8 @@ import store from "@/store";
 // Views
 import Home from "@/views/Home.vue";
 import Login from "@/views/Login.vue";
+import ItemCarousel from '@/components/ItemCarousel.vue';
+import ItemDetail from '@/views/ItemDetail.vue';
 
 const routes = [
   {
@@ -15,8 +17,7 @@ const routes = [
     path: "/home/:userId",
     name: "Userhome",
     component: Home,
-    meta: { requiresAuth: true }
-
+    meta: { requiresAuth: true },
   },
   {
     path: "/login",
@@ -39,16 +40,16 @@ const routes = [
     name: "report-lost",
     component: () => import("@/views/ReportLost.vue"),
     meta: {
-      requiresAuth: true
-    }
+      requiresAuth: true,
+    },
   },
   {
     path: "/report-found",
     name: "report-found",
     component: () => import("@/views/ReportFound.vue"),
     meta: {
-      requiresAuth: true
-    }
+      requiresAuth: true,
+    },
   },
   {
     path: '/chat',
@@ -71,30 +72,62 @@ const routes = [
     name: "profile",
     component: () => import("@/views/Profile.vue"),
     meta: {
-      requiresAuth: true
-    }
+      requiresAuth: true,
+    },
   },
   {
     path: "/collections",
     name: "collection",
     component: () => import("@/views/Collection.vue"),
     meta: {
-      requiresAuth: true
-    }
+      requiresAuth: true,
+    },
   },
   {
     path: "/report-success",
     name: "report-success",
     component: () => import("@/views/ReportSuccess.vue"),
     meta: {
-      requiresAuth: true
-    }
+      requiresAuth: true,
+    },
   },
   {
-    path: '/logistics-form',
-    name: 'LogisticsForm',
-    component: () => import('@/views/LogisticsForm.vue')
-  }
+    path: "/logistics-form",
+    name: "LogisticsForm",
+    component: () => import("@/views/LogisticsForm.vue"),
+  },
+  {
+    path: "/potential-matches",
+    name: "all-potential-matches",
+    component: () => import("@/views/PotentialMatches.vue"),
+    meta: {
+      requiresAuth: true,
+    },
+  },
+  {
+    path: "/payment-form",
+    name: "PaymentForm",
+    component: () => import("@/views/PaymentForm.vue"),
+  },
+  {
+    path: '/potential-matches/:id',
+    name: 'ItemCarousel',
+    component: ItemCarousel,
+  },
+  {
+    path: "/items/:id",
+    name: "item-details",
+    component: () => import("@/views/ItemDetail.vue"),
+    meta: {
+      requiresAuth: true,
+    },
+  },
+  {
+    path: '/items/:id',
+    name: 'ItemDetail',
+    component: ItemDetail,
+    props: true
+  },
 ];
 
 const router = createRouter({

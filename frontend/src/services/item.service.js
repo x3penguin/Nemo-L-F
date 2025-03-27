@@ -51,11 +51,6 @@ class ItemService {
   //     }
   //   });
   // }
-  
-  getAllCollectionItems() {
-    // This gets all items in the collection process
-    return api.get('/items/collection');
-  }
 
   initiateCollection(itemId, collectionData) {
     return api.post(`/items/${itemId}/collection`, collectionData);
@@ -64,6 +59,15 @@ class ItemService {
   getCollectionDetails(itemId) {
     return api.get(`/items/${itemId}/collection`);
   }
+
+  getPotentialMatches(itemId) {
+    return api.get(`/items/${itemId}/potential-matches`);
+  }
+
+  getItemById(id) {
+    return api.get(`/items/${id}`);
+  }
+
 }
 
 export default new ItemService();

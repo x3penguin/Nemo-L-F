@@ -1,6 +1,6 @@
 FROM python:3.10
 
-WORKDIR /app
+WORKDIR /usr/src/app
 
 # Install system dependencies for OpenCV
 RUN apt-get update && apt-get install -y \
@@ -24,5 +24,6 @@ COPY main.py .
 # Copy Firebase credentials (will be overridden by volume mount)
 COPY esd-nemo-firebase-adminsdk-fbsvc-fbe963cc58.json .
 
+EXPOSE 3002
 # Run the service - environment variables will be passed at runtime
-CMD ["python", "main.py"]
+CMD ["python", "./main.py"]

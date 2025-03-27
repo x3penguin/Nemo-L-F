@@ -2,7 +2,7 @@
 FROM node:16-alpine
 
 # Create app directory and set proper permissions
-WORKDIR /app
+WORKDIR /usr/src/app
 
 # Copy package files first (for better caching)
 COPY package*.json ./

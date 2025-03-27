@@ -5,7 +5,8 @@ import os
 import datetime
 from image_match.image_matcher import match_images
 from location_match.location_matcher import match_locations
-from firebase_client import update_matched_items
+from firebase_client import update_matched_items, get_lost_items, get_item_by_id, store_potential_matches
+from publisher import publish_match_notification
 
 def create_producer():
     kafka_brokers = os.environ.get('KAFKA_BROKERS', 'localhost:9092').split(',')
@@ -15,22 +16,6 @@ def create_producer():
         key_serializer=lambda k: str(k).encode('utf-8')
     )
     return producer
-
-def publish_match_notification(match_data):
-    """Publish match notification to Kafka"""
-    try:
-        producer = create_producer()
-        producer.send(
-            'match-notifications', 
-            key=match_data['lostItemId'],
-            value=match_data
-        )
-        producer.flush()
-        print(f"Published match notification: {match_data}")
-        return True
-    except Exception as e:
-        print(f"Error publishing match notification: {e}")
-        return False
 
 def start_consumer():
     # Get configuration from environment variables or use defaults
@@ -103,29 +88,39 @@ def start_consumer():
                             # Sort by weighted confidence (highest first)
                             final_matches.sort(key=lambda x: x['weightedConfidence'], reverse=True)
 
-                            # Update the best match in Firebase
-                            best_match = final_matches[0]
-                            update_matched_items(
-                                best_match['foundItemId'],
-                                best_match['lostItemId'],
-                                best_match['weightedConfidence']
-                            )
-
-                            # Publish match notification event to Kafka
-                            publish_match_notification({
-                                'lostItemId': best_match['foundItemId'],
-                                'foundItemId': item_id,
-                                'confidence': best_match['weightedConfidence'],
-                                'timestamp': datetime.datetime.now().isoformat()
-                            })
+                            # Get top 5 matches (or all if less than 5)
+                            top_matches = final_matches[:5]
                             
-                            print(f"Match completed: Found item {best_match['foundItemId']} matches with lost item {best_match['lostItemId']} with confidence {best_match['weightedConfidence']:.2f}%")
-                        else:
-                            print("No matches above threshold after weighting")
+                            # Store all potential matches for display in UI
+                            for match in top_matches:
+                                # Store the match details for potential matches view
+                                store_potential_matches(
+                                    match['foundItemId'],
+                                    match['lostItemId'],
+                                    match['weightedConfidence'],
+                                    match['distance']
+                                )
+                            
+                            # Update the best match in Firebase
+                        #     best_match = final_matches[0]
+                        #     update_matched_items(
+                        #         best_match['foundItemId'],
+                        #         best_match['lostItemId'],
+                        #         best_match['weightedConfidence']
+                        #     )
 
+                        #     # Publish match notification event to Kafka
+                        #     publish_match_notification({
+                        #         'lostItemId': best_match['lostItemId'],
+                        #         'foundItemId': item_id,
+                        #         'confidence': best_match['weightedConfidence'],
+                        #         'timestamp': datetime.datetime.now().isoformat()
+                        #     })
+                            
+                        #     print(f"Match completed: Found item {best_match['foundItemId']} matches with lost item {best_match['lostItemId']} with confidence {best_match['weightedConfidence']:.2f}%")
+                        #     print(f"Stored {len(top_matches)} potential matches for UI display")
                         # else:
-                        #     print(f"No matches found above threshold for item {item_id}")
-            
+                        #     print(f"No matches above threshold for item {item_id} after weighting")
             # Commit offset after successful processing
             consumer.commit()
             

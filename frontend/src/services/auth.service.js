@@ -32,6 +32,10 @@ class AuthService {
   getCurrentUser() {
     return JSON.parse(localStorage.getItem('user'));
   }
+
+  getUserPotentialMatches(userId) {
+    return axios.get(`${API_BASE_URL}/api/users/${userId}/potential-matches`);
+  }
 }
 
 export default new AuthService();

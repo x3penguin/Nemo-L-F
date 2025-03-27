@@ -1,7 +1,6 @@
 <template>
   <nav class="navbar">
     <div class="container navbar-container">
-
       <router-link :to="isLoggedIn ? `/home/${user.id}` : '/'" class="navbar-logo">
         Nemo
       </router-link>
@@ -10,7 +9,7 @@
         <router-link to="/report-lost" class="navbar-link">Report Lost</router-link>
         <router-link to="/report-found" class="navbar-link">Report Found</router-link>
         <router-link to="/collections" class="navbar-link">Collections</router-link>
-        <router-link to="/chat" class="navbar-link">Chat</router-link>
+        <router-link to="/potential-matches" class="navbar-link">Potential Matches</router-link>
       </div>
 
       <div class="navbar-auth">
@@ -93,11 +92,22 @@ export default {
   color: #4b5563;
   font-weight: 500;
   transition: color 0.2s;
+  position: relative;
 }
 
 .navbar-link:hover,
 .navbar-link.router-link-active {
   color: #111827;
+}
+
+.navbar-link.router-link-active::after {
+  content: '';
+  position: absolute;
+  bottom: -6px;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background-color: #111827;
 }
 
 .navbar-auth {

@@ -2,7 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import { db } from './firebase.js'; // Import Firestore reference
-import { collection, addDoc, doc, query, where, getDoc, getDocs } from "firebase/firestore";
+import { collection, addDoc, doc, query, where, getDoc, getDocs, writeBatch, updateDoc } from "firebase/firestore";
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
 
@@ -20,13 +20,17 @@ app.get('/', (req, res) => {
 
 // Route to create a new user (POST)
 app.post('/users', async (req, res) => {
-  const { email, password, phone, name } = req.body;
+  const { email, password, phone, name, city,
+    postalCode,
+    streetAddress,
+    unitNumber } = req.body;
 
-  if (!email || !password || !phone || !name) {
+  if (!email || !password || !phone || !name || !city || !postalCode || !streetAddress || !unitNumber) {
     return res.status(400).send({ message: 'All fields are required' });
   }
 
   try {
+    
     const hashedPassword = await bcrypt.hash(password, 10);
     // Save user data in Firestore
     const docRef = await addDoc(collection(db, 'users'), {
@@ -34,6 +38,12 @@ app.post('/users', async (req, res) => {
       email,
       password: hashedPassword,
       phone,
+      address: {
+        city,
+        postalCode,
+        streetAddress,
+        unitNumber
+      },
       createdAt: new Date(),
     });
     const userId = docRef.id;
@@ -123,6 +133,302 @@ app.post('/login', async (req, res) => {
   } catch (error) {
     console.error('Error logging in:', error);
     res.status(500).send({ message: 'Failed to log in', error: error.message });
+  }
+});
+
+app.get('/api/users/:id/matches/new', async (req, res) => {
+  const userId = req.params.id;
+
+  try {
+    // Query Firestore for matched items where this user is involved
+    const itemsRef = collection(db, 'items');
+
+    // Query for items where user is the owner (lost items that were found)
+    const ownerQuery = query(
+      itemsRef,
+      where('status', '==', 'MATCHED'),
+      where('ownerId', '==', userId),
+      where('notificationSeen', '==', false)
+    );
+
+    // Query for items where user is the finder (found items that were matched)
+    const finderQuery = query(
+      itemsRef,
+      where('status', '==', 'MATCHED'),
+      where('finderId', '==', userId),
+      where('notificationSeen', '==', false)
+    );
+
+    // Run both queries
+    const [ownerQuerySnapshot, finderQuerySnapshot] = await Promise.all([
+      getDocs(ownerQuery),
+      getDocs(finderQuery)
+    ]);
+
+    // Combine the results
+    const matches = [];
+
+    ownerQuerySnapshot.forEach((doc) => {
+      const data = doc.data();
+      matches.push({
+        id: doc.id,
+        itemId: doc.id,
+        matchedItemId: data.matchedItemId,
+        itemName: data.name,
+        confidence: data.matchingConfidence || 0,
+        matchedDate: data.matchedDate,
+        type: 'lost',  // This was a lost item that was found
+        seen: false
+      });
+    });
+
+    finderQuerySnapshot.forEach((doc) => {
+      const data = doc.data();
+      matches.push({
+        id: doc.id,
+        itemId: doc.id,
+        matchedItemId: data.matchedItemId,
+        itemName: data.name,
+        confidence: data.matchingConfidence || 0,
+        matchedDate: data.matchedDate,
+        type: 'found',  // This was an item the user found that was matched
+        seen: false
+      });
+    });
+
+    // Mark notifications as seen but don't auto-remove them
+    if (matches.length > 0) {
+      const batch = writeBatch(db);
+
+      // Mark all as seen in Firestore
+      [...ownerQuerySnapshot.docs, ...finderQuerySnapshot.docs].forEach((doc) => {
+        batch.update(doc.ref, { notificationSeen: true });
+      });
+
+      // Commit the batch
+      await batch.commit();
+    }
+
+    res.json({ matches });
+  } catch (error) {
+    console.error('Error fetching matches:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to fetch matches'
+    });
+  }
+});
+
+// Route to mark a notification as read
+app.put('/api/notifications/:id/read', async (req, res) => {
+  const notificationId = req.params.id;
+
+  try {
+    const notificationRef = doc(db, 'items', notificationId);
+    await updateDoc(notificationRef, { notificationRead: true });
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error marking notification as read:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to update notification'
+    });
+  }
+});
+
+// Route to fetch potential matches (up to 5)
+app.get('/api/users/:id/potential-matches', async (req, res) => {
+  const userId = req.params.id;
+
+  try {
+    // Query for user's items that might have potential matches
+    const itemsRef = collection(db, 'items');
+    const userItems = query(
+      itemsRef,
+      where('ownerId', '==', userId),
+      where('status', 'in', ['LOST', 'FOUND'])
+    );
+
+    const itemsSnapshot = await getDocs(userItems);
+    const potentialMatches = [];
+
+    // For each item, find potential matches
+    for (const itemDoc of itemsSnapshot.docs) {
+      const item = itemDoc.data();
+      const itemId = itemDoc.id;
+      
+      // Query for matching items (if lost, find found items; if found, find lost items)
+      const matchStatus = item.status === 'LOST' ? 'FOUND' : 'LOST';
+      const matchQuery = query(
+        itemsRef,
+        where('status', '==', matchStatus)
+      );
+      
+      const matchesSnapshot = await getDocs(matchQuery);
+      
+      // Calculate matches (simplified - in a real app, you'd use your actual matching algorithm)
+      const matches = matchesSnapshot.docs
+        .map(matchDoc => {
+          // Calculate a confidence score (simplified)
+          const confidence = Math.floor(Math.random() * 40) + 60; // Random score between 60-99
+          
+          return {
+            id: matchDoc.id,
+            itemId: matchDoc.id,
+            sourceItemId: itemId,
+            itemName: matchDoc.data().name,
+            category: matchDoc.data().category,
+            description: matchDoc.data().description,
+            location: matchDoc.data().location,
+            imageUrl: matchDoc.data().imageUrl,
+            confidence: confidence,
+            dateTime: matchDoc.data().dateTime
+          };
+        })
+        .sort((a, b) => b.confidence - a.confidence) // Sort by confidence
+        .slice(0, 5); // Take top 5
+      
+      potentialMatches.push(...matches);
+    }
+    
+    // Return the top potential matches across all user items
+    res.json({
+      success: true,
+      matches: potentialMatches.sort((a, b) => b.confidence - a.confidence).slice(0, 5)
+    });
+    
+  } catch (error) {
+    console.error('Error fetching potential matches:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to fetch potential matches'
+    });
+  }
+});
+
+app.get('/api/users/:id/lost-items-with-matches', async (req, res) => {
+  const userId = req.params.id;
+
+  try {
+    // Query for lost items by this user
+    const itemsRef = collection(db, 'items');
+    const lostItemsQuery = query(
+      itemsRef,
+      where('status', '==', 'LOST'),
+      where('ownerId', '==', userId)
+    );
+    
+    const lostItemsSnapshot = await getDocs(lostItemsQuery);
+    const lostItems = [];
+    
+    lostItemsSnapshot.forEach(doc => {
+      const item = doc.data();
+      lostItems.push({
+        id: doc.id,
+        name: item.name,
+        description: item.description,
+        category: item.category,
+        location: item.location,
+        dateTime: item.dateTime,
+        imageUrl: item.imageUrl,
+        status: item.status
+      });
+    });
+
+    res.json({ 
+      success: true,
+      items: lostItems
+    });
+  } catch (error) {
+    console.error('Error fetching lost items:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to fetch lost items'
+    });
+  }
+});
+
+app.post('/api/test/create-match', async (req, res) => {
+  const { lostItemId, foundItemId, confidence = 90 } = req.body;
+
+  if (!lostItemId || !foundItemId) {
+    return res.status(400).json({
+      success: false,
+      error: 'Both lostItemId and foundItemId are required'
+    });
+  }
+
+  try {
+    // Get the lost item
+    const lostItemRef = doc(db, 'items', lostItemId);
+    const lostItemDoc = await getDoc(lostItemRef);
+
+    if (!lostItemDoc.exists()) {
+      return res.status(404).json({
+        success: false,
+        error: `Lost item with ID ${lostItemId} not found`
+      });
+    }
+
+    // Get the found item
+    const foundItemRef = doc(db, 'items', foundItemId);
+    const foundItemDoc = await getDoc(foundItemRef);
+
+    if (!foundItemDoc.exists()) {
+      return res.status(404).json({
+        success: false,
+        error: `Found item with ID ${foundItemId} not found`
+      });
+    }
+
+    const lostItem = lostItemDoc.data();
+    const foundItem = foundItemDoc.data();
+
+    // Update both items as matched
+    const batch = writeBatch(db);
+
+    // Update lost item
+    batch.update(lostItemRef, {
+      status: 'MATCHED',
+      matchedItemId: foundItemId,
+      matchingConfidence: confidence,
+      matchedDate: new Date(),
+      finderId: foundItem.finderId,
+      notificationSeen: false,
+      notificationRead: false
+    });
+
+    // Update found item
+    batch.update(foundItemRef, {
+      status: 'MATCHED',
+      matchedItemId: lostItemId,
+      matchingConfidence: confidence,
+      matchedDate: new Date(),
+      ownerId: lostItem.ownerId,
+      notificationSeen: false,
+      notificationRead: false
+    });
+
+    // Commit the batch
+    await batch.commit();
+
+    res.json({
+      success: true,
+      message: 'Match created successfully',
+      match: {
+        lostItemId,
+        foundItemId,
+        confidence
+      }
+    });
+
+  } catch (error) {
+    console.error('Error creating test match:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to create test match'
+    });
   }
 });
 

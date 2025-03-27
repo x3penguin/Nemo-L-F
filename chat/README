@@ -1,4 +1,4 @@
 pip install -r requirements.txt
-
-run in project root
+have the esd-nemo-firebase-adminsdk-fbsvc-fbe963cc58.json file created with firebase credentials 
+run in project root > uvicorn chat.main:app --reload --host 127.0.0.1 --port 8000
 cd chat > py consumer.py 

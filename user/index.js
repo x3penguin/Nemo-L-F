@@ -376,32 +376,48 @@ app.get("/api/users/:id/lost-items-with-matches", async (req, res) => {
     const lostItemsQuery = query(
       itemsRef,
       where("status", "==", "LOST"),
-      where("ownerId", "==", userId)
+      where("reportOwner", "==", userId)
     );
 
     const lostItemsSnapshot = await getDocs(lostItemsQuery);
     const lostItems = [];
 
-    lostItemsSnapshot.forEach((doc) => {
+    // Get all user's lost items
+    for (const doc of lostItemsSnapshot.docs) {
       const item = doc.data();
-      lostItems.push({
-        id: doc.id,
-        name: item.name,
-        description: item.description,
-        category: item.category,
-        location: item.location,
-        dateTime: item.dateTime,
-        imageUrl: item.imageUrl,
-        status: item.status,
-      });
-    });
+
+      // Check if this item has potential matches
+      // Query for potential matches in the potential_matches collection
+      const potentialMatchesQuery = query(
+        collection(db, "potential_matches"),
+        where("lostItemId", "==", doc.id)
+      );
+
+      const potentialMatchesSnapshot = await getDocs(potentialMatchesQuery);
+
+      // Only include this item if it has at least one potential match
+      if (!potentialMatchesSnapshot.empty) {
+        lostItems.push({
+          id: doc.id,
+          name: item.name,
+          description: item.description,
+          category: item.category,
+          location: item.location,
+          dateTime: item.dateTime,
+          imageUrl: item.imageUrl,
+          status: item.status,
+          hasPotentialMatches: true, // Mark it as having matches
+          matchCount: potentialMatchesSnapshot.size, // Include count of matches
+        });
+      }
+    }
 
     res.json({
       success: true,
       items: lostItems,
     });
   } catch (error) {
-    console.error("Error fetching lost items:", error);
+    console.error("Error fetching lost items with matches:", error);
     res.status(500).json({
       success: false,
       error: error.message || "Failed to fetch lost items",

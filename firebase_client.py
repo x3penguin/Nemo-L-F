@@ -28,30 +28,26 @@ def get_item_by_id(item_id):
 
     return None
 
-
 def store_potential_matches(found_item_id, lost_item_id, confidence, distance=None):
     """Store potential match data for UI display"""
     try:
         # Create a potential match document
         potential_match_ref = db.collection("potential_matches").document()
-
-        potential_match_ref.set(
-            {
-                "foundItemId": found_item_id,
-                "lostItemId": lost_item_id,
-                "confidence": confidence,
-                "distance": distance,
-                "createdAt": firestore.SERVER_TIMESTAMP,
-                "viewed": False,
-            }
-        )
-
+        
+        potential_match_ref.set({
+            "foundItemId": found_item_id,
+            "lostItemId": lost_item_id,
+            "confidence": confidence,
+            "distance": distance,
+            "createdAt": firestore.SERVER_TIMESTAMP,
+            "viewed": False
+        })
+        
         print(f"Stored potential match between {found_item_id} and {lost_item_id}")
         return True
     except Exception as e:
         print(f"Error storing potential match: {e}")
         return False
-
 
 def get_lost_items():
     """Get all LOST items from Firestore"""
@@ -65,24 +61,25 @@ def get_lost_items():
     return items
 
 
+
 def update_matched_items(found_item_id, lost_item_id, confidence):
+    """Update both items as matched with notification flags"""
+    # Get a new transaction
     transaction = db.transaction()
 
     @firestore.transactional
     def update_in_transaction(transaction, found_id, lost_id, conf):
-        # Get the found item
+        # Get the found item to get the finder ID
         found_ref = db.collection("items").document(found_id)
         found_item = found_ref.get(transaction=transaction).to_dict()
         finder_id = found_item.get("finderId")
-        found_report_type = found_item.get("reportType", "FOUND")  # Get or default
 
-        # Get the lost item
+        # Get the lost item to get the owner ID
         lost_ref = db.collection("items").document(lost_id)
         lost_item = lost_ref.get(transaction=transaction).to_dict()
         owner_id = lost_item.get("ownerId")
-        lost_report_type = lost_item.get("reportType", "LOST")  # Get or default
 
-        # Update found item - keep its reportType
+        # Update found item
         transaction.update(
             found_ref,
             {
@@ -90,14 +87,13 @@ def update_matched_items(found_item_id, lost_item_id, confidence):
                 "matchedItemId": lost_id,
                 "matchingConfidence": conf,
                 "matchedDate": firestore.SERVER_TIMESTAMP,
-                "ownerId": owner_id,
-                "notificationSeen": False,
+                "ownerId": owner_id,  # Add owner ID to found item
+                "notificationSeen": False,  # Add notification flags
                 "notificationRead": False,
-                "reportType": found_report_type,  # Preserve reportType
             },
         )
 
-        # Update lost item - keep its reportType
+        # Update lost item
         transaction.update(
             lost_ref,
             {
@@ -105,18 +101,16 @@ def update_matched_items(found_item_id, lost_item_id, confidence):
                 "matchedItemId": found_id,
                 "matchingConfidence": conf,
                 "matchedDate": firestore.SERVER_TIMESTAMP,
-                "finderId": finder_id,
-                "notificationSeen": False,
+                "finderId": finder_id,  # Add finder ID to lost item
+                "notificationSeen": False,  # Add notification flags
                 "notificationRead": False,
-                "reportType": lost_report_type,  # Preserve reportType
             },
         )
 
+    # Execute the transaction
     update_in_transaction(transaction, found_item_id, lost_item_id, confidence)
 
-    print(
-        f"Updated items {found_item_id} and {lost_item_id} as matched with notification flags"
-    )
+    print(f"Updated items {found_item_id} and {lost_item_id} as matched with notification flags")
 
 
 def get_owner_details(item_id):

@@ -4,6 +4,8 @@ import axios from 'axios';
 
 const API_BASE_URL = 'http://localhost:3004/api';
 
+let processedNotificationIds = new Set();
+
 /**
  * Fetch new match notifications for a user
  * @param {string} userId - The user ID to fetch notifications for
@@ -12,6 +14,20 @@ const API_BASE_URL = 'http://localhost:3004/api';
 export const getNewMatches = async (userId) => {
   try {
     const response = await axios.get(`${API_BASE_URL}/users/${userId}/matches/new`);
+    
+    // Filter out already processed notifications
+    if (response.data && response.data.matches) {
+      const newMatches = response.data.matches.filter(match => 
+        !processedNotificationIds.has(match.id)
+      );
+      
+      // Add the IDs of these new matches to our processed set
+      newMatches.forEach(match => processedNotificationIds.add(match.id));
+      
+      // Return only the new matches
+      return { ...response.data, matches: newMatches };
+    }
+    
     return response.data;
   } catch (error) {
     console.error('Error fetching new matches:', error);
@@ -70,4 +86,9 @@ export const stopMatchPolling = (intervalId) => {
   if (intervalId) {
     clearInterval(intervalId);
   }
+}
+
+// Function to reset notification tracking (useful when logging out)
+export const resetNotificationTracking = () => {
+  processedNotificationIds.clear();
 }

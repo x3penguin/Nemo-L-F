@@ -840,6 +840,7 @@ export default {
         const currentUser = store.getters["auth/user"];
         const userId = currentUser ? currentUser.id : "1"; // Fallback to 1 for testing
         apiFormData.append("userId", userId);
+        apiFormData.append("reportType", "LOST");
 
         if (formData.value.imageFile) {
           apiFormData.append("image", formData.value.imageFile);

@@ -49,9 +49,21 @@ export default {
     const store = useStore();
     const router = useRouter();
     
-    const activeNotifications = computed(() => 
-      store.getters['notifications/notifications']
-    );
+    // Use this computed property to get unique notifications
+    const activeNotifications = computed(() => {
+      const allNotifications = store.getters['notifications/notifications'];
+      
+      // De-duplicate notifications by message content (if they have the same message, only show one)
+      const uniqueMessages = new Set();
+      return allNotifications.filter(notification => {
+        const messageKey = `${notification.type}-${notification.message}`;
+        if (uniqueMessages.has(messageKey)) {
+          return false;
+        }
+        uniqueMessages.add(messageKey);
+        return true;
+      });
+    });
     
     const removeNotification = (id) => {
       // If this is a match notification with an itemId, mark it as read

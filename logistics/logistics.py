@@ -4,7 +4,7 @@ import os
 from flask_cors import CORS
 import requests
 import json
-from firebase_config import db
+from firebase_client import db
 from firebase_admin import firestore
 
 # Load environment variables from .env file
@@ -98,7 +98,7 @@ def shipping_history():
         if 'rate_data' in rate_data and 'result' in rate_data['rate_data']:
             for result in rate_data['rate_data']['result']:
                 for rate in result.get('rates', []):
-                    if rate.get('price', 0) > 0:
+                    if float(rate.get('price', 0)) > 0:
                         all_rates.append({
                             'timestamp': rate_data['timestamp'],
                             'shipment': rate_data.get('shipment', {}),

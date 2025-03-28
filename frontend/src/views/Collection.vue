@@ -587,7 +587,7 @@
 import { ref, computed, onMounted } from "vue";
 import itemService from "@/services/item.service";
 import ItemCard from "@/components/ItemCard.vue";
-import { useStore } from 'vuex';
+import { useStore } from "vuex";
 export default {
   name: "CollectionView",
   components: {
@@ -595,7 +595,46 @@ export default {
   },
   setup() {
     const store = useStore();
-    
+    const activeSubTab = ref("lost");
+
+    const getItemsToShow = computed(() => {
+      // User ID from store
+      const userId = store.getters["auth/user"]?.id;
+
+      if (!userId) return [];
+
+      // Filter based on active subtab
+      let filteredItems = [];
+
+      if (activeSubTab.value === "lost") {
+        // Show matched items where user is the owner AND reportType is LOST
+        filteredItems = matchedItems.value.filter(
+          (item) =>
+            item.ownerId === userId &&
+            item.status.toUpperCase() === "MATCHED" &&
+            item.reportType === "LOST"
+        );
+      } else if (activeSubTab.value === "found") {
+        // Show matched items where user is the finder AND reportType is FOUND
+        filteredItems = matchedItems.value.filter(
+          (item) =>
+            item.finderId === userId &&
+            item.status.toUpperCase() === "MATCHED" &&
+            item.reportType === "FOUND"
+        );
+      } else if (activeSubTab.value === "matched") {
+        // Show items in collection or retrieval process
+        filteredItems = matchedItems.value.filter(
+          (item) =>
+            (item.ownerId === userId || item.finderId === userId) &&
+            (item.status.toUpperCase() === "COLLECTING" ||
+              item.status.toUpperCase() === "RETRIEVED")
+        );
+      }
+
+      return filteredItems;
+    });
+
     const viewItemDetails = (item) => {
       selectedItem.value = item;
       modalType.value = "details";
@@ -606,36 +645,42 @@ export default {
         fetchCollectionDetails(item.id);
       }
     };
-    const fetchMatchedItems = async () => {
+    async function fetchMatchedItems() {
       isLoading.value = true;
       error.value = null;
 
       try {
-        // Use the correct endpoint with query parameter
-        const userId = store.getters["auth/user"]?.id || 1; // Fallback to 1 for testing
+        const userId = store.getters["auth/user"]?.id || 1;
 
-        // Fetch items for all relevant statuses
-        const [
-          lostResponse,
-          matchedResponse,
-          collectingResponse,
-          retrievedResponse,
-        ] = await Promise.all([
-          itemService.getLostItems(),
-          itemService.getMatchedItems(),
-          itemService.getCollectingItems(),
-          itemService.getRetrievedItems(),
-        ]);
+        const [matchedResponse, collectingResponse, retrievedResponse] =
+          await Promise.all([
+            itemService.getMatchedItems(),
+            itemService.getCollectingItems(),
+            itemService.getRetrievedItems(),
+          ]);
 
-        // Combine all items and filter by user ID
-        const allItems = [
-          ...lostResponse.data,
+        // Combine items but avoid duplicates by using both ID and reportType for filtering
+        let allItems = [
           ...matchedResponse.data,
           ...collectingResponse.data,
           ...retrievedResponse.data,
         ].filter((item) => item.ownerId === userId || item.finderId === userId);
 
-        matchedItems.value = allItems;
+        // Use a Map with a composite key of id+reportType to ensure uniqueness
+        const uniqueItemsMap = new Map();
+
+        for (const item of allItems) {
+          // Create a unique key combining the item ID and report type
+          const key = `${item.id}-${item.reportType || "UNKNOWN"}`;
+
+          // Only add if this combination doesn't exist yet
+          if (!uniqueItemsMap.has(key)) {
+            uniqueItemsMap.set(key, item);
+          }
+        }
+
+        // Convert back to array
+        matchedItems.value = Array.from(uniqueItemsMap.values());
         console.log("Items fetched:", matchedItems.value);
       } catch (err) {
         console.error("Error fetching items:", err);
@@ -643,7 +688,7 @@ export default {
       } finally {
         isLoading.value = false;
       }
-    };
+    }
 
     const fetchItems = async () => {
       try {
@@ -1043,6 +1088,7 @@ export default {
       handleImageError,
       fetchItems,
       viewItemDetails,
+      getItemsToShow
     };
   },
 };

@@ -2,6 +2,7 @@ from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Depends, HTTPExce
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from firebase_admin import auth
 from chat.firebase_client import get_item_by_id
+from chat.websocket_manager import CustomJSONEncoder
 from typing import List, Optional
 import json
 
@@ -142,7 +143,7 @@ async def websocket_endpoint(websocket: WebSocket, token: str):
                     await websocket.send_text(json.dumps({
                         "status": "sent",
                         "message": message
-                    }))
+                    }, cls=CustomJSONEncoder))
                 
         except WebSocketDisconnect:
             manager.disconnect(websocket)

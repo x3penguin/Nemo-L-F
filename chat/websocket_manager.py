@@ -2,13 +2,13 @@ from fastapi import WebSocket, WebSocketDisconnect
 from typing import Dict, Set, List
 from datetime import datetime
 import json
-import asyncio
 
-def convert_datetime(obj):
-    try:
-        return obj.isoformat()
-    except Exception:
-        return str(obj)
+class CustomJSONEncoder(json.JSONEncoder):
+    def default(self, obj):
+        try:
+            return obj.isoformat()
+        except Exception:
+            return str(obj)
 
 class ConnectionManager:
     def __init__(self):
@@ -41,19 +41,24 @@ class ConnectionManager:
     async def send_personal_message(self, message: dict, user_id: str):
         """Send a message to a specific user on all their active connections"""
         if user_id in self.active_connections:
-            # Convert message to JSON
-            message_json = json.dumps(message, default=convert_datetime)
-            
-            # Send to all connections for this user
-            websockets = self.active_connections[user_id]
-            for websocket in list(websockets):  # Create a copy to avoid modification during iteration
-                try:
-                    await websocket.send_text(message_json)
-                except WebSocketDisconnect:
-                    self.disconnect(websocket)
-                except Exception as e:
-                    print(f"Error sending message to websocket: {e}")
-                    self.disconnect(websocket)
+            # Convert message to JSON using the custom JSON encoder
+            try:
+                json_string = json.dumps(message, cls=CustomJSONEncoder)
+                
+                # Send to all connections for this user
+                websockets = self.active_connections[user_id]
+                for websocket in list(websockets):  # Create a copy to avoid modification during iteration
+                    try:
+                        await websocket.send_text(json_string)
+                    except WebSocketDisconnect:
+                        self.disconnect(websocket)
+                    except Exception as e:
+                        print(f"Error sending message to websocket: {e}")
+                        self.disconnect(websocket)
+            except TypeError as e:
+                print(f"JSON Serialization Error: {e}")
+                # Log the problematic object for debugging
+                print(f"Problematic message: {message}")
 
 # Create a global connection manager
 manager = ConnectionManager()

@@ -109,6 +109,17 @@ const routes = [
     path: "/payment-form",
     name: "PaymentForm",
     component: () => import("@/views/PaymentForm.vue"),
+    meta: {
+      requiresAuth: true,
+    },
+  },
+  {
+    path: "/paymentResult",
+    name: "PaymentResult",
+    component: () => import("@/views/PaymentResult.vue"),
+    meta: {
+      requiresAuth: true,
+    },
   },
   {
     path: "/items/:id",

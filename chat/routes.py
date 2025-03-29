@@ -5,7 +5,6 @@ from chat.firebase_client import get_item_by_id
 from chat.websocket_manager import CustomJSONEncoder
 from typing import List, Optional
 import json
-
 from . import database as chat_db
 from . import schemas
 from .websocket_manager import manager

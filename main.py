@@ -1,28 +1,24 @@
-import uvicorn
 from fastapi import FastAPI
-from chat.routes import router as chat_router
-import firebase_admin
-from firebase_admin import credentials
-import os
-from dotenv import load_dotenv
+from fastapi.middleware.cors import CORSMiddleware
 
-load_dotenv()
+app = FastAPI()
 
-# # Initialize Firebase if not already initialized
-# try:
-#     firebase_admin.get_app()
-# except ValueError:
-#     cred = credentials.Certificate(os.getenv("SERVICE_KEY"))
-#     firebase_admin.initialize_app(cred)
-
-app = FastAPI(title="Lost and Found API")
-
-# Include chat router
-app.include_router(chat_router)
-
-@app.get("/")
-def read_root():
-    return {"message": "Lost and Found API"}
-
-if __name__ == "__main__":
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+# More specific and secure CORS configuration
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:8000",  # Your FastAPI server
+        "http://localhost:8080",  # Frontend dev server
+        "http://127.0.0.1:8000",
+        "http://127.0.0.1:8080",
+        "http://localhost:3000"
+    ],
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],  # Specific HTTP methods
+    allow_headers=[
+        "Content-Type", 
+        "Authorization", 
+        "Access-Control-Allow-Headers", 
+        "Access-Control-Allow-Origin"
+    ]
+)

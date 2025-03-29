@@ -6,19 +6,18 @@
       </div>
       
       <div class="chat-list">
-        <div v-for="(chat, index) in chats" 
-             :key="index" 
-             class="chat-item"
-             :class="{ 'chat-item-active': activeChatIndex === index }"
-             @click="setActiveChat(index)">
-          <div class="chat-avatar">{{ getInitials(chat.name) }}</div>
-          <div class="chat-info">
-            <h3 class="chat-name">{{ chat.name }}</h3>
-            <p class="chat-preview">{{ chat.lastMessage }}</p>
+        <div
+          v-for="chat in chats"
+          :key="chat.id"
+          class="chat-preview"
+          @click="selectChat(chat)"
+        >
+          <div class="chat-participant">
+            {{ chat.participants.find(p => p !== userId) || "Unknown user" }}
           </div>
-          <div class="chat-meta">
-            <span class="chat-time">{{ chat.time }}</span>
-            <span v-if="chat.unread" class="chat-badge">{{ chat.unread }}</span>
+          <div class="chat-snippet">
+            <div class="last-message">{{ chat.lastMessage }}</div>
+            <div class="timestamp">{{ formatTime(chat.lastMessageTime) }}</div>
           </div>
         </div>
       </div>
@@ -33,13 +32,29 @@
             </div>
           </div>
           
-          <div class="chat-messages">
+          <!-- <div class="chat-messages">
             <div v-for="(message, index) in activeChat.messages" 
                  :key="index" 
                  class="chat-message"
                  :class="{ 'chat-message-mine': message.isMine }">
               <div class="chat-message-content">{{ message.text }}</div>
               <div class="chat-message-time">{{ message.time }}</div>
+            </div>
+          </div> -->
+
+          <div class="chat-window" v-if="selectedChat">
+            <div class="chat-header">
+              Chat with: {{ selectedChat.participants.find(p => p !== userId) }}
+            </div>
+            <div class="messages">
+              <div
+                v-for="message in messages"
+                :key="message.id"
+                :class="['message', message.sender === userId ? 'sent' : 'received']"
+              >
+                <div class="content">{{ message.content }}</div>
+                <div class="timestamp">{{ formatTime(message.timestamp) }}</div>
+              </div>
             </div>
           </div>
           
@@ -65,113 +80,137 @@
   </template>
   
   <script>
-  export default {
-    name: 'ChatView',
-    data() {
-      return {
-        activeChatIndex: null,
-        newMessage: '',
-        chats: [
-          {
-            name: 'John Smith',
-            lastMessage: 'I found your wallet at Central Park',
-            time: '10:30 AM',
-            unread: 3,
-            itemName: 'Black Leather Wallet',
-            messages: [
-              { text: 'Hi, I believe I found your wallet at Central Park.', time: '10:15 AM', isMine: false },
-              { text: 'It has your ID inside.', time: '10:16 AM', isMine: false },
-              { text: 'Oh thank you so much!', time: '10:20 AM', isMine: true },
-              { text: 'When would be a good time to meet?', time: '10:22 AM', isMine: true },
-              { text: 'I can meet you tomorrow at the park entrance around noon.', time: '10:30 AM', isMine: false }
-            ]
-          },
-          {
-            name: 'Sarah Johnson',
-            lastMessage: 'Is this your blue umbrella?',
-            time: 'Yesterday',
-            unread: 0,
-            itemName: 'Blue Umbrella',
-            messages: [
-              { text: 'Hello, I think I might have your blue umbrella.', time: 'Yesterday, 2:15 PM', isMine: false },
-              { text: 'Does it have a wooden handle?', time: 'Yesterday, 2:20 PM', isMine: true },
-              { text: 'Yes, it does. And it has a small logo on it.', time: 'Yesterday, 2:25 PM', isMine: false }
-            ]
-          },
-          {
-            name: 'Michael Brown',
-            lastMessage: 'Thank you for returning my keys!',
-            time: 'Mar 22',
-            unread: 0,
-            itemName: 'Car Keys',
-            messages: [
-              { text: 'I found your car keys at the gym.', time: 'Mar 22, 9:15 AM', isMine: false },
-              { text: 'Thank you!', time: 'Mar 22, 9:30 AM', isMine: true },
-              { text: 'No problem! Glad to help.', time: 'Mar 22, 9:35 AM', isMine: false },
-              { text: 'Thank you for returning my keys!', time: 'Mar 22, 4:45 PM', isMine: true }
-            ]
+import axios from 'axios';
+import { auth } from "@/services/firebase";
+import { onAuthStateChanged } from "firebase/auth";
+
+if (auth.currentUser) {
+  auth.currentUser.getIdToken().then((token) => {
+    console.log("Firebase ID Token:", token); // Use this in Postman
+  });
+} else {
+  console.error("No user is currently signed in.");
+}
+
+export default {
+  data() {
+  const user = JSON.parse(localStorage.getItem("user"));
+  console.log(user)
+  return {
+    userId: user?.id || null,
+    token: user?.token || null,
+    chats: [],
+    messages: [],
+    selectedChat: null,
+    newMessage: ""
+  };
+},
+mounted() {
+  onAuthStateChanged(auth, async (user) => {
+    console.log(auth)
+    console.log("Current user:", auth.currentUser);
+    if (user) {
+      const idToken = await user.getIdToken();
+      const userId = user.uid;
+
+      console.log("User logged in:", userId);
+      console.log("Firebase ID token:", idToken);
+
+      // Store in localStorage
+      localStorage.setItem("idToken", idToken);
+      localStorage.setItem("userId", userId);
+
+      // Assign to Vue state
+      this.token = idToken;
+      this.userId = userId;
+
+      // Now fetch chats AFTER token is ready
+      this.fetchChats();
+    } else {
+      console.error("No user is currently logged in.");
+    }
+  });
+
+  },
+  methods: {
+    async fetchChats() {
+      try {
+        const response = await axios.get("http://localhost:8000/chat", {
+          headers: {
+            Authorization: `Bearer ${this.token}`
           }
-        ]
-      }
-    },
-    computed: {
-      activeChat() {
-        return this.activeChatIndex !== null ? this.chats[this.activeChatIndex] : null;
-      }
-    },
-    methods: {
-      getInitials(name) {
-        return name.split(' ').map(word => word[0]).join('').toUpperCase();
-      },
-      setActiveChat(index) {
-        this.activeChatIndex = index;
-        if (this.chats[index].unread) {
-          this.chats[index].unread = 0;
-        }
-      },
-      sendMessage() {
-        if (!this.newMessage.trim() || this.activeChatIndex === null) return;
-        
-        this.chats[this.activeChatIndex].messages.push({
-          text: this.newMessage,
-          time: this.getCurrentTime(),
-          isMine: true
         });
-        
-        this.chats[this.activeChatIndex].lastMessage = this.newMessage;
-        this.chats[this.activeChatIndex].time = 'Just now';
-        
-        this.newMessage = '';
-        
-        // Simulate response (for demo purposes)
-        setTimeout(() => {
-          if (this.activeChatIndex !== null) {
-            const responses = [
-              "Sounds good! Looking forward to it.",
-              "Perfect, that works for me.",
-              "Great! I'll see you then.",
-              "Thanks for the quick response!"
-            ];
-            const randomResponse = responses[Math.floor(Math.random() * responses.length)];
-            
-            this.chats[this.activeChatIndex].messages.push({
-              text: randomResponse,
-              time: this.getCurrentTime(),
-              isMine: false
-            });
-            
-            this.chats[this.activeChatIndex].lastMessage = randomResponse;
-            this.chats[this.activeChatIndex].time = 'Just now';
-          }
-        }, 2000);
-      },
-      getCurrentTime() {
-        const now = new Date();
-        return now.getHours() + ':' + (now.getMinutes() < 10 ? '0' : '') + now.getMinutes();
+        this.chats = response.data;
+      } catch (error) {
+        console.error("Failed to fetch chats:", error);
       }
+    },
+    async selectChat(chat) {
+      this.selectedChat = chat;
+      try {
+        const response = await axios.get(`http://localhost:8000/chat/${chat.id}`, {
+          headers: {
+            Authorization: `Bearer ${this.token}`
+          }
+        });
+        this.messages = response.data.messages;
+      } catch (error) {
+        console.error("Failed to fetch messages:", error);
+      }
+    },
+    async sendMessage() {
+      if (!this.newMessage || !this.selectedChat) return;
+
+      try {
+        const payload = {
+          chat_id: this.selectedChat.id,
+          receiver_id: this.selectedChat.participants.find(p => p !== this.userId),
+          content: this.newMessage
+        };
+
+        // Use the correct WebSocket URL matching your network setup
+        const socket = new WebSocket(`ws://10.124.135.6:8000/chat/ws/${this.token}`);
+
+        socket.onopen = () => {
+          console.log('WebSocket connection established');
+          socket.send(JSON.stringify(payload));
+          this.newMessage = "";
+        };
+
+        socket.onmessage = (event) => {
+          console.log('Received WebSocket message:', event.data);
+          try {
+            const data = JSON.parse(event.data);
+            if (data.message) {
+              this.messages.push(data.message);
+            }
+          } catch (error) {
+            console.error('Error parsing WebSocket message:', error);
+          }
+        };
+
+        socket.onerror = (error) => {
+          console.error('WebSocket connection error:', error);
+        };
+
+        socket.onclose = (event) => {
+          console.log('WebSocket connection closed:', event);
+        };
+
+      } catch (error) {
+        console.error("Error in WebSocket connection:", error);
+      }
+    },
+    formatTime(timestamp) {
+      if (!timestamp) return "";
+      return new Date(timestamp).toLocaleString();
+    },
+    getInitials(name) {
+      return name?.split(" ").map(word => word[0]).join("").toUpperCase();
     }
   }
-  </script>
+};
+</script> 
   
   <style scoped>
   .chat-container {

@@ -72,11 +72,29 @@
           >
             <template #actions>
               <button
+                v-if="item.status === 'MATCHED'"
                 @click.stop="initiateCollection(item)"
                 class="btn btn-primary"
               >
                 Arrange Collection
               </button>
+              <button
+                v-else-if="item.status === 'COLLECTING'"
+                class="btn btn-secondary"
+                disabled
+              >
+                Collection in Progress
+              </button>
+              <button
+                v-else-if="item.status === 'RETRIEVED'"
+                class="btn btn-success disabled"
+                disabled
+              >
+                Item Retrieved
+              </button>
+              <div v-else class="status-message">
+                {{ getStatusMessage(item.status) }}
+              </div>
             </template>
           </ItemCard>
         </div>
@@ -511,6 +529,17 @@ export default {
     const userAddress = ref(null);
     const isLoadingAddress = ref(false);
     const addressError = ref(null);
+
+    const getStatusMessage = (status) => {
+      switch (status.toUpperCase()) {
+        case "LOST":
+          return "Awaiting matches";
+        case "FOUND":
+          return "Awaiting owner claim";
+        default:
+          return status;
+      }
+    };
 
     // Function to fetch user's address when initiating delivery
     const fetchUserAddress = async (itemId) => {
@@ -1014,6 +1043,7 @@ export default {
     };
 
     return {
+      getStatusMessage,
       isLoading,
       error,
       matchedItems,

@@ -37,7 +37,7 @@
                 @error="handleImageError"
               />
               <div class="match-confidence">
-                {{ Math.round(item.confidence) }}% Match
+                {{ Math.round(getConfidence(item)) }}% Match
               </div>
             </div>
             <div class="item-details">
@@ -112,6 +112,27 @@ export default {
     const router = useRouter();
     const currentIndex = ref(0);
     const store = useStore();
+
+    const getConfidence = (item) => {
+      // First check for confidence from potential_matches
+      if (item.confidence) {
+        return item.confidence;
+      }
+
+      // Try alternative field names
+      // (in case they're named differently in different parts of the app)
+      if (item.matchingConfidence) {
+        return item.matchingConfidence;
+      }
+
+      if (item.weightedConfidence) {
+        return item.weightedConfidence;
+      }
+
+      // If not available, return a default
+      return 85; // Default confidence value
+    };
+
     const confirmMatch = async (item) => {
       if (!item) return;
 
@@ -130,28 +151,30 @@ export default {
           return;
         }
         const currentUser = store.getters["auth/user"];
-    if (!currentUser) {
-      alert("You must be logged in to confirm a match");
-      return;
-    }
-    
-    // Get user email
-    let userEmail = currentUser.email;
-    if (!userEmail) {
-      console.warn("User email not found in store, fetching from API");
-      try {
-        // Fetch user details if email is not in the store
-        const userResponse = await axios.get(`http://localhost:3004/users/${currentUser.id}`);
-        if (userResponse.data && userResponse.data.email) {
-          userEmail = userResponse.data.email;
-        } else {
-          throw new Error("Could not retrieve user email");
+        if (!currentUser) {
+          alert("You must be logged in to confirm a match");
+          return;
         }
-      } catch (userError) {
-        console.error("Error fetching user data:", userError);
-        // Continue with flow but log the error
-      }
-    }
+
+        // Get user email
+        let userEmail = currentUser.email;
+        if (!userEmail) {
+          console.warn("User email not found in store, fetching from API");
+          try {
+            // Fetch user details if email is not in the store
+            const userResponse = await axios.get(
+              `http://localhost:3004/users/${currentUser.id}`
+            );
+            if (userResponse.data && userResponse.data.email) {
+              userEmail = userResponse.data.email;
+            } else {
+              throw new Error("Could not retrieve user email");
+            }
+          } catch (userError) {
+            console.error("Error fetching user data:", userError);
+            // Continue with flow but log the error
+          }
+        }
         // Call the API to confirm the match
         const response = await axios.post(
           "http://localhost:3004/api/test/create-match",
@@ -173,7 +196,7 @@ export default {
               itemId: foundItemId,
               itemName: item.name || "Found Item",
               itemDescription: item.description || "No description",
-              ownerEmail: userEmail
+              ownerEmail: userEmail,
             });
             console.log("Email notification request sent");
           } catch (emailErr) {
@@ -272,6 +295,7 @@ export default {
       truncateDescription,
       formatDate,
       confirmMatch,
+      getConfidence
     };
   },
 };

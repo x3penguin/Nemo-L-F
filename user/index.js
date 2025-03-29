@@ -367,24 +367,25 @@ app.get("/api/users/:id/potential-matches", async (req, res) => {
   }
 });
 
-app.get("/api/users/:id/lost-items-with-matches", async (req, res) => {
+app.get('/api/users/:id/lost-items-with-matches', async (req, res) => {
   const userId = req.params.id;
 
   try {
-    // Query for lost items by this user
-    const itemsRef = collection(db, "items");
+    // First get all lost items reported by this user
+    const itemsRef = collection(db, 'items');
     const lostItemsQuery = query(
       itemsRef,
-      where("status", "==", "LOST"),
-      where("reportOwner", "==", userId)
+      where('status', '==', 'LOST'),
+      where('reportOwner', '==', userId)  // Use reportOwner to identify who created the report
     );
-
+    
     const lostItemsSnapshot = await getDocs(lostItemsQuery);
-    const lostItems = [];
-
-    lostItemsSnapshot.forEach((doc) => {
+    
+    // Create a map of all user's lost items for quick access
+    const userLostItems = {};
+    lostItemsSnapshot.forEach(doc => {
       const item = doc.data();
-      lostItems.push({
+      userLostItems[doc.id] = {
         id: doc.id,
         name: item.name,
         description: item.description,
@@ -393,18 +394,77 @@ app.get("/api/users/:id/lost-items-with-matches", async (req, res) => {
         dateTime: item.dateTime,
         imageUrl: item.imageUrl,
         status: item.status,
-      });
+        reportOwner: item.reportOwner,
+        ownerId: item.ownerId
+      };
     });
+    
+    // Get all potential matches related to these lost items
+    const lostItemIds = Object.keys(userLostItems);
+    const matchResults = {};
+    
+    // Only proceed if we have lost items
+    if (lostItemIds.length > 0) {
+      // Query the potential_matches collection for any matches to user's lost items
+      const potentialMatchesRef = collection(db, 'potential_matches');
+      
+      // We need to query in batches as Firestore IN query can only handle up to 10 values
+      const batchSize = 10;
+      for (let i = 0; i < lostItemIds.length; i += batchSize) {
+        const batch = lostItemIds.slice(i, i + batchSize);
+        
+        const matchesQuery = query(
+          potentialMatchesRef,
+          where('lostItemId', 'in', batch)
+        );
+        
+        const matchesSnapshot = await getDocs(matchesQuery);
+        
+        // Count matches for each lost item
+        matchesSnapshot.forEach(doc => {
+          const match = doc.data();
+          const lostItemId = match.lostItemId;
+          
+          if (!matchResults[lostItemId]) {
+            matchResults[lostItemId] = {
+              matchCount: 1,
+              highestConfidence: match.confidence
+            };
+          } else {
+            matchResults[lostItemId].matchCount++;
+            // Track highest confidence
+            if (match.confidence > matchResults[lostItemId].highestConfidence) {
+              matchResults[lostItemId].highestConfidence = match.confidence;
+            }
+          }
+        });
+      }
+    }
+    
+    // Generate result with only items that have matches
+    const lostItemsWithMatches = [];
+    for (const [itemId, matchInfo] of Object.entries(matchResults)) {
+      if (userLostItems[itemId] && matchInfo.matchCount > 0) {
+        lostItemsWithMatches.push({
+          ...userLostItems[itemId],
+          matchCount: matchInfo.matchCount,
+          highestConfidence: matchInfo.highestConfidence
+        });
+      }
+    }
 
-    res.json({
+    // Sort by highest confidence first
+    lostItemsWithMatches.sort((a, b) => b.highestConfidence - a.highestConfidence);
+
+    res.json({ 
       success: true,
-      items: lostItems,
+      items: lostItemsWithMatches
     });
   } catch (error) {
-    console.error("Error fetching lost items:", error);
+    console.error('Error fetching lost items with matches:', error);
     res.status(500).json({
       success: false,
-      error: error.message || "Failed to fetch lost items",
+      error: error.message || 'Failed to fetch lost items with matches'
     });
   }
 });

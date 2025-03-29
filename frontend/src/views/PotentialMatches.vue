@@ -119,7 +119,7 @@
           >
         </div>
 
-        <div v-else class="items-grid">
+        <div class="items-grid">
           <div
             v-for="item in matches"
             :key="item.id"
@@ -137,6 +137,11 @@
                 :class="`status-${item.status.toLowerCase()}`"
               >
                 {{ formatStatus(item.status) }}
+              </div>
+              <!-- Only show match count badge -->
+              <div class="match-count">
+                {{ item.matchCount }} potential
+                {{ item.matchCount === 1 ? "match" : "matches" }}
               </div>
             </div>
             <div class="item-details">
@@ -292,6 +297,12 @@ export default {
       });
     };
 
+    const getConfidenceLevel = (confidence) => {
+      if (confidence >= 85) return "high";
+      if (confidence >= 70) return "medium";
+      return "low";
+    };
+
     onMounted(() => {
       fetchMatches();
     });
@@ -308,12 +319,25 @@ export default {
       formatDate,
       truncateDescription,
       viewItem,
+      getConfidenceLevel,
     };
   },
 };
 </script>
 
 <style scoped>
+.match-count {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  background-color: #3b82f6;
+  color: white;
+  font-size: 0.75rem;
+  font-weight: 500;
+  padding: 0.25rem 0.5rem;
+  border-radius: 9999px;
+}
+
 .matches-container {
   max-width: 1000px;
   margin: 2rem auto;

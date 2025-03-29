@@ -184,154 +184,64 @@
             <div v-if="collectionMethod === 'COURIER'" class="delivery-form">
               <h3>Delivery Address</h3>
 
-              <div v-if="savedAddresses.length > 0">
-                <div class="saved-addresses">
-                  <div
-                    v-for="address in savedAddresses"
-                    :key="address.id"
-                    class="saved-address"
-                    :class="{
-                      selected:
-                        selectedAddress && selectedAddress.id === address.id,
-                    }"
-                    @click="selectAddress(address)"
-                  >
-                    <div class="address-details">
-                      <h4 class="address-name">
-                        {{ formatAddressName(address) }}
-                      </h4>
-                      <p class="address-line">
-                        {{ formatAddressLine(address) }}
-                      </p>
-                      <span v-if="address.is_default" class="default-badge"
-                        >Default</span
-                      >
-                    </div>
-                    <div class="address-selection">
-                      <div
-                        class="radio-button"
-                        :class="{
-                          selected:
-                            selectedAddress &&
-                            selectedAddress.id === address.id,
-                        }"
-                      ></div>
-                    </div>
-                  </div>
-                </div>
+              <div v-if="isLoadingAddress" class="loading-indicator">
+                <div class="spinner small"></div>
+                <p>Loading address information...</p>
+              </div>
 
+              <div v-else-if="addressError" class="address-error">
+                <div class="error-icon">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                  </svg>
+                </div>
+                <p>{{ addressError }}</p>
                 <button
-                  @click="showNewAddressForm = true"
-                  class="btn btn-secondary btn-small"
-                  v-if="!showNewAddressForm"
+                  @click="fetchUserAddress(selectedItem.id)"
+                  class="btn btn-secondary btn-sm"
                 >
-                  + Add New Address
+                  Try Again
                 </button>
               </div>
 
-              <div
-                v-if="showNewAddressForm || savedAddresses.length === 0"
-                class="new-address-form"
-              >
-                <div v-if="savedAddresses.length > 0" class="form-header">
-                  <h4>New Address</h4>
-                  <button
-                    @click="showNewAddressForm = false"
-                    class="btn btn-text"
-                  >
-                    Cancel
-                  </button>
+              <div v-else-if="userAddress" class="address-details">
+                <div class="address-card">
+                  <h4>Delivery Address</h4>
+                  <p class="address-name">{{ userAddress.fullName }}</p>
+                  <p class="address-line">
+                    {{ userAddress.address.unitNumber }},
+                    {{ userAddress.address.streetAddress }}
+                  </p>
+                  <p class="address-line">
+                    {{ userAddress.address.city }}
+                    {{ userAddress.address.postalCode }}
+                  </p>
+                  <p class="address-contact">Phone: {{ userAddress.phone }}</p>
+                  <p class="address-contact">Email: {{ userAddress.email }}</p>
                 </div>
 
-                <div class="form-group">
-                  <label for="street">Street Address *</label>
-                  <input
-                    type="text"
-                    id="street"
-                    v-model="newAddress.street_address"
-                    class="form-control"
-                    :class="{ error: addressErrors.street_address }"
-                  />
-                  <div
-                    v-if="addressErrors.street_address"
-                    class="error-message"
-                  >
-                    {{ addressErrors.street_address }}
-                  </div>
+                <div class="note-section">
+                  <p class="note">
+                    This address information will be used by the logistics
+                    service to deliver the item. The actual delivery options and
+                    pricing will be provided by the integrated logistics
+                    service.
+                  </p>
                 </div>
+              </div>
 
-                <div class="form-group">
-                  <label for="unit">Unit Number *</label>
-                  <input
-                    type="text"
-                    id="unit"
-                    v-model="newAddress.unit_number"
-                    class="form-control"
-                    :class="{ error: addressErrors.unit_number }"
-                  />
-                  <div v-if="addressErrors.unit_number" class="error-message">
-                    {{ addressErrors.unit_number }}
-                  </div>
-                </div>
-
-                <div class="form-row">
-                  <div class="form-group half">
-                    <label for="postal">Postal Code *</label>
-                    <input
-                      type="text"
-                      id="postal"
-                      v-model="newAddress.postal_code"
-                      class="form-control"
-                      :class="{ error: addressErrors.postal_code }"
-                    />
-                    <div v-if="addressErrors.postal_code" class="error-message">
-                      {{ addressErrors.postal_code }}
-                    </div>
-                  </div>
-
-                  <div class="form-group half">
-                    <label for="city">City *</label>
-                    <input
-                      type="text"
-                      id="city"
-                      v-model="newAddress.city"
-                      class="form-control"
-                      :class="{ error: addressErrors.city }"
-                    />
-                    <div v-if="addressErrors.city" class="error-message">
-                      {{ addressErrors.city }}
-                    </div>
-                  </div>
-                </div>
-
-                <div class="form-group">
-                  <label for="phone">Contact Phone *</label>
-                  <input
-                    type="text"
-                    id="phone"
-                    v-model="newAddress.phone"
-                    class="form-control"
-                    :class="{ error: addressErrors.phone }"
-                  />
-                  <div v-if="addressErrors.phone" class="error-message">
-                    {{ addressErrors.phone }}
-                  </div>
-                </div>
-
-                <div class="form-check">
-                  <input
-                    type="checkbox"
-                    id="default"
-                    v-model="newAddress.is_default"
-                  />
-                  <label for="default" class="check-label"
-                    >Set as default address</label
-                  >
-                </div>
-
-                <button @click="saveAddress" class="btn btn-primary btn-small">
-                  Save Address
-                </button>
+              <div v-else class="no-address">
+                <p>No address information available for delivery.</p>
               </div>
             </div>
 
@@ -588,6 +498,7 @@ import { ref, computed, onMounted } from "vue";
 import itemService from "@/services/item.service";
 import ItemCard from "@/components/ItemCard.vue";
 import { useStore } from "vuex";
+import axios from "axios";
 export default {
   name: "CollectionView",
   components: {
@@ -596,6 +507,65 @@ export default {
   setup() {
     const store = useStore();
     const activeSubTab = ref("lost");
+
+    const userAddress = ref(null);
+    const isLoadingAddress = ref(false);
+    const addressError = ref(null);
+
+    // Function to fetch user's address when initiating delivery
+    const fetchUserAddress = async (itemId) => {
+      try {
+        isLoadingAddress.value = true;
+        addressError.value = null;
+
+        // First get the owner ID from the item
+        const itemResponse = await itemService.getItemById(itemId);
+        const ownerId = itemResponse.data.ownerId;
+
+        if (!ownerId) {
+          throw new Error("Item owner information not found");
+        }
+
+        // Fetch address from user service
+        const response = await axios.get(
+          `http://localhost:3004/api/users/${ownerId}/address`
+        );
+
+        if (response.data.success) {
+          userAddress.value = response.data.address;
+          console.log("User address loaded:", userAddress.value);
+        } else {
+          throw new Error(
+            response.data.error || "Failed to load address information"
+          );
+        }
+      } catch (error) {
+        console.error("Error fetching owner address:", error);
+        addressError.value =
+          error.message ||
+          "Failed to load address information. Please try again.";
+        userAddress.value = null;
+      } finally {
+        isLoadingAddress.value = false;
+      }
+    };
+
+    // Enhanced initiateCollection function to fetch address
+    const initiateCollection = async (item) => {
+      selectedItem.value = item;
+      modalType.value = "initiate";
+      collectionMethod.value = "SELF_PICKUP";
+      collectionError.value = null;
+      showModal.value = true;
+
+      // Clear previous address data
+      userAddress.value = null;
+      addressError.value = null;
+
+      // Fetch the address when courier delivery option is available
+      // This makes the address data ready for the logistics service to use
+      await fetchUserAddress(item.id);
+    };
 
     const getItemsToShow = computed(() => {
       // User ID from store
@@ -906,14 +876,6 @@ export default {
       return stepIndex <= currentIndex;
     };
 
-    const initiateCollection = (item) => {
-      selectedItem.value = item;
-      modalType.value = "initiate";
-      collectionMethod.value = "SELF_PICKUP";
-      collectionError.value = null;
-      showModal.value = true;
-    };
-
     const viewCollectionDetails = async (item) => {
       selectedItem.value = item;
       modalType.value = "details";
@@ -1093,12 +1055,90 @@ export default {
       fetchItems,
       viewItemDetails,
       getItemsToShow,
+      userAddress,
+      isLoadingAddress,
+      addressError,
+      fetchUserAddress,
     };
   },
 };
 </script>
 
 <style scoped>
+.delivery-form {
+  margin-top: 2rem;
+  border-top: 1px solid #e5e7eb;
+  padding-top: 1.5rem;
+}
+
+.address-card {
+  background-color: #f8fafc;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.address-card h4 {
+  font-size: 1.125rem;
+  color: #111827;
+  margin-bottom: 0.75rem;
+}
+
+.address-name {
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.address-line {
+  margin-bottom: 0.25rem;
+}
+
+.address-contact {
+  color: #6b7280;
+  font-size: 0.875rem;
+  margin-top: 0.5rem;
+}
+
+.note-section {
+  margin-top: 1.5rem;
+}
+
+.note {
+  font-size: 0.875rem;
+  color: #6b7280;
+  font-style: italic;
+}
+
+.address-error {
+  color: #ef4444;
+  background-color: #fee2e2;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.error-icon {
+  margin-bottom: 0.5rem;
+}
+
+.no-address {
+  text-align: center;
+  color: #6b7280;
+  padding: 2rem;
+}
+
+.spinner.small {
+  width: 1.5rem;
+  height: 1.5rem;
+  border: 2px solid rgba(17, 24, 39, 0.1);
+  border-top-color: #111827;
+}
+
 .collection-container {
   max-width: 1000px;
   margin: 2rem auto;

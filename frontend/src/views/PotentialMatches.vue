@@ -201,7 +201,7 @@ export default {
           );
           matches.value = matchesResponse.data || [];
         } else {
-          // No itemId - show only lost items with potential matches
+          // No itemId - just show user's lost items
           const userId = store.getters["auth/user"]?.id;
           if (!userId) {
             error.value = "User not logged in";
@@ -210,14 +210,12 @@ export default {
           }
 
           try {
+            // Use existing endpoint - don't filter for now until backend is updated
             const response = await axios.get(
               `http://localhost:3004/api/users/${userId}/lost-items-with-matches`
             );
-            matches.value = (response.data.items || []).filter(
-              (item) =>
-                // Only include items that have potential matches
-                item.hasPotentialMatches === true
-            );
+            matches.value = response.data.items || [];
+            console.log("Potential matches loaded:", matches.value.length);
           } catch (err) {
             console.error("Error fetching lost items with matches:", err);
             error.value = "Failed to load your items. Please try again.";

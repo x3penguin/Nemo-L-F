@@ -82,7 +82,7 @@
   <script>
 import axios from 'axios';
 import { auth } from "@/services/firebase";
-import { onAuthStateChanged } from "firebase/auth";
+// import { onAuthStateChanged } from "firebase/auth";
 
 if (auth.currentUser) {
   auth.currentUser.getIdToken().then((token) => {
@@ -106,30 +106,30 @@ export default {
   };
 },
 mounted() {
-  onAuthStateChanged(auth, async (user) => {
-    console.log(auth)
-    console.log("Current user:", auth.currentUser);
-    if (user) {
-      const idToken = await user.getIdToken();
-      const userId = user.uid;
+  // onAuthStateChanged(auth, async (user) => {
+  //   console.log(auth)
+  //   console.log("Current user:", auth.currentUser);
+  //   if (user) {
+  //     const idToken = await user.getIdToken();
+  //     const userId = user.uid;
 
-      console.log("User logged in:", userId);
-      console.log("Firebase ID token:", idToken);
+  //     console.log("User logged in:", userId);
+  //     console.log("Firebase ID token:", idToken);
 
-      // Store in localStorage
-      localStorage.setItem("idToken", idToken);
-      localStorage.setItem("userId", userId);
+  //     // Store in localStorage
+  //     localStorage.setItem("idToken", idToken);
+  //     localStorage.setItem("userId", userId);
 
-      // Assign to Vue state
-      this.token = idToken;
-      this.userId = userId;
+  //     // Assign to Vue state
+  //     this.token = idToken;
+  //     this.userId = userId;
 
-      // Now fetch chats AFTER token is ready
-      this.fetchChats();
-    } else {
-      console.error("No user is currently logged in.");
-    }
-  });
+  //     // Now fetch chats AFTER token is ready
+  //     this.fetchChats();
+  //   } else {
+  //     console.error("No user is currently logged in.");
+  //   }
+  // });
 
   },
   methods: {

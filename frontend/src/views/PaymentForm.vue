@@ -1,193 +1,136 @@
 <template>
-    <div class="container">
-      <div class="payment-container">
-        <h1 class="payment-title">Payment Details</h1>
-  
-        <div class="payment-card">
-          <!-- Order Summary -->
-          <div class="order-summary">
-            <h2 class="summary-heading">Order Summary</h2>
-            <div class="summary-items">
-              <div class="summary-item">
-                <span class="item-label">Delivery Service:</span>
-                <span class="item-value">{{ orderDetails.serviceName }}</span>
-              </div>
-              <div class="summary-item">
-                <span class="item-label">Shipping From:</span>
-                <span class="item-value">{{ orderDetails.pickupLocation }}</span>
-              </div>
-              <div class="summary-item">
-                <span class="item-label">Shipping To:</span>
-                <span class="item-value">{{ orderDetails.deliveryLocation }}</span>
-              </div>
-              <div class="summary-item">
-                <span class="item-label">Item:</span>
-                <span class="item-value">{{ orderDetails.itemName }}</span>
+  <div class="container">
+    <div class="payment-container">
+      <h1 class="payment-title">Payment Details</h1>
+
+      <div class="payment-card">
+        <!-- Order Summary -->
+        <div class="order-summary">
+          <h2 class="summary-heading">Order Summary</h2>
+          <div class="summary-items">
+            <div class="summary-item">
+              <span class="item-label">Delivery Service:</span>
+              <span class="item-value">{{ orderDetails.serviceName }}</span>
+            </div>
+            <div class="summary-item">
+              <span class="item-label">Shipping From:</span>
+              <span class="item-value">{{ orderDetails.pickupLocation }}</span>
+            </div>
+            <div class="summary-item">
+              <span class="item-label">Shipping To:</span>
+              <span class="item-value">{{ orderDetails.deliveryLocation }}</span>
+            </div>
+            <div class="summary-item">
+              <span class="item-label">Item:</span>
+              <span class="item-value">{{ orderDetails.itemName }}</span>
+            </div>
+          </div>
+          <div class="price-summary">
+            <div class="price-item">
+              <span class="price-label">Shipping Cost:</span>
+              <span class="price-value">${{ orderDetails.shippingCost }}</span>
+            </div>
+            <div class="price-item total">
+              <span class="price-label">Total:</span>
+              <span class="price-value">${{ orderDetails.totalAmount }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Payment Form -->
+        <div class="payment-form">
+          <h2 class="form-heading">Payment Information</h2>
+
+          <!-- Cardholder Name -->
+          <div class="form-group">
+            <label for="cardholderName">Cardholder Name *</label>
+            <input
+              type="text"
+              id="cardholderName"
+              v-model="paymentData.cardholderName"
+              class="form-control"
+              :class="{ error: errors.cardholderName }"
+              placeholder="e.g. John Doe"
+            />
+            <div v-if="errors.cardholderName" class="error-message">
+              {{ errors.cardholderName }}
+            </div>
+          </div>
+
+          <!-- Stripe Elements -->
+          <div class="form-group">
+            <label for="card-element">Card Details *</label>
+            <!-- Stripe Elements container -->
+            <div id="card-element" class="form-control"></div> 
+            <!-- Error message for card details -->
+            <div v-if="errors.cardDetails" class="error-message">
+              {{ errors.cardDetails }}
+            </div>
+          </div>
+
+          <!-- Billing Address -->
+          <div class="form-group">
+            <label for="billingAddress">Billing Address *</label>
+            <input
+              type="text"
+              id="billingAddress"
+              v-model="paymentData.billingAddress"
+              class="form-control"
+              :class="{ error: errors.billingAddress }"
+              placeholder="Street Address"
+            />
+            <div v-if="errors.billingAddress" class="error-message">
+              {{ errors.billingAddress }}
+            </div>
+          </div>
+
+          <!-- City and Postal Code -->
+          <div class="form-row">
+            <div class="form-group half">
+              <label for="city">City *</label>
+              <input
+                type="text"
+                id="city"
+                v-model="paymentData.city"
+                class="form-control"
+                :class="{ error: errors.city }"
+                placeholder="e.g. Singapore"
+              />
+              <div v-if="errors.city" class="error-message">
+                {{ errors.city }}
               </div>
             </div>
-            <div class="price-summary">
-              <div class="price-item">
-                <span class="price-label">Shipping Cost:</span>
-                <span class="price-value">${{ orderDetails.shippingCost }}</span>
-              </div>
-              <div class="price-item total">
-                <span class="price-label">Total:</span>
-                <span class="price-value">${{ orderDetails.totalAmount }}</span>
+
+            <div class="form-group half">
+              <label for="postalCode">Postal Code *</label>
+              <input
+                type="text"
+                id="postalCode"
+                v-model="paymentData.postalCode"
+                class="form-control"
+                :class="{ error: errors.postalCode }"
+                placeholder="e.g. 123456"
+              />
+          
+              <div v-if="errors.postalCode" class="error-message">
+                {{ errors.postalCode }}
               </div>
             </div>
           </div>
-  
-          <!-- Payment Form -->
-          <div class="payment-form">
-            <h2 class="form-heading">Payment Information</h2>
-            
-            <div class="form-group">
-              <label for="cardholderName">Cardholder Name *</label>
-              <input
-                type="text"
-                id="cardholderName"
-                v-model="paymentData.cardholderName"
-                class="form-control"
-                :class="{ error: errors.cardholderName }"
-                placeholder="e.g. John Doe"
-              />
-              <div v-if="errors.cardholderName" class="error-message">
-                {{ errors.cardholderName }}
-              </div>
-            </div>
-  
-            <div class="form-group">
-              <label for="cardNumber">Card Number *</label>
-              <div class="card-input-wrapper">
-                <input
-                  type="text"
-                  id="cardNumber"
-                  v-model="paymentData.cardNumber"
-                  class="form-control"
-                  :class="{ error: errors.cardNumber }"
-                  placeholder="4111 1111 1111 1111"
-                  @input="formatCardNumber"
-                  maxlength="19"
-                />
-              </div>
-              <div v-if="errors.cardNumber" class="error-message">
-                {{ errors.cardNumber }}
-              </div>
-            </div>
-  
-            <div class="form-row">
-              <div class="form-group half">
-                <label for="expiryDate">Expiry Date *</label>
-                <input
-                  type="text"
-                  id="expiryDate"
-                  v-model="paymentData.expiryDate"
-                  class="form-control"
-                  :class="{ error: errors.expiryDate }"
-                  placeholder="MM/YY"
-                  @input="formatExpiryDate"
-                  maxlength="5"
-                />
-                <div v-if="errors.expiryDate" class="error-message">
-                  {{ errors.expiryDate }}
-                </div>
-              </div>
-  
-              <div class="form-group half">
-                <label for="cvv">CVV *</label>
-                <input
-                  type="text"
-                  id="cvv"
-                  v-model="paymentData.cvv"
-                  class="form-control"
-                  :class="{ error: errors.cvv }"
-                  placeholder="123"
-                  maxlength="4"
-                />
-                <div v-if="errors.cvv" class="error-message">
-                  {{ errors.cvv }}
-                </div>
-              </div>
-            </div>
-  
-            <div class="form-group">
-              <label for="billingAddress">Billing Address *</label>
-              <input
-                type="text"
-                id="billingAddress"
-                v-model="paymentData.billingAddress"
-                class="form-control"
-                :class="{ error: errors.billingAddress }"
-                placeholder="Street Address"
-              />
-              <div v-if="errors.billingAddress" class="error-message">
-                {{ errors.billingAddress }}
-              </div>
-            </div>
-  
-            <div class="form-row">
-              <div class="form-group half">
-                <label for="city">City *</label>
-                <input
-                  type="text"
-                  id="city"
-                  v-model="paymentData.city"
-                  class="form-control"
-                  :class="{ error: errors.city }"
-                  placeholder="e.g. Singapore"
-                />
-                <div v-if="errors.city" class="error-message">
-                  {{ errors.city }}
-                </div>
-              </div>
-  
-              <div class="form-group half">
-                <label for="postalCode">Postal Code *</label>
-                <input
-                  type="text"
-                  id="postalCode"
-                  v-model="paymentData.postalCode"
-                  class="form-control"
-                  :class="{ error: errors.postalCode }"
-                  placeholder="e.g. 123456"
-                />
-                <div v-if="errors.postalCode" class="error-message">
-                  {{ errors.postalCode }}
-                </div>
-              </div>
-            </div>
-  
-            <div class="payment-security">
-              <div class="security-icon">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                  <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-                </svg>
-              </div>
-              <div class="security-text">
-                Your payment info is secure and encrypted
-              </div>
-            </div>
-  
-            <div v-if="errors.api" class="api-error">
-              <div class="error-icon">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <circle cx="12" cy="12" r="10"></circle>
-                  <line x1="12" y1="8" x2="12" y2="12"></line>
-                  <line x1="12" y1="16" x2="12.01" y2="16"></line>
-                </svg>
-              </div>
-              <div class="error-message">{{ errors.api }}</div>
-            </div>
-  
-            <!-- Payment Buttons -->
-            <div class="payment-actions">
-              <button
-                @click="goBack"
-                class="btn btn-secondary"
-              >
-                Back
-              </button>
+
+          <!-- Payment Security -->
+          <div class="payment-security">
+            Your payment info is secure and encrypted.
+          </div>
+
+          <!-- Payment Buttons -->
+          <div class="payment-actions">
+            <!-- Back Button -->
+            <button @click.prevent="$router.push('/logistics')" 
+                    type='button' 
+                    class='btn btn-secondary'>
+                    Back
+             </button>
   
               <button
                 @click="processPayment"
@@ -203,191 +146,256 @@
       </div>
     </div>
   </template>
-    
-  <script>
-  export default {
-    data() {
-      return {
-        isProcessing: false,
-        paymentData: {
-          cardholderName: '',
-          cardNumber: '',
-          expiryDate: '',
-          cvv: '',
-          billingAddress: '',
-          city: '',
-          postalCode: ''
-        },
-        orderDetails: {
-          orderId: '',
-          serviceName: '',
-          pickupLocation: '',
-          deliveryLocation: '',
-          itemName: '',
-          shippingCost: 0,
-          totalAmount: 0
-        },
-        errors: {}
-      }
-    },
-    created() {
-      // Get order details from route params or local storage
-      const orderData = this.$route.params.orderData || JSON.parse(localStorage.getItem('orderData'));
-      
-      if (orderData) {
-        this.orderDetails = {
-          orderId: orderData.orderId || 'N/A',
-          serviceName: orderData.serviceName || 'Standard Delivery',
-          pickupLocation: orderData.pickupLocation || 'N/A',
-          deliveryLocation: orderData.deliveryLocation || 'N/A',
-          itemName: orderData.itemName || 'Lost Item',
-          shippingCost: parseFloat(orderData.price || 0).toFixed(2),
-          totalAmount: parseFloat(orderData.price || 0).toFixed(2)
-        };
-      } else {
-        // No order data, redirect back to logistics form
-        this.$router.push('/logistics');
-      }
-    },
-    methods: {
-      formatCardNumber(e) {
-        // Format card number with spaces after every 4 digits
-        let value = e.target.value.replace(/\s+/g, '').replace(/[^0-9]/gi, '');
-        let formattedValue = '';
-        
-        for (let i = 0; i < value.length; i++) {
-          if (i > 0 && i % 4 === 0) {
-            formattedValue += ' ';
-          }
-          formattedValue += value[i];
-        }
-        
-        this.paymentData.cardNumber = formattedValue;
+<script>
+import { loadStripe } from '@stripe/stripe-js';
+import {jwtDecode} from 'jwt-decode';
+
+export default {
+  data() {
+    return {
+      isProcessing: false,
+      paymentData: {
+        cardholderName: '',
+        billingAddress: '',
+        city: '',
+        postalCode: ''
       },
-      
-      formatExpiryDate(e) {
-        // Format expiry date as MM/YY
-        let value = e.target.value.replace(/\s+/g, '').replace(/[^0-9]/gi, '');
-        
-        if (value.length > 2) {
-          value = value.substring(0, 2) + '/' + value.substring(2);
-        }
-        
-        this.paymentData.expiryDate = value;
+      orderDetails: {
+        orderId: '',
+        serviceName: '',
+        pickupLocation: '',
+        deliveryLocation: '',
+        itemName: '',
+        shippingCost: 0,
+        totalAmount: 0
       },
-      
-      goBack() {
-        this.$router.push('/logistics');
-      },
-      
-      validateForm() {
-        this.errors = {};
-        let isValid = true;
-        
-        if (!this.paymentData.cardholderName?.trim()) {
-          this.errors.cardholderName = 'Cardholder name is required';
-          isValid = false;
-        }
-        
-        if (!this.paymentData.cardNumber?.trim()) {
-          this.errors.cardNumber = 'Card number is required';
-          isValid = false;
-        } else if (this.paymentData.cardNumber.replace(/\s+/g, '').length < 15) {
-          this.errors.cardNumber = 'Please enter a valid card number';
-          isValid = false;
-        }
-        
-        if (!this.paymentData.expiryDate?.trim()) {
-          this.errors.expiryDate = 'Expiry date is required';
-          isValid = false;
-        } else if (!/^\d{2}\/\d{2}$/.test(this.paymentData.expiryDate)) {
-          this.errors.expiryDate = 'Please enter a valid expiry date (MM/YY)';
-          isValid = false;
-        }
-        
-        if (!this.paymentData.cvv?.trim()) {
-          this.errors.cvv = 'CVV is required';
-          isValid = false;
-        } else if (!/^\d{3,4}$/.test(this.paymentData.cvv)) {
-          this.errors.cvv = 'Please enter a valid CVV';
-          isValid = false;
-        }
-        
-        if (!this.paymentData.billingAddress?.trim()) {
-          this.errors.billingAddress = 'Billing address is required';
-          isValid = false;
-        }
-        
-        if (!this.paymentData.city?.trim()) {
-          this.errors.city = 'City is required';
-          isValid = false;
-        }
-        
-        if (!this.paymentData.postalCode?.trim()) {
-          this.errors.postalCode = 'Postal code is required';
-          isValid = false;
-        } else if (!/^\d{6}$/.test(this.paymentData.postalCode)) {
-          this.errors.postalCode = 'Please enter a valid 6-digit postal code';
-          isValid = false;
-        }
-        
-        // If not valid, scroll to first error
-        if (!isValid) {
-          this.$nextTick(() => {
-            const firstError = document.querySelector('.error-message');
-            if (firstError) {
-              firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }
-          });
-        }
-        
-        return isValid;
-      },
-      
-      async processPayment() {
-        if (!this.validateForm()) {
-          return;
-        }
-        
-        this.isProcessing = true;
-        this.errors.api = null;
-        
-        try {
-          // In a real implementation, you would make an API call to your payment processing endpoint
-          // For demo purposes, we'll simulate a successful payment after a delay
-          await new Promise(resolve => setTimeout(resolve, 2000));
-          
-          // Simulate a successful payment
-          const paymentResult = {
-            success: true,
-            transactionId: 'TX' + Math.floor(Math.random() * 1000000000),
-            message: 'Payment processed successfully'
-          };
-          
-          if (paymentResult.success) {
-            // Save payment confirmation to local storage
-            localStorage.setItem('paymentConfirmation', JSON.stringify({
-              orderId: this.orderDetails.orderId,
-              transactionId: paymentResult.transactionId,
-              amount: this.orderDetails.totalAmount,
-              date: new Date().toISOString()
-            }));
-            
-            // Redirect to confirmation page
-            this.$router.push('/payment-success');
-          } else {
-            this.errors.api = paymentResult.message || 'Payment processing failed. Please try again.';
-          }
-        } catch (error) {
-          console.error('Error processing payment:', error);
-          this.errors.api = 'Network error when processing payment. Please try again later.';
-        } finally {
-          this.isProcessing = false;
-        }
-      }
+      errorMessage: '',
+      errors: {},
+      stripe: null,
+      cardElement: null
+    };
+  },
+  async created() {
+    if (!this.checkUserToken()) {
+      this.$router.push('/login');
+      return;
     }
+
+    const orderData = this.$route.params.orderData || JSON.parse(localStorage.getItem('orderData'));
+    if (!orderData) {
+      this.$router.push('/logistics');
+      return;
+    }
+
+    this.orderDetails = {
+      orderId: orderData.orderId || 'N/A',
+      serviceName: orderData.serviceName || 'Standard Delivery',
+      pickupLocation: orderData.pickupLocation || 'N/A',
+      deliveryLocation: orderData.deliveryLocation || 'N/A',
+      itemName: orderData.itemName || 'Lost Item',
+      shippingCost: 10.00,
+      totalAmount: 50.00
+    };
+
+    try {
+      this.stripe = await loadStripe('pk_test_51R6nuLCVbLlQKjEGNlj2tdersKgR93V08ip1mf2wLCJGuBVp6U6Vmo7zjolRol97zKnGgXF0pJ35h0JDxh2J1Dum00QaT1ZyiK');
+      const elements = this.stripe.elements();
+      this.cardElement = elements.create('card', {
+        classes: { base: 'stripe-card-element' }
+      });
+      this.$nextTick(() => {
+        this.cardElement.mount('#card-element');
+      });
+    } catch (error) {
+      console.error('Stripe initialization failed:', error);
+      this.errors.api = 'Payment system unavailable';
+    }
+  },
+  methods: {
+    checkUserToken() {
+  const user = JSON.parse(localStorage.getItem('user'));
+  if (!user || !user.token) {
+    console.error('User token not found in localStorage');
+    return false;
   }
-  </script>
+  try {
+    const decodedToken = jwtDecode(user.token);
+    console.log('Decoded JWT:', decodedToken);
+    const userId = decodedToken.id || decodedToken.userId || decodedToken.sub || decodedToken.uid;
+    if (userId) {
+      console.log('User ID found:', userId);
+      return true;
+    } else {
+      console.warn('No user ID found in token');
+      return false;
+    }
+  } catch (error) {
+    console.error('Error decoding token:', error);
+    return false;
+  }
+}
+,
+getUserIdFromToken(token) {
+  try {
+    const decoded = jwtDecode(token);
+    return decoded.id || decoded.userId || decoded.sub || decoded.uid || null;
+  } catch (error) {
+    console.error('Error decoding JWT:', error);
+    return null;
+  }
+},
+    goBack() {
+      this.$router.push('/logistics');
+    },
+    validateForm() {
+      this.errors = {};
+      let isValid = true;
+
+      const fields = {
+        cardholderName: 'Cardholder name is required',
+        billingAddress: 'Billing address is required',
+        city: 'City is required',
+        postalCode: {
+          check: () => /^\d{6}$/.test(this.paymentData.postalCode),
+          message: 'Valid 6-digit postal code required'
+        }
+      };
+
+      Object.entries(fields).forEach(([field, rule]) => {
+        const value = this.paymentData[field]?.trim();
+        if (!value) {
+          this.errors[field] = typeof rule === 'string' ? rule : rule.message;
+          isValid = false;
+        } else if (typeof rule === 'object' && !rule.check()) {
+          this.errors[field] = rule.message;
+          isValid = false;
+        }
+      });
+
+      if (!isValid) {
+        this.$nextTick(() => {
+          const firstError = document.querySelector('.error-message');
+          firstError?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        });
+      }
+      return isValid;
+    },
+    async processPayment() {
+  if (!this.checkUserToken()) {
+    this.errors.api = 'User authentication failed';
+    return;
+  }
+  if (!this.validateForm()) return;
+
+  this.isProcessing = true;
+  this.errors.api = null;
+
+  try {
+    const user = JSON.parse(localStorage.getItem('user'));
+    if (!user?.token) throw new Error('Authentication required');
+
+    const userId = this.getUserIdFromToken(user.token);
+    if (!userId) throw new Error('User identification failed');
+
+    // 1. Create Payment Intent in OutSystems
+    const createPaymentResponse = await fetch('https://personal-kbjnamsn.outsystemscloud.com/NEMOPaymentService/rest/paymentAPI/create-payment-intent', {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${user.token}`
+      },
+      body: JSON.stringify({
+        userId,
+        amount: Math.round(this.orderDetails.totalAmount * 100) // Ensure it's in cents
+      })
+    });
+
+    // Handle non-JSON responses
+    const responseText = await createPaymentResponse.text();
+    console.log('Raw response from OutSystems API:', responseText); // Log the raw response
+    let paymentData;
+    try {
+      paymentData = JSON.parse(responseText);
+    } catch (e) {
+      console.error('Invalid JSON response:', responseText);
+      throw new Error('Invalid server response');
+    }
+
+    if (!createPaymentResponse.ok) {
+      throw new Error(paymentData.message || 'Payment initialization failed');
+    }
+
+    // 2. Check for the payment intent ID from OutSystems
+    if (!paymentData.paymentIntentId) {
+      console.log('Full paymentData response:', paymentData);
+      throw new Error('Missing Stripe payment ID in response');
+    }
+
+    // 3. Confirm the payment intent with the Stripe Connector (Replace with Stripe's own method)
+    const {error: stripeError,  paymentIntent } = await this.stripe.confirmCardPayment(
+      paymentData.clientSecret, // Corrected variable
+      {
+        payment_method: {
+          card: this.cardElement,
+          billing_details: {
+            name: this.paymentData.cardholderName.trim(),
+            address: {
+              line1: this.paymentData.billingAddress.trim(),
+              city: this.paymentData.city.trim(),
+              postal_code: this.paymentData.postalCode.trim()
+            }
+          }
+        }
+      }
+    );
+    if (stripeError) {
+  throw stripeError; // This will be caught in the catch block
+}
+   
+    if (paymentIntent.status === 'succeeded') {
+      // Payment was successful
+      this.$router.push({
+        path: '/PaymentResult',
+        query: {
+          status: 'success',
+          paymentId: paymentData.paymentIntentId,
+          amount: this.orderDetails.totalAmount
+        }
+      });
+    } else {
+    // Redirect for non-success statuses
+    this.$router.push({
+        path: '/PaymentResult',
+        query: {
+          status: 'fail',
+          errorMessage: `Payment status: ${paymentIntent.status}`,
+          paymentId: paymentIntent.id,
+          amount: this.orderDetails.totalAmount
+        }
+      });
+      return; // Exit after redirect
+    }
+  } catch (error) {
+    console.error('Payment Error:', error);
+    const paymentId = error.paymentIntent?.id || '';
+    this.$router.push({
+      path: '/PaymentResult',
+      query: {
+        status: 'fail',
+        errorMessage: error.message || 'Payment processing failed',
+        paymentId: paymentId,
+        amount: this.orderDetails.totalAmount
+      }
+    });
+  } finally {
+    this.isProcessing = false;
+  }
+}
+  }}
+</script>
+
+    
+  
     
   <style scoped>
   .payment-container {

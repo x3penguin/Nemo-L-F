@@ -34,12 +34,12 @@ export const storeItemData = async (itemData) => {
       }
     }
 
-    // Format data for storage
+    // Format data for storage - include reportOwner
     const formattedData = {
       name: itemData.name,
       description: itemData.description,
       category: itemData.category,
-      imageUrl: itemData.imageUrl || null, // Make imageUrl optional
+      imageUrl: itemData.imageUrl || null,
       status: itemData.status,
       location: itemData.location,
       dateTime: Timestamp.fromDate(new Date(itemData.dateTime)),
@@ -50,7 +50,8 @@ export const storeItemData = async (itemData) => {
       finderId: itemData.finderId || null,
       matchingConfidence: itemData.matchingConfidence || null,
       reportedDateTime: Timestamp.now(),
-      reportType: itemData.reportType || (itemData.status === "LOST" ? "LOST" : "FOUND")
+      // Record who reported this item - critical for collection view filtering
+      reportOwner: itemData.reportOwner || null,
     };
 
     // Store in Firestore
@@ -128,26 +129,26 @@ export const updateItem = async (itemId, updateData) => {
 export const getItemsByStatus = async (status) => {
   try {
     console.log("Querying Firebase for items with status:", status);
-    const q = query(collection(db, 'items'), where('status', '==', status));
+    const q = query(collection(db, "items"), where("status", "==", status));
     const querySnapshot = await getDocs(q);
-    
+
     const items = [];
     // Check if querySnapshot has a forEach method
     if (querySnapshot.forEach) {
       querySnapshot.forEach((docSnapshot) => {
         // Make sure to use the correct method to access data
-        if (typeof docSnapshot.data === 'function') {
+        if (typeof docSnapshot.data === "function") {
           const itemData = docSnapshot.data();
           items.push({
             id: docSnapshot.id,
-            ...itemData
+            ...itemData,
           });
         } else {
           // Alternative for different Firebase API
           console.log("Using alternative data access method");
           items.push({
             id: docSnapshot.id,
-            ...docSnapshot
+            ...docSnapshot,
           });
         }
       });
@@ -156,26 +157,25 @@ export const getItemsByStatus = async (status) => {
       console.log("QuerySnapshot has different structure:", querySnapshot);
       // Try to access documents array if it exists
       const docs = querySnapshot.docs || [];
-      docs.forEach(doc => {
-        if (doc && typeof doc.data === 'function') {
+      docs.forEach((doc) => {
+        if (doc && typeof doc.data === "function") {
           items.push({
             id: doc.id,
-            ...doc.data()
+            ...doc.data(),
           });
         }
       });
     }
-    
-    
+
     return {
       success: true,
-      items
+      items,
     };
   } catch (error) {
     console.error("Error getting items by status:", error);
     return {
       success: false,
-      error: error.message
+      error: error.message,
     };
   }
 };

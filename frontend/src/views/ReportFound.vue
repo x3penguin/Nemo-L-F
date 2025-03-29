@@ -892,13 +892,18 @@ export default {
         );
         apiFormData.append("latitude", formData.value.coordinates.lat);
         apiFormData.append("longitude", formData.value.coordinates.lng);
-        apiFormData.append("current_location", formData.value.currentLocation);
-
-        if (formData.value.currentLocation === "other") {
+        if (formData.value.currentLocation) {
           apiFormData.append(
-            "other_location_details",
-            formData.value.otherLocationDetails
+            "current_location",
+            formData.value.currentLocation
           );
+
+          if (formData.value.currentLocation === "other") {
+            apiFormData.append(
+              "other_location_details",
+              formData.value.otherLocationDetails
+            );
+          }
         }
 
         const now = new Date();
@@ -910,7 +915,7 @@ export default {
         const userId = currentUser ? currentUser.id : "1";
 
         apiFormData.append("userId", userId);
-        apiFormData.append("reportType", "FOUND");
+        apiFormData.append("reportOwner", userId);
 
         if (formData.value.imageFile) {
           apiFormData.append("image", formData.value.imageFile);

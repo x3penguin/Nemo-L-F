@@ -74,13 +74,13 @@ def update_matched_items(found_item_id, lost_item_id, confidence):
         found_ref = db.collection("items").document(found_id)
         found_item = found_ref.get(transaction=transaction).to_dict()
         finder_id = found_item.get("finderId")
-        found_report_type = found_item.get("reportType", "FOUND")  # Get or default
+        found_report_owner = found_item.get("reportOwner")  # Get the reportOwner
 
-        # Get the lost item
+        # Get the lost item to get the owner ID and reportOwner
         lost_ref = db.collection("items").document(lost_id)
         lost_item = lost_ref.get(transaction=transaction).to_dict()
         owner_id = lost_item.get("ownerId")
-        lost_report_type = lost_item.get("reportType", "LOST")  # Get or default
+        lost_report_owner = lost_item.get("reportOwner")
 
         # Update found item - keep its reportType
         transaction.update(
@@ -93,7 +93,7 @@ def update_matched_items(found_item_id, lost_item_id, confidence):
                 "ownerId": owner_id,
                 "notificationSeen": False,
                 "notificationRead": False,
-                "reportType": found_report_type,  # Preserve reportType
+                "reportOwner": found_report_owner,
             },
         )
 
@@ -108,7 +108,7 @@ def update_matched_items(found_item_id, lost_item_id, confidence):
                 "finderId": finder_id,
                 "notificationSeen": False,
                 "notificationRead": False,
-                "reportType": lost_report_type,  # Preserve reportType
+                "reportOwner": lost_report_owner,  # Preserve reportType
             },
         )
 

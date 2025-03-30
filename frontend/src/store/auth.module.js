@@ -1,5 +1,4 @@
 import authService from '@/services/auth.service';
-import { resetNotificationTracking } from '@/services/notifService';
 
 const user = JSON.parse(localStorage.getItem('user'));
 const initialState = user
@@ -47,9 +46,6 @@ export const auth = {
     logout({ commit }) {
       // Call the service to log out
       authService.logout();
-      
-      // Reset notification tracking to prevent old notifications from appearing after login
-      resetNotificationTracking();
       
       // Update state
       commit('logout');

@@ -11,11 +11,11 @@ firebase_admin.initialize_app(cred)
 
 db = firestore.client()
 
-# Save shipping rate data to Firestore
-def save_shipping_rate(rate_data):
-    doc_ref = db.collection('shipping_rates').document()
+def save_selected_order(order_data):
+    doc_ref = db.collection('selected_orders').document()
     doc_ref.set({
         'timestamp': firestore.SERVER_TIMESTAMP,
-        'rate_data': rate_data
+        'order_data': order_data,
+        'status': 'selected'
     })
     return doc_ref.id

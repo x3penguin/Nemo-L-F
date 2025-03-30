@@ -20,14 +20,6 @@
         </div>
         <div class="notification-message">
           {{ notification.message }}
-          <div v-if="notification.itemId" class="notification-actions">
-            <button 
-              @click="viewMatches(notification)"
-              class="action-button"
-            >
-              View Potential Matches
-            </button>
-          </div>
         </div>
       </div>
       <button class="notification-close" @click="removeNotification(notification.id)">
@@ -40,14 +32,11 @@
 <script>
 import { computed } from 'vue';
 import { useStore } from 'vuex';
-import { useRouter } from 'vue-router';
-import * as notifService from '@/services/notifService';
 
 export default {
   name: 'NotificationCenter',
   setup() {
     const store = useStore();
-    const router = useRouter();
     
     // Use this computed property to get unique notifications
     const activeNotifications = computed(() => {
@@ -65,32 +54,14 @@ export default {
       });
     });
     
-    const removeNotification = (id) => {
-      // If this is a match notification with an itemId, mark it as read
-      const notification = activeNotifications.value.find(n => n.id === id);
-      if (notification && notification.itemId) {
-        try {
-          notifService.markAsRead(notification.itemId);
-        } catch (err) {
-          console.error('Error marking notification as read:', err);
-        }
-      }
-      
+    const removeNotification = (id) => {  
       store.dispatch('notifications/remove', id);
     };
     
-    const viewMatches = (notification) => {
-      // Remove the notification
-      removeNotification(notification.id);
-      
-      // Navigate to the potential matches page for this item
-      router.push(`/potential-matches/${notification.itemId}`);
-    };
     
     return {
       activeNotifications,
       removeNotification,
-      viewMatches
     };
   }
 }

@@ -9,7 +9,10 @@
         <router-link to="/report-lost" class="navbar-link">Report Lost</router-link>
         <router-link to="/report-found" class="navbar-link">Report Found</router-link>
         <router-link to="/collections" class="navbar-link">Collections</router-link>
-        <router-link to="/potential-matches" class="navbar-link">Potential Matches</router-link>
+        <router-link to="/potential-matches" class="navbar-link">
+          Potential Matches
+          <span v-if="hasPotentialMatches" class="badge">•</span>
+        </router-link>
         <router-link to="/chat" class="navbar-link">Chat</router-link>
       </div>
 
@@ -31,9 +34,10 @@
 </template>
 
 <script>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted, watch} from 'vue';
 import { useRouter } from 'vue-router';
 import { useStore } from 'vuex';
+import axios from 'axios';
 
 export default {
   name: 'NavBar',
@@ -41,9 +45,47 @@ export default {
     const store = useStore();
     const router = useRouter();
     const showDropdown = ref(false);
+    const hasPotentialMatches = ref(false);
 
     const isLoggedIn = computed(() => store.getters['auth/isLoggedIn']);
     const user = computed(() => store.getters['auth/user']);
+
+    // Check for potential matches when component mounts
+    const checkPotentialMatches = async () => {
+      if (!user.value || !user.value.id) return;
+      
+      try {
+        const response = await axios.get(
+          `http://localhost:3004/api/users/${user.value.id}/lost-items-with-matches`
+        );
+        
+        if (response.data && response.data.items && response.data.items.length > 0) {
+          hasPotentialMatches.value = true;
+        } else {
+          hasPotentialMatches.value = false;
+        }
+      } catch (error) {
+        console.error("Error checking for potential matches:", error);
+      }
+    };
+
+    onMounted(() => {
+      if (isLoggedIn.value) {
+        checkPotentialMatches();
+      }
+    });
+
+    // Watch for user login state changes
+    watch(
+      () => isLoggedIn.value,
+      (newValue) => {
+        if (newValue) {
+          checkPotentialMatches();
+        } else {
+          hasPotentialMatches.value = false;
+        }
+      }
+    );
 
     const toggleDropdown = () => {
       showDropdown.value = !showDropdown.value;
@@ -59,7 +101,8 @@ export default {
       user,
       showDropdown,
       toggleDropdown,
-      logout
+      logout,
+      hasPotentialMatches
     };
   }
 };
@@ -109,6 +152,21 @@ export default {
   width: 100%;
   height: 2px;
   background-color: #111827;
+}
+
+.badge {
+  display: inline-block;
+  color: #ef4444;
+  font-size: 1.5rem;
+  margin-left: 0.25rem;
+  font-weight: bold;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% { opacity: 0.7; }
+  50% { opacity: 1; }
+  100% { opacity: 0.7; }
 }
 
 .navbar-auth {

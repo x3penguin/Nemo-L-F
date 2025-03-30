@@ -283,6 +283,8 @@ app.get("/health", (req, res) => {
   res.status(200).json({ status: "UP" });
 });
 
+import { db } from './firebase.js';
+import { collection, query, where, getDocs } from 'firebase/firestore';
 app.get("/api/items/:id/potential-matches", async (req, res) => {
   const itemId = req.params.id;
 
@@ -309,30 +311,68 @@ app.get("/api/items/:id/potential-matches", async (req, res) => {
       return res.status(200).json([]);
     }
 
-    // Get all items of the matching status
-    const matchingItemsResult = await getItemsByStatus(matchingStatus);
+    try {
 
-    if (!matchingItemsResult.success) {
-      return res
-        .status(500)
-        .json({ error: "Failed to retrieve potential matches" });
+
+      
+      // Query the potential_matches collection for matches related to this item
+      const potentialMatchesRef = collection(db, 'potential_matches');
+      let queryRef;
+      
+      if (status === "LOST") {
+        // If item is LOST, look for matches where this is the lostItemId
+        queryRef = query(potentialMatchesRef, where('lostItemId', '==', itemId));
+      } else {
+        // If item is FOUND, look for matches where this is the foundItemId
+        queryRef = query(potentialMatchesRef, where('foundItemId', '==', itemId));
+      }
+      
+      const matchesSnapshot = await getDocs(queryRef);
+      
+      if (!matchesSnapshot.empty) {
+        console.log(`Found ${matchesSnapshot.size} potential matches from potential_matches collection`);
+        
+        // Get the matching item details for each potential match
+        const matchPromises = matchesSnapshot.docs.map(async (doc) => {
+          const matchData = doc.data();
+          let matchItemId;
+          
+          // Determine which ID to use based on source item status
+          if (status === "LOST") {
+            matchItemId = matchData.foundItemId;
+          } else {
+            matchItemId = matchData.lostItemId;
+          }
+          
+          // Get the matching item details
+          const matchItemResult = await getItemById(matchItemId);
+          if (!matchItemResult.success) {
+            return null; // Skip this match if we can't get the item details
+          }
+          
+          // Combine the match data and item data
+          return {
+            ...matchItemResult.data,
+            id: matchItemId,
+            sourceItemId: itemId,
+            confidence: matchData.confidence || matchData.weightedConfidence,
+            distance: matchData.distance || null
+          };
+        });
+        
+        // Wait for all item details to be fetched
+        const resolvedMatches = (await Promise.all(matchPromises))
+          .filter(match => match !== null) // Remove null entries
+          .sort((a, b) => b.confidence - a.confidence)
+          .slice(0, 5); // Limit to top 5 matches
+        
+        return res.status(200).json(resolvedMatches);
+      }
+    } catch (firestoreError) {
+      console.warn("Error querying potential_matches collection:", firestoreError);
+      // Continue to fallback approach if potential_matches query fails
     }
 
-    // Process up to 5 potential matches
-    const potentialMatches = matchingItemsResult.items
-      .map((item) => {
-        return {
-          ...item,
-          confidence: item.matchingConfidence || Math.floor(Math.random() * 40) + 60,
-          sourceItemId: itemId,
-          distance: item.distance || null
-        };
-      })
-      .sort((a, b) => b.confidence - a.confidence)
-      .slice(0, 5); // Limit to top 5 matches
-
-    // Return the matches
-    res.status(200).json(potentialMatches);
   } catch (error) {
     console.error("Error getting potential matches:", error);
     res.status(500).json({ error: error.message || "Internal server error" });

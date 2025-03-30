@@ -126,7 +126,7 @@
           <!-- Payment Buttons -->
           <div class="payment-actions">
             <!-- Back Button -->
-            <button @click.prevent="$router.push('/logistics')" 
+            <button @click.prevent="$router.push('/logistics-form')" 
                     type='button' 
                     class='btn btn-secondary'>
                     Back
@@ -245,7 +245,7 @@ getUserIdFromToken(token) {
   }
 },
     goBack() {
-      this.$router.push('/logistics');
+      this.$router.push('/logistics-form');
     },
     validateForm() {
       this.errors = {};

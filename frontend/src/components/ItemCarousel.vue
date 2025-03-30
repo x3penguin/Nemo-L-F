@@ -114,23 +114,16 @@ export default {
     const store = useStore();
 
     const getConfidence = (item) => {
-      // First check for confidence from potential_matches
-      if (item.confidence) {
-        return item.confidence;
+      // Check for confidence value in order of priority
+
+      // 1. First prioritize confidence directly from potential_matches
+      if (item.confidence !== undefined && item.confidence !== null) {
+        return parseFloat(item.confidence);
       }
 
-      // Try alternative field names
-      // (in case they're named differently in different parts of the app)
-      if (item.matchingConfidence) {
-        return item.matchingConfidence;
-      }
-
-      if (item.weightedConfidence) {
-        return item.weightedConfidence;
-      }
-
-      // If not available, return a default
-      return 85; // Default confidence value
+      // If no confidence value found, return a reasonable default
+      console.warn("No confidence value found for item:", item.id);
+      return 75; // Lower default value to make it clear it's not from database
     };
 
     const confirmMatch = async (item) => {
@@ -150,31 +143,20 @@ export default {
           alert("Unable to confirm match: missing item information");
           return;
         }
+
         const currentUser = store.getters["auth/user"];
         if (!currentUser) {
           alert("You must be logged in to confirm a match");
           return;
         }
 
-        // Get user email
+        // Get user email for notification purposes
         let userEmail = currentUser.email;
         if (!userEmail) {
-          console.warn("User email not found in store, fetching from API");
-          try {
-            // Fetch user details if email is not in the store
-            const userResponse = await axios.get(
-              `http://localhost:3004/users/${currentUser.id}`
-            );
-            if (userResponse.data && userResponse.data.email) {
-              userEmail = userResponse.data.email;
-            } else {
-              throw new Error("Could not retrieve user email");
-            }
-          } catch (userError) {
-            console.error("Error fetching user data:", userError);
-            // Continue with flow but log the error
-          }
+          console.warn("User email not found in store, using fallback");
+          userEmail = "user@example.com"; // Fallback email
         }
+
         // Call the API to confirm the match
         const response = await axios.post(
           "http://localhost:3004/api/test/create-match",
@@ -186,29 +168,26 @@ export default {
         );
 
         if (response.data.success) {
-          // Show success message
-          alert("Match confirmed! You can now arrange to collect your item.");
+          // Show simple notification
+          store.dispatch("notifications/add", {
+            type: "success",
+            message: `${item.name} has been matched! Go to the Collections page to arrange collection.`,
+            isPersistent: true,
+          });
 
-          // Attempt to explicitly notify the email service
           try {
-            // This is optional but can help ensure notification is sent
             await axios.post("http://localhost:3001/api/found-items/notify", {
               itemId: foundItemId,
               itemName: item.name || "Found Item",
               itemDescription: item.description || "No description",
               ownerEmail: userEmail,
             });
-            console.log("Email notification request sent");
           } catch (emailErr) {
             console.error("Error sending email notification:", emailErr);
-            // Don't block the process if email fails
           }
 
-          // Redirect to the matched item view
-          router.push({
-            path: `/items/${lostItemId}`,
-            query: { matched: "true" },
-          });
+          // Redirect to collections page
+          router.push("/collections");
         } else {
           throw new Error(response.data.error || "Failed to confirm match");
         }
@@ -295,7 +274,7 @@ export default {
       truncateDescription,
       formatDate,
       confirmMatch,
-      getConfidence
+      getConfidence,
     };
   },
 };

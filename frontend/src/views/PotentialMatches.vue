@@ -298,8 +298,16 @@ export default {
     };
 
     const getConfidenceLevel = (confidence) => {
-      if (confidence >= 85) return "high";
-      if (confidence >= 70) return "medium";
+      // Parse the confidence value to ensure it's a number
+      const confValue = parseFloat(confidence);
+
+      if (isNaN(confValue)) {
+        console.warn("Invalid confidence value:", confidence);
+        return "unknown";
+      }
+
+      if (confValue >= 85) return "high";
+      if (confValue >= 70) return "medium";
       return "low";
     };
 

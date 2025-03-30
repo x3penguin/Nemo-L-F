@@ -273,13 +273,14 @@
             <div class="item-summary">
               <div class="item-image">
                 <img
-                  :src="selectedItem.image_url || '/img/placeholder-image.jpg'"
+                  :src="selectedItem.imageUrl || '/img/placeholder-image.jpg'"
                   :alt="selectedItem.name"
                 />
               </div>
               <div class="item-info">
                 <h3>{{ selectedItem.name }}</h3>
                 <p><strong>Category:</strong> {{ selectedItem.category }}</p>
+                <p v-if="selectedItem.description"><strong>Description:</strong> {{ selectedItem.description }}</p>
                 <p>
                   <strong>Status:</strong>
                   <span
@@ -291,7 +292,7 @@
               </div>
             </div>
 
-            <div class="collection-info">
+            <div v-if="selectedItem.status === 'COLLECTING' && collectionDetails && collectionDetails.type" class="collection-info">
               <h3>Collection Details</h3>
 
               <div class="detail-row">
@@ -447,6 +448,10 @@
                 </div>
               </div>
             </div>
+            
+            <div v-else class="collection-not-started">
+              <p class="collection-message">{{ getCollectionStatusMessage(selectedItem.status) }}</p>
+            </div>
           </div>
 
           <!-- Payment Form -->
@@ -540,6 +545,21 @@ export default {
           return status;
       }
     };
+
+    const getCollectionStatusMessage = (status) => {
+      switch(status) {
+        case 'MATCHED':
+          return "This item has been matched but collection has not been arranged yet. Click 'Arrange Collection' to proceed.";
+        case 'LOST':
+          return "This item is currently marked as lost. Once it's found and matched, you can arrange collection.";
+        case 'FOUND':
+          return "This item is currently marked as found. It's waiting to be matched with its owner.";
+        case 'RETRIEVED':
+          return "This item has been successfully retrieved by its owner.";
+        default:
+          return "No collection information available.";
+      }
+    }
 
     // Function to fetch user's address when initiating delivery
     const fetchUserAddress = async (itemId) => {
@@ -1089,12 +1109,26 @@ export default {
       isLoadingAddress,
       addressError,
       fetchUserAddress,
+      getCollectionStatusMessage,
     };
   },
 };
 </script>
 
 <style scoped>
+.collection-not-started {
+  padding: 1.5rem;
+  background-color: #f8fafc;
+  border-radius: 0.5rem;
+  margin-top: 1rem;
+}
+
+.collection-message {
+  color: #4b5563;
+  text-align: center;
+  font-style: italic;
+}
+
 .delivery-form {
   margin-top: 2rem;
   border-top: 1px solid #e5e7eb;

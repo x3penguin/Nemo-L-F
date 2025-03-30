@@ -6,13 +6,14 @@
     "firebase": "^11.5.0",
     "firebase-admin": "^13.2.0",
     "jwt-decode": "^4.0.0",
-    "kafkajs": "^2.2.4"
+    "kafkajs": "^2.2.4",
+    "nodemon": "^3.1.9"
   },
   "scripts": {
     "dev": "concurrently \"npm run dev:frontend\" \"npm run dev:storage\" \"npm run dev:location\" \"npm run dev:match\" \"npm run dev:email\" \"npm run dev:user\"",
     "serve": "concurrently \"npm run dev:frontend\" \"npm run dev:storage\"  ",
     "dev:frontend": "cd frontend && npm run serve",
-    "dev:storage": "cd storage && node index.js",
+    "dev:storage": "cd storage && nodemon index.js",
     "dev:location": "cd location && python index.py",
     "dev:match": "cd match && python main.py",
     "dev:email": "cd email/src && node index.js",

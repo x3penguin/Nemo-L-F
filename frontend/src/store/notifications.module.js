@@ -12,12 +12,9 @@ export const notifications = {
         timestamp: new Date()
       });
       
-      // Auto remove after 5 seconds only if not persistent
-      if (!notification.isPersistent) {
-        setTimeout(() => {
-          commit('remove', id);
-        }, 5000);
-      }
+      setTimeout(() => {
+        commit('remove', id);
+      }, 10000);
     },
     remove({ commit }, id) {
       commit('remove', id);

@@ -4,7 +4,7 @@ import os
 from flask_cors import CORS
 import requests
 import json
-from firebase_client import db
+from firebase_client import db, save_selected_order
 from firebase_admin import firestore
 
 # Load environment variables from .env file

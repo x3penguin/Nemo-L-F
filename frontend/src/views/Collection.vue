@@ -1090,17 +1090,63 @@ export default {
 
     const processPayment = async () => {
       isProcessingPayment.value = true;
+      collectionError.value = null;
 
       try {
+        // 1. Validate that we have a selected shipping option
+        if (collectionMethod.value === "COURIER" && !selectedOption.value) {
+          collectionError.value = "Please select a shipping option first";
+          return;
+        }
+
         // In a real application, redirect to payment gateway
-        // For now, simulate a delay
+        // For now, simulate a delay for payment processing
         await new Promise((resolve) => setTimeout(resolve, 2000));
 
-        // After "payment", close modal and refresh items
+        // 2. Update item status from MATCHED to COLLECTING
+        await axios.put(
+          `http://localhost:3000/api/items/${selectedItem.value.id}/status`,
+          {
+            status: "COLLECTING",
+          }
+        );
+
+        // Add logging to debug
+        console.log("Updating item status for item ID:", selectedItem.value.id);
+
+        // 3. If using courier, call select-order API in logistics service
+        if (collectionMethod.value === "COURIER" && selectedOption.value) {
+          const orderDetails = {
+            item_id: selectedItem.value.id,
+            user_id: store.getters["auth/user"]?.id,
+            service_name: selectedOption.value.service_name,
+            price: selectedOption.value.price,
+            send_address: `${userAddress.value.address.unitNumber}, ${userAddress.value.address.streetAddress}, ${userAddress.value.address.city}, ${userAddress.value.address.postalCode}`,
+            pick_code: "059893", // Default pickup postal code
+            delivery_status: "PAID" // Change to PAID since payment was completed
+          };
+
+          // Wrap the order details in an object with 'order' key
+          const orderPayload = {
+            order: orderDetails
+          };
+
+          // Call the logistics service to store the selected order
+          const logisticsResponse = await axios.post(
+            "http://localhost:3010/select-order", 
+            orderPayload
+          );
+
+          console.log("Logistics order created:", logisticsResponse.data);
+        }
+
+        // After successful payment and API calls, close modal and refresh items
         showModal.value = false;
         await fetchMatchedItems();
+        
       } catch (err) {
         console.error("Error processing payment:", err);
+        collectionError.value = "Failed to process payment. Please try again.";
       } finally {
         isProcessingPayment.value = false;
       }

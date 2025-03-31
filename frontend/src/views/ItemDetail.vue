@@ -182,7 +182,7 @@
 
 // frontend/src/views/ItemDetail.vue - Focused fix for potential matches logic
 <script>
-import { ref, onMounted, computed, watch, onUnmounted } from "vue";
+import { ref, onMounted, computed, watch, onUnmounted,nextTick } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import itemService from "@/services/item.service";
 import ItemCarousel from "@/components/ItemCarousel.vue";
@@ -209,6 +209,7 @@ export default {
     const mapLoading = ref(false);
     const mapLoaded = ref(false);
     const mapError = ref(null);
+    const sourceItem = ref(null);
     let map = null;
     let marker = null;
 
@@ -278,10 +279,24 @@ export default {
         isLoading.value = true;
         error.value = null;
 
+        console.log("Fetching details for item ID:", itemId);
         const response = await itemService.getItemById(itemId);
         item.value = response.data;
 
-        console.log("Fetched item:", item.value);
+        console.log("Fetched item details:", item.value);
+
+        // If sourceId is provided, load it separately but don't display as main item
+        if (route.query.sourceId) {
+          try {
+            const sourceResponse = await itemService.getItemById(
+              route.query.sourceId
+            );
+            sourceItem.value = sourceResponse.data;
+            console.log("Fetched source item:", sourceItem.value);
+          } catch (err) {
+            console.error("Error fetching source item:", err);
+          }
+        }
 
         // If the item is matched, fetch the matched item details
         if (item.value.matchedItemId) {
@@ -321,10 +336,21 @@ export default {
         isLoadingMatches.value = false;
       }
     };
+    
 
     const initMap = async () => {
+      // Make sure the DOM element exists before trying to create the map
       if (!mapElement.value) {
         console.error("Map element ref not available");
+
+        // Try again after a short delay to allow DOM to update
+        setTimeout(() => {
+          if (mapElement.value) {
+            console.log("Map element now available, initializing");
+            initMap();
+          }
+        }, 500);
+
         return;
       }
 
@@ -423,6 +449,27 @@ export default {
       }
     };
 
+    const initGoogleMap = () => {
+  nextTick(() => {
+    if (mapElement.value) {
+      initMap();
+    } else {
+      console.log("Map element not ready, waiting...");
+      setTimeout(initGoogleMap, 100);
+    }
+  });
+};
+
+// Then call this in your relevant watchers
+watch(
+  () => item.value,
+  (newItem) => {
+    if (newItem && hasCoordinates.value) {
+      initGoogleMap();
+    }
+  }
+);
+
     // Clean up map resources when component is unmounted
     onUnmounted(() => {
       if (map) {
@@ -462,6 +509,17 @@ export default {
           fetchPotentialMatches(item.value.id);
         }
       }
+    );
+
+    watch(
+      () => route.params.id,
+      (newId, oldId) => {
+        if (newId !== oldId) {
+          console.log("Item ID changed in route, reloading details");
+          fetchItemDetails();
+        }
+      },
+      { immediate: true }
     );
 
     const viewMatchedItem = () => {
@@ -514,6 +572,9 @@ export default {
 
     onMounted(() => {
       fetchItemDetails();
+      if (hasCoordinates.value) {
+         initGoogleMap(); 
+  }
     });
 
     return {
@@ -536,6 +597,7 @@ export default {
       formatStatus,
       formatDate,
       initMap,
+      sourceItem,
     };
   },
 };

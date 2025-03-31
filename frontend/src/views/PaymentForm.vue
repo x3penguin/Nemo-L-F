@@ -198,7 +198,7 @@ export default {
     };
 
     try {
-      this.stripe = await loadStripe('pk_test_51R6nuLCVbLlQKjEGNlj2tdersKgR93V08ip1mf2wLCJGuBVp6U6Vmo7zjolRol97zKnGgXF0pJ35h0JDxh2J1Dum00QaT1ZyiK');
+      this.stripe = await loadStripe(process.env.VUE_APP_STRIPE_KEY);
       const elements = this.stripe.elements();
       this.cardElement = elements.create('card', {
         classes: { base: 'stripe-card-element' }

@@ -7,8 +7,10 @@ import './assets/styles/index.css';
 // Setup axios interceptors for authentication
 import './services/api';
 
-const app = createApp(App);
+// Import Firebase configuration
+import './firebase';
 
+const app = createApp(App);
 
 app.use(router);
 app.use(store);

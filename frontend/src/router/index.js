@@ -129,6 +129,10 @@ const routes = [
     meta: {
       requiresAuth: true,
     },
+    beforeRouteUpdate: (to, from, next) => {
+      to.meta.skipFetchingData = false;
+      next();
+    }
   },
 ];
 

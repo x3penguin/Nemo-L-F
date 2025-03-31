@@ -1,28 +1,3 @@
-// smtp pw - wnba nwyj mdwu zgrn
-// http://localhost:3001/api/found-items/notify - post via postman to test notif email 
-
-// module.exports = {
-//   kafka: {
-//     brokers: ['localhost:9092'],
-//     topics: {
-//       foundItems: 'found-items',
-//       matchingJobs: 'image-matching-jobs' 
-//     },
-//     groupId: 'nemo-lf-email-group'
-//   },
-//   email: {
-//     smtpServer: 'smtp.gmail.com',  // Or your SMTP server
-//     smtpPort: 587,
-//     smtpUser: 'finding.nemo.esd@gmail.com',  // Your email
-//     smtpPassword: 'wnba nwyj mdwu zgrn',  // Your password
-//     from: 'finding.nemo.esd@gmail.com'  
-//   },
-//   api: {
-//     port: 3001
-//   }
-// };
-
-// not working ENV below
 const path = require('path');
 require('dotenv').config({ path: path.resolve(__dirname, '../../.env') });
 

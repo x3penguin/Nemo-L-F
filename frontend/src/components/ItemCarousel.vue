@@ -49,12 +49,20 @@
               <p class="item-location">Location: {{ item.location }}</p>
               <p class="item-date">{{ formatDate(item.dateTime) }}</p>
 
-              <button @click="viewDetails(item)" class="btn btn-primary mt-3">
-                View Details
-              </button>
-              <button @click="confirmMatch(item)" class="btn btn-success mt-2">
-                Confirm This Is My Item
-              </button>
+              <div class="button-group">
+                <button @click="viewDetails(item)" class="btn btn-primary">
+                  View Details
+                </button>
+                <button @click="chatWithFinder(item)" class="btn btn-secondary">
+                  Chat with Finder
+                </button>
+                <button
+                  @click="confirmMatch(item)"
+                  class="btn btn-success mt-2"
+                >
+                  Confirm This Is My Item
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -112,6 +120,49 @@ export default {
     const router = useRouter();
     const currentIndex = ref(0);
     const store = useStore();
+
+    const formatDate = (dateTime) => {
+      if (!dateTime) return "N/A";
+
+      // Handle Firebase timestamp
+      if (dateTime.seconds) {
+        const date = new Date(dateTime.seconds * 1000);
+        return date.toLocaleDateString("en-US", {
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+        });
+      }
+
+      // Handle regular date string
+      const date = new Date(dateTime);
+      return date.toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      });
+    };
+
+    // Function to initiate chat with finder
+    const chatWithFinder = (item) => {
+      if (!item || !item.id) {
+        console.error("Cannot chat: Invalid item data");
+        return;
+      }
+
+      // Store information about which item we're chatting about
+      localStorage.setItem(
+        "chatItem",
+        JSON.stringify({
+          itemId: item.id,
+          itemName: item.name,
+          finderId: item.finderId || item.reportOwner,
+        })
+      );
+
+      // Navigate to chat page
+      router.push("/chat");
+    };
 
     const getConfidence = (item) => {
       // Check for confidence value in order of priority
@@ -221,9 +272,10 @@ export default {
     const viewDetails = (item) => {
       if (!item) return;
 
-      console.log("Viewing item details with sourceId:", item.sourceItemId);
+      // Make sure we're using the ID of the potential match item, not the source item
+      console.log("Viewing details for item:", item.id);
 
-      // Navigate to item details
+      // Navigate to item details with the correct ID
       router.push({
         path: `/items/${item.id}`,
         query: {
@@ -242,28 +294,6 @@ export default {
       return description.substring(0, maxLength) + "...";
     };
 
-    const formatDate = (dateTime) => {
-      if (!dateTime) return "N/A";
-
-      // Handle Firebase timestamp
-      if (dateTime.seconds) {
-        const date = new Date(dateTime.seconds * 1000);
-        return date.toLocaleDateString("en-US", {
-          year: "numeric",
-          month: "short",
-          day: "numeric",
-        });
-      }
-
-      // Handle regular date string
-      const date = new Date(dateTime);
-      return date.toLocaleDateString("en-US", {
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-      });
-    };
-
     return {
       currentIndex,
       nextSlide,
@@ -275,6 +305,7 @@ export default {
       formatDate,
       confirmMatch,
       getConfidence,
+      chatWithFinder,
     };
   },
 };
@@ -392,6 +423,51 @@ export default {
 .carousel-item {
   display: flex;
   padding: 1.5rem;
+}
+
+.item-actions {
+  padding: 1rem;
+  border-top: 1px solid #e5e7eb;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.button-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.btn {
+  display: inline-block;
+  padding: 0.75rem 1.25rem;
+  border-radius: 0.375rem;
+  font-weight: 500;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-primary:hover {
+  background-color: #1f2937;
+}
+
+.btn-secondary {
+  background-color: #4b5563;
+  color: white;
+  border: none;
+}
+
+.btn-secondary:hover {
+  background-color: #374151;
+}
+
+.mt-2 {
+  margin-top: 0.5rem;
+}
+
+.mt-3 {
+  margin-top: 0.75rem;
 }
 
 .item-image {

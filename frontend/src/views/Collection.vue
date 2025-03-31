@@ -479,6 +479,19 @@
                 </div>
               </div>
 
+                  <!-- Shipping Options from rate-check API -->
+                  <div v-if="shippingOptions && shippingOptions.length">
+                    <h4>Select a Shipping Option</h4>
+                    <ul>
+                      <li v-for="option in shippingOptions" :key="option.service_name">
+                        <label>
+                          <input type="radio" :value="option" v-model="selectedOption" />
+                          {{ option.service_name }} - ${{ option.price }}
+                        </label>
+                      </li>
+                    </ul>
+                  </div>
+
               <p class="payment-description">
                 Click the button below to proceed to our secure payment gateway.
                 Once payment is completed, your delivery will be scheduled.
@@ -1008,10 +1021,14 @@ export default {
       };
     };
 
+     // Add the missing refs for shipping options
+     const shippingOptions = ref([]);
+    const selectedOption = ref(null);
+
     const submitCollectionRequest = async () => {
       collectionError.value = null;
 
-      // Validate courier option requires address
+      // Validate that courier option has a delivery address selected
       if (collectionMethod.value === "COURIER" && !selectedAddress.value) {
         collectionError.value = "Please select or add a delivery address";
         return;
@@ -1020,29 +1037,56 @@ export default {
       isSubmitting.value = true;
 
       try {
-        // In a real application, this would be an API call
-        // For now, simulate a delay
-        await new Promise((resolve) => setTimeout(resolve, 1500));
-
         if (collectionMethod.value === "COURIER") {
-          // If courier, proceed to payment
-          modalType.value = "payment";
-        } else {
-          // If self-pickup, show success and close
-          showModal.value = false;
-          // Show success message or redirect
+          // Prepare payload using the saved address (using snake_case keys)
+          const payload = {
+            pick_code: "059893",                      // Default or dynamic value for pickup location
+            pick_country: "SG",                       // Pickup country
+            send_code: userAddress.value.address.postalCode, // Use the user's postal code from saved addresses
+            send_country: "SG",                       // Destination country
+            weight: "10"                              // Weight of the shipment (could be dynamic)
+          };
 
-          // Refresh items list to update status
+          // Call the /rate-check API from your logistics service (running on port 3010)
+          const response = await axios.post("http://localhost:3010/rate-check", payload);
+
+          if (response.data && response.data.rates) {
+            // Update shippingOptions so the options can be displayed in your payment modal
+            shippingOptions.value = response.data.rates;
+            if (shippingOptions.value.length > 0) {
+              // If no shipping option has been selected, auto-select the lowest rate
+              if (!selectedOption.value) {
+                selectedOption.value = shippingOptions.value[0];
+              }
+              // Update paymentDetails with the selected courier fee and recalculate total
+              paymentDetails.value.courier_fee = selectedOption.value.price;
+              paymentDetails.value.total =
+                (paymentDetails.value.base_fee || 0) +
+                (paymentDetails.value.distance_fee || 0) +
+                selectedOption.value.price;
+
+              // Proceed to payment modal so the user can review and then pay
+              modalType.value = "payment";
+            } else {
+              collectionError.value = "No available rates. Please try again later.";
+            }
+          } else {
+            collectionError.value = "Failed to retrieve rates. Please try again.";
+          }
+        } else {
+          // For self-pickup, simulate a delay then close the modal and refresh items
+          await new Promise((resolve) => setTimeout(resolve, 1500));
+          showModal.value = false;
           await fetchMatchedItems();
         }
       } catch (err) {
         console.error("Error submitting collection request:", err);
-        collectionError.value =
-          "Failed to submit collection request. Please try again.";
+        collectionError.value = "Failed to submit collection request. Please try again.";
       } finally {
         isSubmitting.value = false;
       }
     };
+
 
     const processPayment = async () => {
       isProcessingPayment.value = true;
@@ -1110,6 +1154,8 @@ export default {
       addressError,
       fetchUserAddress,
       getCollectionStatusMessage,
+      shippingOptions,
+      selectedOption,
     };
   },
 };

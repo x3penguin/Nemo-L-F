@@ -5,11 +5,10 @@ import os
 import datetime
 from image_match.image_matcher import match_images
 from location_match.location_matcher import match_locations
-from firebase_client import update_matched_items, get_lost_items, get_item_by_id, store_potential_matches
-from publisher import publish_match_notification
+from firebase_client import store_potential_matches
 
 def create_producer():
-    kafka_brokers = os.environ.get('KAFKA_BROKERS', 'localhost:9092').split(',')
+    kafka_brokers = os.environ.get('KAFKA_BROKERS')
     producer = KafkaProducer(
         bootstrap_servers=kafka_brokers,
         value_serializer=lambda v: json.dumps(v).encode('utf-8'),
@@ -19,9 +18,9 @@ def create_producer():
 
 def start_consumer():
     # Get configuration from environment variables or use defaults
-    kafka_brokers = os.environ.get('KAFKA_BROKERS', 'localhost:9092').split(',')
-    kafka_topic = os.environ.get('KAFKA_TOPIC', 'image-matching-jobs')
-    kafka_group = os.environ.get('KAFKA_GROUP_ID', 'nemo-lf-matching-group')
+    kafka_brokers = os.environ.get('KAFKA_BROKERS')
+    kafka_topic = os.environ.get('KAFKA_TOPIC')
+    kafka_group = os.environ.get('KAFKA_GROUP_ID')
     
     print(f"Connecting to Kafka brokers: {kafka_brokers}")
     print(f"Listening on topic: {kafka_topic}")

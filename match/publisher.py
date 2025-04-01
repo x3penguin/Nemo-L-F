@@ -3,7 +3,7 @@ import json
 import os
 
 def create_producer():
-    kafka_brokers = os.environ.get('KAFKA_BROKERS', 'localhost:9092').split(',')
+    kafka_brokers = os.environ.get('KAFKA_BROKERS')
     producer = KafkaProducer(
         bootstrap_servers=kafka_brokers,
         value_serializer=lambda v: json.dumps(v).encode('utf-8'),

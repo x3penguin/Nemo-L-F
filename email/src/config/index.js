@@ -5,18 +5,18 @@ module.exports = {
   kafka: {
     brokers: process.env.KAFKA_BROKERS.split(','),
     topics: {
-      foundItems: process.env.KAFKA_TOPIC_FOUND_ITEMS || 'found-items'
+      foundItems: process.env.KAFKA_TOPIC_FOUND_ITEMS 
     },
-    groupId: process.env.KAFKA_GROUP_ID || 'nemo-lf-email-group'
+    groupId: process.env.KAFKA_GROUP_ID  
   },
   email: {
     smtpServer: process.env.SMTP_SERVER,
-    smtpPort: parseInt(process.env.SMTP_PORT) || 587,
+    smtpPort: parseInt(process.env.SMTP_PORT) ,
     smtpUser: process.env.SMTP_USER,
     smtpPassword: process.env.SMTP_PASSWORD,
     from: process.env.EMAIL_FROM
   },
   api: {
-    port: parseInt(process.env.PORT) || 3001
+    port: parseInt(process.env.PORT)
   }
 };

@@ -70,28 +70,38 @@
             :item="item"
             @click="viewItemDetails(item)"
           >
-            <template #actions>
+            <template v-slot:actions>
               <button
-                v-if="item.status === 'MATCHED'"
+                v-if="item.status === 'MATCHED' && isItemOwner(item)"
                 @click.stop="initiateCollection(item)"
                 class="btn btn-primary"
               >
                 Arrange Collection
               </button>
-              <button
+              <div
+                v-else-if="item.status === 'MATCHED' && !isItemOwner(item)"
+                class="status-message finder-info"
+              >
+                Waiting for Owner to Arrange Collection
+              </div>
+              <div
                 v-else-if="item.status === 'COLLECTING'"
-                class="btn btn-secondary"
-                disabled
+                class="status-badge collecting"
               >
                 Collection in Progress
-              </button>
-              <button
+                <button
+                  @click.stop="viewItemDetails(item)"
+                  class="btn btn-sm btn-outline"
+                >
+                  View Details
+                </button>
+              </div>
+              <div
                 v-else-if="item.status === 'RETRIEVED'"
-                class="btn btn-success disabled"
-                disabled
+                class="status-badge retrieved"
               >
                 Item Retrieved
-              </button>
+              </div>
               <div v-else class="status-message">
                 {{ getStatusMessage(item.status) }}
               </div>
@@ -280,7 +290,9 @@
               <div class="item-info">
                 <h3>{{ selectedItem.name }}</h3>
                 <p><strong>Category:</strong> {{ selectedItem.category }}</p>
-                <p v-if="selectedItem.description"><strong>Description:</strong> {{ selectedItem.description }}</p>
+                <p v-if="selectedItem.description">
+                  <strong>Description:</strong> {{ selectedItem.description }}
+                </p>
                 <p>
                   <strong>Status:</strong>
                   <span
@@ -292,165 +304,120 @@
               </div>
             </div>
 
-            <div v-if="selectedItem.status === 'COLLECTING' && collectionDetails && collectionDetails.type" class="collection-info">
+            <div
+              v-if="selectedItem.status === 'COLLECTING' && collectionDetails"
+              class="collection-info"
+            >
               <h3>Collection Details</h3>
 
+              <!-- Common details section -->
               <div class="detail-row">
-                <span class="detail-label">Collection Method:</span>
+                <span class="detail-label">Delivery Status:</span>
+                <span
+                  class="detail-value status-badge"
+                  :class="`delivery-${collectionDetails.delivery_status?.toLowerCase()}`"
+                >
+                  {{
+                    formatDeliveryStatus(
+                      collectionDetails.delivery_status || "PENDING"
+                    )
+                  }}
+                </span>
+              </div>
+
+              <!-- Shipping details -->
+              <div class="detail-row">
+                <span class="detail-label">Service:</span>
                 <span class="detail-value">{{
-                  formatCollectionMethod(collectionDetails.type)
+                  collectionDetails.service_name || "Standard Delivery"
                 }}</span>
               </div>
 
-              <div
-                v-if="collectionDetails.type === 'SELF_PICKUP'"
-                class="pickup-details"
-              >
-                <div class="detail-row">
-                  <span class="detail-label">Pickup Location:</span>
-                  <span class="detail-value">{{
-                    collectionDetails.pickup_venue
-                  }}</span>
-                </div>
-
-                <div class="detail-row">
-                  <span class="detail-label">Address:</span>
-                  <span class="detail-value">{{
-                    collectionDetails.pickup_address || "Not specified"
-                  }}</span>
-                </div>
-
-                <div class="detail-row">
-                  <span class="detail-label">Available From:</span>
-                  <span class="detail-value">{{
-                    formatDate(collectionDetails.pickup_start)
-                  }}</span>
-                </div>
-
-                <div class="detail-row">
-                  <span class="detail-label">Available Until:</span>
-                  <span class="detail-value">{{
-                    formatDate(collectionDetails.pickup_end)
-                  }}</span>
-                </div>
-
-                <div class="detail-row">
-                  <span class="detail-label">Instructions:</span>
-                  <span class="detail-value">{{
-                    collectionDetails.pickup_instructions ||
-                    "No special instructions"
-                  }}</span>
-                </div>
-
-                <div class="map-container">
-                  <div class="map-placeholder">
-                    <div class="map-pin"></div>
-                    <p>Map view would appear here<br />using Google Maps API</p>
-                  </div>
-                </div>
+              <div class="detail-row">
+                <span class="detail-label">Price:</span>
+                <span class="detail-value"
+                  >${{ collectionDetails.price || "0.00" }}</span
+                >
               </div>
 
-              <div
-                v-else-if="collectionDetails.type === 'COURIER'"
-                class="courier-details"
-              >
-                <div class="detail-row">
-                  <span class="detail-label">Status:</span>
-                  <span
-                    class="detail-value status-badge"
-                    :class="
-                      'delivery-' + collectionDetails.status.toLowerCase()
+              <div class="detail-row">
+                <span class="detail-label">From:</span>
+                <span class="detail-value">{{
+                  collectionDetails.pick_code || "N/A"
+                }}</span>
+              </div>
+
+              <div class="detail-row">
+                <span class="detail-label">To:</span>
+                <span class="detail-value">{{
+                  collectionDetails.send_address || "N/A"
+                }}</span>
+              </div>
+
+              <!-- Different actions for finder vs owner -->
+              <div class="collection-actions">
+                <!-- Finder-specific actions -->
+                <div v-if="isItemFinder(selectedItem)" class="action-section">
+                  <h4>Finder Actions</h4>
+                  <button
+                    v-if="collectionDetails.delivery_status === 'PAID'"
+                    @click="updateDeliveryStatus(selectedItem.id, 'PICKED_UP')"
+                    class="btn btn-primary"
+                  >
+                    Confirm Item Picked Up by Courier
+                  </button>
+                  <div
+                    v-else-if="
+                      collectionDetails.delivery_status === 'PICKED_UP'
                     "
-                    >{{ formatDeliveryStatus(collectionDetails.status) }}</span
+                    class="status-message"
                   >
-                </div>
-
-                <div class="detail-row">
-                  <span class="detail-label">Delivery Address:</span>
-                  <span class="detail-value">{{
-                    formatFullAddress(collectionDetails)
-                  }}</span>
-                </div>
-
-                <div class="detail-row">
-                  <span class="detail-label">Estimated Delivery:</span>
-                  <span class="detail-value">{{
-                    formatDate(collectionDetails.estimated_delivery)
-                  }}</span>
-                </div>
-
-                <div
-                  v-if="collectionDetails.courier_provider"
-                  class="detail-row"
-                >
-                  <span class="detail-label">Courier:</span>
-                  <span class="detail-value">{{
-                    collectionDetails.courier_provider
-                  }}</span>
-                </div>
-
-                <div v-if="collectionDetails.tracking_id" class="detail-row">
-                  <span class="detail-label">Tracking ID:</span>
-                  <span class="detail-value">{{
-                    collectionDetails.tracking_id
-                  }}</span>
-                </div>
-
-                <div class="delivery-progress">
-                  <div
-                    class="progress-step"
-                    :class="{ active: isDeliveryStepActive('PAID') }"
-                  >
-                    <div class="step-dot"></div>
-                    <div class="step-label">Payment Confirmed</div>
-                    <div
-                      class="step-time"
-                      v-if="collectionDetails.payment_time"
-                    >
-                      {{ formatTime(collectionDetails.payment_time) }}
-                    </div>
+                    Item has been picked up by courier
                   </div>
-
                   <div
-                    class="progress-line"
-                    :class="{ active: isDeliveryStepActive('IN_PROGRESS') }"
-                  ></div>
-
-                  <div
-                    class="progress-step"
-                    :class="{ active: isDeliveryStepActive('IN_PROGRESS') }"
+                    v-else-if="
+                      collectionDetails.delivery_status === 'DELIVERED'
+                    "
+                    class="status-message"
                   >
-                    <div class="step-dot"></div>
-                    <div class="step-label">Pickup Scheduled</div>
-                    <div class="step-time" v-if="collectionDetails.pickup_time">
-                      {{ formatTime(collectionDetails.pickup_time) }}
-                    </div>
+                    Item has been successfully delivered
                   </div>
+                </div>
 
+                <!-- Owner-specific actions -->
+                <div v-if="isItemOwner(selectedItem)" class="action-section">
+                  <h4>Owner Actions</h4>
                   <div
-                    class="progress-line"
-                    :class="{ active: isDeliveryStepActive('COMPLETED') }"
-                  ></div>
-
-                  <div
-                    class="progress-step"
-                    :class="{ active: isDeliveryStepActive('COMPLETED') }"
+                    v-if="collectionDetails.delivery_status === 'PAID'"
+                    class="status-message"
                   >
-                    <div class="step-dot"></div>
-                    <div class="step-label">Delivered</div>
-                    <div
-                      class="step-time"
-                      v-if="collectionDetails.delivery_time"
-                    >
-                      {{ formatTime(collectionDetails.delivery_time) }}
-                    </div>
+                    Waiting for item to be picked up from finder
+                  </div>
+                  <button
+                    v-else-if="
+                      collectionDetails.delivery_status === 'PICKED_UP'
+                    "
+                    @click="markItemAsDelivered(selectedItem.id)"
+                    class="btn btn-success"
+                  >
+                    Confirm Item Received
+                  </button>
+                  <div
+                    v-else-if="
+                      collectionDetails.delivery_status === 'DELIVERED'
+                    "
+                    class="status-message"
+                  >
+                    You've confirmed receipt of this item
                   </div>
                 </div>
               </div>
             </div>
-            
+
             <div v-else class="collection-not-started">
-              <p class="collection-message">{{ getCollectionStatusMessage(selectedItem.status) }}</p>
+              <p class="collection-message">
+                {{ getCollectionStatusMessage(selectedItem.status) }}
+              </p>
             </div>
           </div>
 
@@ -479,18 +446,25 @@
                 </div>
               </div>
 
-                  <!-- Shipping Options from rate-check API -->
-                  <div v-if="shippingOptions && shippingOptions.length">
-                    <h4>Select a Shipping Option</h4>
-                    <ul>
-                      <li v-for="option in shippingOptions" :key="option.service_name">
-                        <label>
-                          <input type="radio" :value="option" v-model="selectedOption" />
-                          {{ option.service_name }} - ${{ option.price }}
-                        </label>
-                      </li>
-                    </ul>
-                  </div>
+              <!-- Shipping Options from rate-check API -->
+              <div v-if="shippingOptions && shippingOptions.length">
+                <h4>Select a Shipping Option</h4>
+                <ul>
+                  <li
+                    v-for="option in shippingOptions"
+                    :key="option.service_name"
+                  >
+                    <label>
+                      <input
+                        type="radio"
+                        :value="option"
+                        v-model="selectedOption"
+                      />
+                      {{ option.service_name }} - ${{ option.price }}
+                    </label>
+                  </li>
+                </ul>
+              </div>
 
               <p class="payment-description">
                 Click the button below to proceed to our secure payment gateway.
@@ -535,6 +509,9 @@ import itemService from "@/services/item.service";
 import ItemCard from "@/components/ItemCard.vue";
 import { useStore } from "vuex";
 import axios from "axios";
+import { collection, query, where, getDocs } from "firebase/firestore";
+import { db } from "../firebase";
+
 export default {
   name: "CollectionView",
   components: {
@@ -560,19 +537,19 @@ export default {
     };
 
     const getCollectionStatusMessage = (status) => {
-      switch(status) {
-        case 'MATCHED':
+      switch (status) {
+        case "MATCHED":
           return "This item has been matched but collection has not been arranged yet. Click 'Arrange Collection' to proceed.";
-        case 'LOST':
+        case "LOST":
           return "This item is currently marked as lost. Once it's found and matched, you can arrange collection.";
-        case 'FOUND':
+        case "FOUND":
           return "This item is currently marked as found. It's waiting to be matched with its owner.";
-        case 'RETRIEVED':
+        case "RETRIEVED":
           return "This item has been successfully retrieved by its owner.";
         default:
           return "No collection information available.";
       }
-    }
+    };
 
     // Function to fetch user's address when initiating delivery
     const fetchUserAddress = async (itemId) => {
@@ -613,20 +590,91 @@ export default {
     };
 
     // Enhanced initiateCollection function to fetch address
-    const initiateCollection = async (item) => {
-      selectedItem.value = item;
-      modalType.value = "initiate";
-      collectionMethod.value = "SELF_PICKUP";
+    const submitCollectionRequest = async () => {
       collectionError.value = null;
-      showModal.value = true;
 
-      // Clear previous address data
-      userAddress.value = null;
-      addressError.value = null;
+      // Validate that courier option has a delivery address selected
+      if (collectionMethod.value === "COURIER" && !selectedAddress.value) {
+        collectionError.value = "Please select or add a delivery address";
+        return;
+      }
 
-      // Fetch the address when courier delivery option is available
-      // This makes the address data ready for the logistics service to use
-      await fetchUserAddress(item.id);
+      isSubmitting.value = true;
+
+      try {
+        if (collectionMethod.value === "COURIER") {
+          // Prepare payload using the saved address
+          const payload = {
+            pick_code: "059893",
+            pick_country: "SG",
+            send_code: userAddress.value.address.postalCode,
+            send_country: "SG",
+            weight: "10",
+          };
+
+          // Call the rate-check API
+          const response = await axios.post(
+            "http://localhost:3010/rate-check",
+            payload
+          );
+
+          if (response.data && response.data.rates) {
+            shippingOptions.value = response.data.rates;
+            if (shippingOptions.value.length > 0) {
+              // Auto-select lowest rate
+              if (!selectedOption.value) {
+                selectedOption.value = shippingOptions.value[0];
+              }
+
+              // Update payment details
+              paymentDetails.value.courier_fee = selectedOption.value.price;
+              paymentDetails.value.total =
+                (paymentDetails.value.base_fee || 0) +
+                (paymentDetails.value.distance_fee || 0) +
+                selectedOption.value.price;
+
+              // Proceed to payment modal
+              modalType.value = "payment";
+            } else {
+              collectionError.value =
+                "No available rates. Please try again later.";
+            }
+          } else {
+            collectionError.value =
+              "Failed to retrieve rates. Please try again.";
+          }
+        } else {
+          // For self-pickup, update both the lost item and the found item to COLLECTING
+          await Promise.all([
+            // Update the current item
+            itemService.updateItemStatus(selectedItem.value.id, "COLLECTING"),
+
+            // Update the matched item if it exists
+            selectedItem.value.matchedItemId
+              ? itemService.updateItemStatus(
+                  selectedItem.value.matchedItemId,
+                  "COLLECTING"
+                )
+              : Promise.resolve(),
+          ]);
+
+          // Show success notification
+          store.dispatch("notifications/add", {
+            type: "success",
+            message: "Collection arranged successfully!",
+          });
+
+          // Close modal and refresh items
+          showModal.value = false;
+          await fetchMatchedItems();
+        }
+      } catch (err) {
+        console.error("Error submitting collection request:", err);
+        collectionError.value =
+          "Failed to submit collection request. Please try again.";
+      } finally {
+        isSubmitting.value = false;
+      }
     };
 
     const getItemsToShow = computed(() => {
@@ -820,23 +868,191 @@ export default {
 
     const fetchCollectionDetails = async (itemId) => {
       try {
-        // Show loading state
+        // Clear previous data
+        collectionDetails.value = null;
         collectionError.value = null;
 
-        // Call your backend API to get collection details
-        const response = await fetch(`/api/items/${itemId}/collection`);
+        let targetItemId = itemId;
+        const currentUser = store.getters["auth/user"];
+        const userId = currentUser?.id;
 
-        if (!response.ok) {
-          throw new Error("Failed to fetch collection details");
+        // Get the item details first to determine if the current user is the finder
+        const itemResponse = await itemService.getItemById(itemId);
+        const itemData = itemResponse.data;
+
+        // If current user is the finder, use the matchedItemId instead
+        if (itemData.finderId === userId && itemData.matchedItemId) {
+          console.log(
+            "Current user is finder, using matched item ID for collection details"
+          );
+          targetItemId = itemData.matchedItemId;
         }
 
-        // Update the collection details
-        collectionDetails.value = await response.json();
+        console.log("Fetching collection details for item ID:", targetItemId);
+
+        // Now try to fetch using the API with the correct item ID
+        try {
+          const response = await axios.get(
+            `${process.env.VUE_APP_ORDERS_URL}` + `/item/${targetItemId}`
+          );
+
+          if (response.data && response.data.success) {
+            // Map API response to your collectionDetails format
+            const orderData = response.data.order_data;
+            collectionDetails.value = {
+              delivery_status: orderData.delivery_status,
+              service_name: orderData.service_name,
+              pick_code: orderData.pick_code,
+              send_address: orderData.send_address,
+              price: orderData.price,
+              timestamp: orderData.timestamp,
+            };
+          } else {
+            throw new Error("No collection details found");
+          }
+        } catch (apiError) {
+          console.warn(
+            "API fetch failed, falling back to direct query:",
+            apiError
+          );
+
+          // Fallback to direct query if needed
+          const selectedOrdersRef = collection(db, "selected_orders");
+          const q = query(
+            selectedOrdersRef,
+            where("order_data.item_id", "==", targetItemId)
+          );
+
+          const querySnapshot = await getDocs(q);
+          if (!querySnapshot.empty) {
+            const orderDoc = querySnapshot.docs[0];
+            const orderData = orderDoc.data().order_data;
+
+            collectionDetails.value = {
+              delivery_status: orderData.delivery_status,
+              service_name: orderData.service_name,
+              pick_code: orderData.pick_code,
+              send_address: orderData.send_address,
+              price: orderData.price,
+              timestamp: orderData.timestamp,
+            };
+          } else {
+            throw new Error("No collection details found");
+          }
+        }
       } catch (err) {
         console.error("Error fetching collection details:", err);
         collectionError.value =
           "Failed to load collection details. Please try again.";
       }
+    };
+
+    const initiateCollection = async (item) => {
+      selectedItem.value = item;
+      modalType.value = "initiate";
+      collectionMethod.value = "SELF_PICKUP";
+      collectionError.value = null;
+      showModal.value = true;
+
+      // Clear previous address data
+      userAddress.value = null;
+      addressError.value = null;
+
+      // Fetch the address when courier delivery option is available
+      // This makes the address data ready for the logistics service to use
+      await fetchUserAddress(item.id);
+    };
+
+    // Update updateDeliveryStatus to use the API
+    const updateDeliveryStatus = async (itemId, newStatus) => {
+      try {
+        // First determine if we need to use a matched ID
+        const itemResponse = await itemService.getItemById(itemId);
+        const itemData = itemResponse.data;
+
+        const currentUser = store.getters["auth/user"];
+        const userId = currentUser?.id;
+
+        // If current user is the finder, use the matchedItemId
+        let targetItemId = itemId;
+        if (itemData.finderId === userId && itemData.matchedItemId) {
+          targetItemId = itemData.matchedItemId;
+        }
+
+        // Call the API endpoint
+        const response = await axios.put(
+          `${process.env.VUE_APP_ORDERS_URL}` + "/status",
+          {
+            item_id: targetItemId,
+            delivery_status: newStatus,
+          }
+        );
+
+        if (response.data && response.data.success) {
+          // Refresh the collection details
+          await fetchCollectionDetails(itemId);
+
+          // Show success notification
+          store.dispatch("notifications/add", {
+            type: "success",
+            message: `Delivery status updated to ${formatDeliveryStatus(
+              newStatus
+            )}`,
+          });
+        } else {
+          throw new Error(response.data?.error || "Failed to update status");
+        }
+      } catch (err) {
+        console.error("Error updating delivery status:", err);
+        store.dispatch("notifications/add", {
+          type: "error",
+          message:
+            "Failed to update delivery status: " +
+            (err.response?.data?.error || err.message),
+        });
+      }
+    };
+
+    // For marking an item as collected by both parties
+    const markItemAsDelivered = async (itemId) => {
+      try {
+        // First update delivery status
+        await updateDeliveryStatus(itemId, "DELIVERED");
+
+        // Then update the item status to RETRIEVED
+        await itemService.updateItemStatus(itemId, "RETRIEVED");
+
+        // If this item has a matchedItemId, update that one too
+        if (selectedItem.value && selectedItem.value.matchedItemId) {
+          await itemService.updateItemStatus(
+            selectedItem.value.matchedItemId,
+            "RETRIEVED"
+          );
+        }
+
+        // Refresh the items list
+        await fetchMatchedItems();
+
+        // Close the modal
+        closeModal();
+
+        store.dispatch("notifications/add", {
+          type: "success",
+          message: "Item successfully marked as delivered and retrieved!",
+        });
+      } catch (err) {
+        console.error("Error marking item as delivered:", err);
+      }
+    };
+
+    const isItemOwner = (item) => {
+      const userId = store.getters["auth/user"]?.id;
+      return item.ownerId === userId;
+    };
+
+    const isItemFinder = (item) => {
+      const userId = store.getters["auth/user"]?.id;
+      return item.finderId === userId;
     };
 
     onMounted(() => {
@@ -905,10 +1121,11 @@ export default {
 
     const formatDeliveryStatus = (status) => {
       const statusMap = {
-        SCHEDULED: "Scheduled",
+        PENDING: "Pending",
         PAID: "Payment Confirmed",
-        IN_PROGRESS: "In Progress",
-        COMPLETED: "Delivered",
+        PICKED_UP: "Picked Up by Courier",
+        IN_PROGRESS: "In Transit",
+        DELIVERED: "Delivered",
       };
       return statusMap[status] || status;
     };
@@ -1021,100 +1238,48 @@ export default {
       };
     };
 
-     // Add the missing refs for shipping options
-     const shippingOptions = ref([]);
+    // Add the missing refs for shipping options
+    const shippingOptions = ref([]);
     const selectedOption = ref(null);
-
-    const submitCollectionRequest = async () => {
-      collectionError.value = null;
-
-      // Validate that courier option has a delivery address selected
-      if (collectionMethod.value === "COURIER" && !selectedAddress.value) {
-        collectionError.value = "Please select or add a delivery address";
-        return;
-      }
-
-      isSubmitting.value = true;
-
-      try {
-        if (collectionMethod.value === "COURIER") {
-          // Prepare payload using the saved address (using snake_case keys)
-          const payload = {
-            pick_code: "059893",                      // Default or dynamic value for pickup location
-            pick_country: "SG",                       // Pickup country
-            send_code: userAddress.value.address.postalCode, // Use the user's postal code from saved addresses
-            send_country: "SG",                       // Destination country
-            weight: "10"                              // Weight of the shipment (could be dynamic)
-          };
-
-          // Call the /rate-check API from your logistics service (running on port 3010)
-          const response = await axios.post("http://localhost:3010/rate-check", payload);
-
-          if (response.data && response.data.rates) {
-            // Update shippingOptions so the options can be displayed in your payment modal
-            shippingOptions.value = response.data.rates;
-            if (shippingOptions.value.length > 0) {
-              // If no shipping option has been selected, auto-select the lowest rate
-              if (!selectedOption.value) {
-                selectedOption.value = shippingOptions.value[0];
-              }
-              // Update paymentDetails with the selected courier fee and recalculate total
-              paymentDetails.value.courier_fee = selectedOption.value.price;
-              paymentDetails.value.total =
-                (paymentDetails.value.base_fee || 0) +
-                (paymentDetails.value.distance_fee || 0) +
-                selectedOption.value.price;
-
-              // Proceed to payment modal so the user can review and then pay
-              modalType.value = "payment";
-            } else {
-              collectionError.value = "No available rates. Please try again later.";
-            }
-          } else {
-            collectionError.value = "Failed to retrieve rates. Please try again.";
-          }
-        } else {
-          // For self-pickup, simulate a delay then close the modal and refresh items
-          await new Promise((resolve) => setTimeout(resolve, 1500));
-          showModal.value = false;
-          await fetchMatchedItems();
-        }
-      } catch (err) {
-        console.error("Error submitting collection request:", err);
-        collectionError.value = "Failed to submit collection request. Please try again.";
-      } finally {
-        isSubmitting.value = false;
-      }
-    };
-
 
     const processPayment = async () => {
       isProcessingPayment.value = true;
       collectionError.value = null;
 
       try {
-        // 1. Validate that we have a selected shipping option
+        // Validate shipping option
         if (collectionMethod.value === "COURIER" && !selectedOption.value) {
           collectionError.value = "Please select a shipping option first";
           return;
         }
 
-        // In a real application, redirect to payment gateway
-        // For now, simulate a delay for payment processing
+        // Simulate payment processing
         await new Promise((resolve) => setTimeout(resolve, 2000));
 
-        // 2. Update item status from MATCHED to COLLECTING
-        await axios.put(
-          `http://localhost:3000/api/items/${selectedItem.value.id}/status`,
-          {
-            status: "COLLECTING",
-          }
-        );
+        // Update both the lost item and the found item to COLLECTING
+        await Promise.all([
+          // Update the current item
+          itemService.updateItemStatus(selectedItem.value.id, "COLLECTING"),
 
-        // Add logging to debug
+          // Update the matched item if it exists
+          selectedItem.value.matchedItemId
+            ? itemService.updateItemStatus(
+                selectedItem.value.matchedItemId,
+                "COLLECTING"
+              )
+            : Promise.resolve(),
+        ]);
+
+        // Add logging
         console.log("Updating item status for item ID:", selectedItem.value.id);
+        if (selectedItem.value.matchedItemId) {
+          console.log(
+            "Updating matched item status for item ID:",
+            selectedItem.value.matchedItemId
+          );
+        }
 
-        // 3. If using courier, call select-order API in logistics service
+        // For courier, call select-order API in logistics service
         if (collectionMethod.value === "COURIER" && selectedOption.value) {
           const orderDetails = {
             item_id: selectedItem.value.id,
@@ -1122,28 +1287,28 @@ export default {
             service_name: selectedOption.value.service_name,
             price: selectedOption.value.price,
             send_address: `${userAddress.value.address.unitNumber}, ${userAddress.value.address.streetAddress}, ${userAddress.value.address.city}, ${userAddress.value.address.postalCode}`,
-            pick_code: "059893", // Default pickup postal code
-            delivery_status: "PAID" // Change to PAID since payment was completed
+            pick_code: "059893",
+            delivery_status: "PAID",
           };
 
-          // Wrap the order details in an object with 'order' key
-          const orderPayload = {
-            order: orderDetails
-          };
-
-          // Call the logistics service to store the selected order
+          // Submit order
+          const orderPayload = { order: orderDetails };
           const logisticsResponse = await axios.post(
-            "http://localhost:3010/select-order", 
+            "http://localhost:3010/select-order",
             orderPayload
           );
-
           console.log("Logistics order created:", logisticsResponse.data);
         }
 
         // After successful payment and API calls, close modal and refresh items
         showModal.value = false;
         await fetchMatchedItems();
-        
+
+        store.dispatch("notifications/add", {
+          type: "success",
+          message:
+            "Payment processed successfully! Collection is now in progress.",
+        });
       } catch (err) {
         console.error("Error processing payment:", err);
         collectionError.value = "Failed to process payment. Please try again.";
@@ -1184,7 +1349,6 @@ export default {
       formatFullAddress,
       isDeliveryStepActive,
       fetchMatchedItems,
-      initiateCollection,
       viewCollectionDetails,
       closeModal,
       selectAddress,
@@ -1202,12 +1366,46 @@ export default {
       getCollectionStatusMessage,
       shippingOptions,
       selectedOption,
+      isItemOwner,
+      updateDeliveryStatus,
+      markItemAsDelivered,
+      isItemFinder,
+      initiateCollection,
     };
   },
 };
 </script>
 
 <style scoped>
+.collection-actions {
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.action-section {
+  margin-bottom: 1rem;
+}
+
+.status-message {
+  padding: 0.75rem;
+  background-color: #f3f4f6;
+  border-radius: 0.375rem;
+  color: #4b5563;
+  font-style: italic;
+}
+
+.delivery-paid {
+  background-color: #3b82f6;
+}
+
+.delivery-picked_up {
+  background-color: #f59e0b;
+}
+
+.delivery-delivered {
+  background-color: #10b981;
+}
 .collection-not-started {
   padding: 1.5rem;
   background-color: #f8fafc;

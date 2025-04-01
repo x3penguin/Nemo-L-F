@@ -589,6 +589,79 @@ export default {
       }
     };
 
+    // Function to determine pick code based on currentLocation
+    const getPickCodeFromItem = async (itemId) => {
+      try {
+        // First, fetch the item details to get currentLocation
+        const itemResponse = await itemService.getItemById(itemId);
+        const itemData = itemResponse.data;
+        
+        console.log("Item data:", itemData); // Add here to verify item data retrieval
+        
+        if (!itemData) {
+          throw new Error("Item not found");
+        }
+        
+        // Check the currentLocation
+        const currentLocation = itemData.currentLocation;
+        console.log("Current location:", currentLocation); // Add here to verify location extraction
+        
+        let pickCode; // Declare a variable to store the pick code
+        
+        if (currentLocation === "with_me") {
+          // If item is with finder, get finder's postal code
+          const finderId = itemData.finderId;
+          if (!finderId) {
+            throw new Error("Finder information not found");
+          }
+          
+          // Fetch address from user service
+          const userResponse = await axios.get(
+            `http://localhost:3004/api/users/${finderId}/address`
+          );
+          
+          if (userResponse.data.success) {
+            pickCode = userResponse.data.address.address.postalCode;
+            console.log("Extracted pick code (from finder):", pickCode); // Add here for finder path
+            return pickCode;
+          } else {
+            throw new Error("Failed to fetch finder's address");
+          }
+        } else if (currentLocation === "lost_found_office" || currentLocation === "venue_staff") {
+          // Extract postal code from location string
+          // Example format: "202 Jurong East Street 21, Singapore 600202 | AF"
+          const locationString = itemData.location;
+          
+          // Use regex to extract 6-digit postal code
+          const postalCodeMatch = locationString.match(/Singapore\s+(\d{6})/i);
+          
+          if (postalCodeMatch && postalCodeMatch[1]) {
+            pickCode = postalCodeMatch[1];
+            console.log("Extracted pick code (from location string):", pickCode); // Add here for location extraction path
+            return pickCode;
+          } else {
+            // Fallback to default if postal code not found in string
+            console.warn("Could not extract postal code from location:", locationString);
+            pickCode = "059893"; // Default postal code
+            console.log("Using default pick code:", pickCode); // Add here for fallback case
+            return pickCode;
+          }
+        } else {
+          // Fallback to default for unknown location type
+          console.warn("Unknown currentLocation value:", currentLocation);
+          pickCode = "059893"; // Default postal code
+          console.log("Using default pick code (unknown location):", pickCode); // Add here for unknown location type
+          return pickCode;
+        }
+      } catch (error) {
+        console.error("Error getting pick code from item:", error);
+        // Return default pick code on error
+        const pickCode = "059893";
+        console.log("Using default pick code (error case):", pickCode); // Add here for error case
+        return pickCode; 
+      }
+    };
+
     // Enhanced initiateCollection function to fetch address
     const submitCollectionRequest = async () => {
       collectionError.value = null;
@@ -603,9 +676,11 @@ export default {
 
       try {
         if (collectionMethod.value === "COURIER") {
+          // Get the dynamic pick code based on item's currentLocation
+          const pickCode = await getPickCodeFromItem(selectedItem.value.id);
           // Prepare payload using the saved address
           const payload = {
-            pick_code: "059893",
+            pick_code: pickCode,
             pick_country: "SG",
             send_code: userAddress.value.address.postalCode,
             send_country: "SG",
@@ -1243,79 +1318,82 @@ export default {
     const selectedOption = ref(null);
 
     const processPayment = async () => {
-      isProcessingPayment.value = true;
-      collectionError.value = null;
+  isProcessingPayment.value = true;
+  collectionError.value = null;
 
-      try {
-        // Validate shipping option
-        if (collectionMethod.value === "COURIER" && !selectedOption.value) {
-          collectionError.value = "Please select a shipping option first";
-          return;
-        }
+  try {
+    // Validate shipping option
+    if (collectionMethod.value === "COURIER" && !selectedOption.value) {
+      collectionError.value = "Please select a shipping option first";
+      return;
+    }
 
-        // Simulate payment processing
-        await new Promise((resolve) => setTimeout(resolve, 2000));
+    // Simulate payment processing
+    await new Promise((resolve) => setTimeout(resolve, 2000));
 
-        // Update both the lost item and the found item to COLLECTING
-        await Promise.all([
-          // Update the current item
-          itemService.updateItemStatus(selectedItem.value.id, "COLLECTING"),
+    // Update both the lost item and the found item to COLLECTING
+    await Promise.all([
+      // Update the current item
+      itemService.updateItemStatus(selectedItem.value.id, "COLLECTING"),
 
-          // Update the matched item if it exists
-          selectedItem.value.matchedItemId
-            ? itemService.updateItemStatus(
-                selectedItem.value.matchedItemId,
-                "COLLECTING"
-              )
-            : Promise.resolve(),
-        ]);
+      // Update the matched item if it exists
+      selectedItem.value.matchedItemId
+        ? itemService.updateItemStatus(
+            selectedItem.value.matchedItemId,
+            "COLLECTING"
+          )
+        : Promise.resolve(),
+    ]);
 
-        // Add logging
-        console.log("Updating item status for item ID:", selectedItem.value.id);
-        if (selectedItem.value.matchedItemId) {
-          console.log(
-            "Updating matched item status for item ID:",
-            selectedItem.value.matchedItemId
-          );
-        }
+    // Add logging
+    console.log("Updating item status for item ID:", selectedItem.value.id);
+    if (selectedItem.value.matchedItemId) {
+      console.log(
+        "Updating matched item status for item ID:",
+        selectedItem.value.matchedItemId
+      );
+    }
 
-        // For courier, call select-order API in logistics service
-        if (collectionMethod.value === "COURIER" && selectedOption.value) {
-          const orderDetails = {
-            item_id: selectedItem.value.id,
-            user_id: store.getters["auth/user"]?.id,
-            service_name: selectedOption.value.service_name,
-            price: selectedOption.value.price,
-            send_address: `${userAddress.value.address.unitNumber}, ${userAddress.value.address.streetAddress}, ${userAddress.value.address.city}, ${userAddress.value.address.postalCode}`,
-            pick_code: "059893",
-            delivery_status: "PAID",
-          };
+    // For courier, call select-order API in logistics service
+    if (collectionMethod.value === "COURIER" && selectedOption.value) {
+      // Get the dynamic pick code based on item's currentLocation
+      const pickCode = await getPickCodeFromItem(selectedItem.value.id);
+      
+      const orderDetails = {
+        item_id: selectedItem.value.id,
+        user_id: store.getters["auth/user"]?.id,
+        service_name: selectedOption.value.service_name,
+        price: selectedOption.value.price,
+        send_address: `${userAddress.value.address.unitNumber}, ${userAddress.value.address.streetAddress}, ${userAddress.value.address.city}, ${userAddress.value.address.postalCode}`,
+        pick_code: pickCode,
+        delivery_status: "PAID",
+      };
 
-          // Submit order
-          const orderPayload = { order: orderDetails };
-          const logisticsResponse = await axios.post(
-            "http://localhost:3010/select-order",
-            orderPayload
-          );
-          console.log("Logistics order created:", logisticsResponse.data);
-        }
+      // Submit order
+      const orderPayload = { order: orderDetails };
+      const logisticsResponse = await axios.post(
+        "http://localhost:3010/select-order",
+        orderPayload
+      );
+      console.log("Logistics order created:", logisticsResponse.data);
+    }
 
-        // After successful payment and API calls, close modal and refresh items
-        showModal.value = false;
-        await fetchMatchedItems();
+    // After successful payment and API calls, close modal and refresh items
+    showModal.value = false;
+    await fetchMatchedItems();
 
-        store.dispatch("notifications/add", {
-          type: "success",
-          message:
-            "Payment processed successfully! Collection is now in progress.",
-        });
-      } catch (err) {
-        console.error("Error processing payment:", err);
-        collectionError.value = "Failed to process payment. Please try again.";
-      } finally {
-        isProcessingPayment.value = false;
-      }
-    };
+    store.dispatch("notifications/add", {
+      type: "success",
+      message:
+        "Payment processed successfully! Collection is now in progress.",
+    });
+  } catch (err) {
+    console.error("Error processing payment:", err);
+    collectionError.value = "Failed to process payment. Please try again.";
+  } finally {
+    isProcessingPayment.value = false;
+  }
+};
 
     return {
       getStatusMessage,
@@ -1353,6 +1431,7 @@ export default {
       closeModal,
       selectAddress,
       saveAddress,
+      getPickCodeFromItem,
       submitCollectionRequest,
       processPayment,
       handleImageError,

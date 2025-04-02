@@ -504,6 +504,7 @@
 </template>
 
 <script>
+import { useRouter } from 'vue-router';
 import { ref, computed, onMounted } from "vue";
 import itemService from "@/services/item.service";
 import ItemCard from "@/components/ItemCard.vue";
@@ -518,6 +519,7 @@ export default {
     ItemCard,
   },
   setup() {
+    const router = useRouter();
     const store = useStore();
     const activeSubTab = ref("lost");
 
@@ -1318,83 +1320,89 @@ export default {
     const selectedOption = ref(null);
 
     const processPayment = async () => {
-  isProcessingPayment.value = true;
-  collectionError.value = null;
+      isProcessingPayment.value = true;
+      collectionError.value = null;
 
-  try {
-    // Validate shipping option
-    if (collectionMethod.value === "COURIER" && !selectedOption.value) {
-      collectionError.value = "Please select a shipping option first";
-      return;
-    }
+      try {
+        // Validate shipping option
+        if (collectionMethod.value === "COURIER" && !selectedOption.value) {
+          collectionError.value = "Please select a shipping option first";
+          return;
+        }
 
-    // Simulate payment processing
-    await new Promise((resolve) => setTimeout(resolve, 2000));
+        // For courier, prepare order details and create initial order record
+        if (collectionMethod.value === "COURIER" && selectedOption.value) {
+          // Get the dynamic pick code based on item's currentLocation
+          const pickCode = await getPickCodeFromItem(selectedItem.value.id);
+          
+          const orderDetails = {
+            item_id: selectedItem.value.id,
+            user_id: store.getters["auth/user"]?.id,
+            service_name: selectedOption.value.service_name,
+            price: selectedOption.value.price,
+            send_address: `${userAddress.value.address.unitNumber}, ${userAddress.value.address.streetAddress}, ${userAddress.value.address.city}, ${userAddress.value.address.postalCode}`,
+            pick_code: pickCode,
+            delivery_status: "PENDING" // Start with PENDING status
+          };
 
-    // Update both the lost item and the found item to COLLECTING
-    await Promise.all([
-      // Update the current item
-      itemService.updateItemStatus(selectedItem.value.id, "COLLECTING"),
+          // Submit order to create the record
+          const orderPayload = { order: orderDetails };
+          const logisticsResponse = await axios.post(
+            "http://localhost:3010/select-order",
+            orderPayload
+          );
+          
+          console.log("Logistics order created:", logisticsResponse.data);
+          
+          // Close modal
+          showModal.value = false;
+          
+          // Redirect to payment form with proper query parameters
+          router.push({
+            name: "PaymentForm", // This matches your route name in router config
+            query: {
+              orderId: logisticsResponse.data.id || selectedItem.value.id,
+              itemId: selectedItem.value.id,
+              amount: selectedOption.value.price,
+              serviceName: selectedOption.value.service_name
+            }
+          });
+          
+          return; // Exit early since we're redirecting to payment page
+        }
+        
+        // For self-pickup, continue with the existing flow
+        // Update both the lost item and the found item to COLLECTING
+        await Promise.all([
+          // Update the current item
+          itemService.updateItemStatus(selectedItem.value.id, "COLLECTING"),
 
-      // Update the matched item if it exists
-      selectedItem.value.matchedItemId
-        ? itemService.updateItemStatus(
-            selectedItem.value.matchedItemId,
-            "COLLECTING"
-          )
-        : Promise.resolve(),
-    ]);
+          // Update the matched item if it exists
+          selectedItem.value.matchedItemId
+            ? itemService.updateItemStatus(
+                selectedItem.value.matchedItemId,
+                "COLLECTING"
+              )
+            : Promise.resolve(),
+        ]);
 
-    // Add logging
-    console.log("Updating item status for item ID:", selectedItem.value.id);
-    if (selectedItem.value.matchedItemId) {
-      console.log(
-        "Updating matched item status for item ID:",
-        selectedItem.value.matchedItemId
-      );
-    }
+        // Show success notification
+        store.dispatch("notifications/add", {
+          type: "success",
+          message: "Collection arranged successfully!",
+        });
 
-    // For courier, call select-order API in logistics service
-    if (collectionMethod.value === "COURIER" && selectedOption.value) {
-      // Get the dynamic pick code based on item's currentLocation
-      const pickCode = await getPickCodeFromItem(selectedItem.value.id);
-      
-      const orderDetails = {
-        item_id: selectedItem.value.id,
-        user_id: store.getters["auth/user"]?.id,
-        service_name: selectedOption.value.service_name,
-        price: selectedOption.value.price,
-        send_address: `${userAddress.value.address.unitNumber}, ${userAddress.value.address.streetAddress}, ${userAddress.value.address.city}, ${userAddress.value.address.postalCode}`,
-        pick_code: pickCode,
-        delivery_status: "PAID",
-      };
-
-      // Submit order
-      const orderPayload = { order: orderDetails };
-      const logisticsResponse = await axios.post(
-        "http://localhost:3010/select-order",
-        orderPayload
-      );
-      console.log("Logistics order created:", logisticsResponse.data);
-    }
-
-    // After successful payment and API calls, close modal and refresh items
-    showModal.value = false;
-    await fetchMatchedItems();
-
-    store.dispatch("notifications/add", {
-      type: "success",
-      message:
-        "Payment processed successfully! Collection is now in progress.",
-    });
-  } catch (err) {
-    console.error("Error processing payment:", err);
-    collectionError.value = "Failed to process payment. Please try again.";
-  } finally {
-    isProcessingPayment.value = false;
-  }
-};
-
+        // Close modal and refresh items
+        showModal.value = false;
+        await fetchMatchedItems();
+        
+      } catch (err) {
+        console.error("Error processing payment:", err);
+        collectionError.value = "Failed to process payment. Please try again.";
+      } finally {
+        isProcessingPayment.value = false;
+      }
+    };
     return {
       getStatusMessage,
       isLoading,

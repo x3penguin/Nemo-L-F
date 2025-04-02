@@ -4,6 +4,7 @@ import os
 from flask_cors import CORS
 import requests
 import json
+import html
 from firebase_client import db, save_selected_order
 from firebase_admin import firestore
 
@@ -51,9 +52,10 @@ def rate_check():
                     for rate in result.get("rates", []):
                         price = float(rate.get("price", 0))
                         if price > 0:
+                            service_name = html.unescape(rate.get("service_name", ""))
                             filtered_rates.append(
                                 {
-                                    "service_name": rate.get("service_name", ""),
+                                    "service_name": service_name,
                                     "price": price,
                                     # Add any additional fields you need from the rate
                                 }

@@ -8,7 +8,7 @@ import("kafkajs")
 
     const kafka = new Kafka({
       clientId: "storage-service",
-      brokers: ["localhost:9092"],
+      brokers: [process.env.KAFKA_BROKERS],
     });
 
     producer = kafka.producer();
@@ -35,7 +35,7 @@ async function publishMatchingJob(itemId, imageUrl, latitude, longitude) {
 
   try {
     await producer.send({
-      topic: "image-matching-jobs",
+      topic: process.env.KAFKA_TOPIC,
       messages: [
         {
           key: itemId,
@@ -88,14 +88,12 @@ const upload = multer({
 // Create a Kafka producer
 const kafka = new Kafka({
   clientId: "storage-service",
-  brokers: ["localhost:9092"],
+  brokers: [process.env.KAFKA_BROKERS],
 });
 
-// Add prefix to all routes to match frontend expectations
-app.use("/api", express.Router());
 
 // Get items by status (handles getLostItems, getFoundItems, getMatchedItems)
-app.get("/api/items", async (req, res) => {
+app.get("/", async (req, res) => {
   const status = req.query.status;
   if (!status) {
     return res
@@ -112,7 +110,7 @@ app.get("/api/items", async (req, res) => {
 });
 
 // Get item by ID
-app.get("/api/items/:id", async (req, res) => {
+app.get("/:id", async (req, res) => {
   const result = await getItemById(req.params.id);
   if (result.success) {
     // Return data in the format expected by frontend
@@ -123,7 +121,7 @@ app.get("/api/items/:id", async (req, res) => {
 });
 
 // Report lost item - handle FormData
-app.post("/api/items/lost", upload.single("image"), async (req, res) => {
+app.post("/lost", upload.single("image"), async (req, res) => {
   try {
     // First upload the image if present
     let imageUrl = null;
@@ -169,7 +167,7 @@ app.post("/api/items/lost", upload.single("image"), async (req, res) => {
 });
 
 // Report found item - handle FormData
-app.post("/api/items/found", upload.single("image"), async (req, res) => {
+app.post("/found", upload.single("image"), async (req, res) => {
   try {
     // First upload the image if present
     let imageUrl = null;
@@ -234,7 +232,7 @@ app.post("/api/items/found", upload.single("image"), async (req, res) => {
 });
 
 // Update item status
-app.put("/api/items/:id/status", async (req, res) => {
+app.put("/:id/status", async (req, res) => {
   const { status } = req.body;
   if (!status) {
     return res.status(400).json({ error: "Status is required" });
@@ -252,7 +250,7 @@ app.put("/api/items/:id/status", async (req, res) => {
 });
 
 // Initiate collection
-app.post("/api/items/:itemId/collection", async (req, res) => {
+app.post("/:itemId/collection", async (req, res) => {
   const result = await updateItem(req.params.itemId, {
     status: "COLLECTING",
     collectionDetails: req.body,
@@ -269,7 +267,7 @@ app.post("/api/items/:itemId/collection", async (req, res) => {
 });
 
 // Get collection details
-app.get("/api/items/:itemId/collection", async (req, res) => {
+app.get("/:itemId/collection", async (req, res) => {
   const result = await getItemById(req.params.itemId);
   if (result.success && result.data.collectionDetails) {
     res.status(200).json(result.data.collectionDetails);
@@ -285,7 +283,7 @@ app.get("/health", (req, res) => {
 
 import { db } from './firebase.js';
 import { collection, query, where, getDocs } from 'firebase/firestore';
-app.get("/api/items/:id/potential-matches", async (req, res) => {
+app.get("/:id/potential-matches", async (req, res) => {
   const itemId = req.params.id;
 
   try {

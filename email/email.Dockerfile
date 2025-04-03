@@ -8,10 +8,10 @@ WORKDIR /usr/src/app
 COPY package*.json ./
 
 # Install dependencies
-RUN npm install --production
+RUN npm install
 
 # Copy application code
 COPY . .
 
 # Start the application
-CMD ["node", "index.js"]
+CMD ["node", "./src/index.js"]

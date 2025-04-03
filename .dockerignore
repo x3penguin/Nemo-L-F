@@ -51,6 +51,7 @@ docker-compose*
 .DS_Store
 *.sublime-project
 *.sublime-workspace
+.angular
 
 # Testing
 coverage

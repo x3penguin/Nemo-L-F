@@ -1,5 +1,59 @@
-version: '3'
+volumes:
+  nemo_data: 
+    name: nemo_data
+
+networks:
+  nemo-net:
+    driver: bridge
+    name: nemo-net
+    external: false
+
 services:
+
+  kong:
+    image: kong/kong-gateway:3.9
+    volumes:
+      - ./kong.yml:/kong/kong.yml  
+    environment:
+      KONG_PROXY_ACCESS_LOG: /dev/stdout
+      KONG_ADMIN_ACCESS_LOG: /dev/stdout
+      KONG_PROXY_ERROR_LOG: /dev/stderr
+      KONG_ADMIN_ERROR_LOG: /dev/stderr
+      KONG_ADMIN_LISTEN: "0.0.0.0:8001"
+      KONG_ADMIN_GUI_URL: "http://localhost:8002"
+      KONG_DATABASE: "off"  
+      KONG_DECLARATIVE_CONFIG: /kong/kong.yml
+    networks:
+      - nemo-net
+    ports:
+      - "8000:8000"
+      - "8001:8001"
+      - "8002:8002"
+    healthcheck:
+      test: [ "CMD", "kong", "health" ]
+      interval: 10s
+      timeout: 10s
+      retries: 3
+    restart: on-failure
+
+  email:
+    container_name: email
+    build: 
+      context: ./email
+      dockerfile: email.Dockerfile
+    volumes:
+      - ./esd-nemo-firebase-adminsdk-fbsvc-6e8d12e51b.json:/usr/src/app/esd-nemo-firebase-adminsdk-fbsvc-6e8d12e51b.json
+    env_file: ./email/.env
+    image: nemo/email:1.0
+    restart: unless-stopped
+    # ports:
+    #   - "3001:3001"
+    depends_on:
+       kafka:
+        condition: service_healthy
+    networks:
+      - nemo-net
+
   frontend:
     container_name: frontend
     build: 
@@ -15,65 +69,79 @@ services:
       - user
       - match
       - logistics
+      - kong
+    networks:
+      - nemo-net
 
   logistics:
     container_name: logistics
     build: 
       context: ./logistics
       dockerfile: logistics.Dockerfile
+    volumes:
+      - ./firebase-config:/usr/src/app/firebase-config
+      - ./esd-nemo-firebase-adminsdk-fbsvc-6e8d12e51b.json:/usr/src/app/esd-nemo-firebase-adminsdk-fbsvc-6e8d12e51b.json
     env_file: ./logistics/.env
     image: nemo/logistics:1.0
     restart: unless-stopped
-    ports:
-      - "3010:3000"
-
+    expose: 
+      - "3010"
+    # ports:
+    #   - "3010:3010"
+    networks:
+      - nemo-net
 
   match:
     container_name: match
     build: 
       context: ./match
       dockerfile: match.Dockerfile
+    volumes:
+      - ./firebase-config:/usr/src/app/firebase-config
+      - ./esd-nemo-firebase-adminsdk-fbsvc-6e8d12e51b.json:/usr/src/app/esd-nemo-firebase-adminsdk-fbsvc-6e8d12e51b.json
     env_file: ./match/.env
     image: nemo/match:1.0
     restart: unless-stopped
-    ports:
-      - "3002:3000"
+    # ports:
+    #   - "3002:3002"
     depends_on:
-      - storage
-
-  payment:
-    container_name: payment
-    build: 
-      context: ./payment
-      dockerfile: payment.Dockerfile
-    env_file: ./payment/.env
-    image: nemo/payment:1.0
-    restart: unless-stopped
-    ports:
-      - "3003:3000"
-
+       kafka:
+        condition: service_healthy
+    networks:
+      - nemo-net
 
   storage:
     container_name: storage
     build: 
       context: ./storage
       dockerfile: storage.Dockerfile
+    volumes:
+      - ./firebase-config:/usr/src/app/firebase-config
     env_file: ./storage/.env
     image: nemo/storage:1.0
     restart: unless-stopped
-    ports:
-      - "3000:3000"
+    # ports:
+    #   - "3000:3000"
+    depends_on:
+       kafka:
+        condition: service_healthy
+    networks:
+      - nemo-net
 
   user:
     container_name: user
     build: 
       context: ./user
       dockerfile: user.Dockerfile
+    volumes:
+      - ./firebase-config:/usr/src/app/firebase-config
     env_file: ./user/.env
     image: nemo/user:1.0
     restart: unless-stopped
-    ports:
-      - "3004:3000"
+    # ports:
+    #   - "3004:3004"
+    networks:
+      - nemo-net
 
   location:
     container_name: location
@@ -83,5 +151,37 @@ services:
     env_file: ./location/.env
     image: nemo/location:1.0
     restart: unless-stopped
-    ports:
-      - "3005:3000"
+    expose:
+      - "3005"
+    # ports:
+    #   - "3005:3005"
+    networks:
+      - nemo-net
+
+  zookeeper:
+    container_name: zookeeper
+    image: wurstmeister/zookeeper
+    # ports:
+    #   - "2181:2181"
+    networks:
+      - nemo-net
+    
+  kafka:
+    container_name: kafka
+    image: wurstmeister/kafka
+    # ports:
+    #   - "9092:9092"
+    environment:
+      KAFKA_ADVERTISED_HOST_NAME: kafka
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_CREATE_TOPICS: "found-items:1:1,image-matching-jobs:1:1"
+    healthcheck:
+      test: ["CMD", "kafka-topics.sh", "--list", "--bootstrap-server", "kafka:9092"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - nemo-net
+

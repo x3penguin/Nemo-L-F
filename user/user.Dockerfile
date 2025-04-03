@@ -1,5 +1,5 @@
 # Use Node.js as the base image
-FROM node:16-alpine
+FROM node:22-slim
 
 # Create app directory and set proper permissions
 WORKDIR /usr/src/app
@@ -8,13 +8,10 @@ WORKDIR /usr/src/app
 COPY package*.json ./
 
 # Install dependencies
-RUN npm install
+RUN npm install --production
 
 # Copy application code
 COPY . .
-
-# Expose the port your service runs on
-EXPOSE 3004
 
 # Command to run the application
 CMD ["node", "index.js"]

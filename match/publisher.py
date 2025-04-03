@@ -1,6 +1,9 @@
 from kafka import KafkaProducer
 import json
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 def create_producer():
     kafka_brokers = os.environ.get('KAFKA_BROKERS')

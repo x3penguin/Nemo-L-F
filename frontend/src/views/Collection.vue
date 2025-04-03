@@ -569,7 +569,7 @@ export default {
 
         // Fetch address from user service
         const response = await axios.get(
-          `http://localhost:3004/api/users/${ownerId}/address`
+          `http://localhost:8000/user/api/users/${ownerId}/address`
         );
 
         if (response.data.success) {
@@ -619,7 +619,7 @@ export default {
           
           // Fetch address from user service
           const userResponse = await axios.get(
-            `http://localhost:3004/api/users/${finderId}/address`
+            `http://localhost:8000/user/api/users/${finderId}/address`
           );
           
           if (userResponse.data.success) {
@@ -691,7 +691,7 @@ export default {
 
           // Call the rate-check API
           const response = await axios.post(
-            "http://localhost:3010/rate-check",
+            "http://localhost:8000/logistics/rate-check",
             payload
           );
 
@@ -970,7 +970,7 @@ export default {
         // Now try to fetch using the API with the correct item ID
         try {
           const response = await axios.get(
-            `${process.env.VUE_APP_ORDERS_URL}` + `/item/${targetItemId}`
+            `http://localhost:8000/user` + `/${targetItemId}`  
           );
 
           if (response.data && response.data.success) {
@@ -1348,7 +1348,7 @@ export default {
           // Submit order to create the record
           const orderPayload = { order: orderDetails };
           const logisticsResponse = await axios.post(
-            "http://localhost:3010/select-order",
+            "http://localhost:8000/logistics/select-order",
             orderPayload
           );
           

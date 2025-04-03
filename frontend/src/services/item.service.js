@@ -2,27 +2,27 @@ import api from './api';
 
 class ItemService {
   getLostItems() {
-    return api.get('/items?status=LOST');
+    return api.get('?status=LOST');
   }
   
   getFoundItems() {
-    return api.get('/items?status=FOUND');
+    return api.get('?status=FOUND');
   }
   
   getMatchedItems() {
-    return api.get('/items?status=MATCHED');
+    return api.get('?status=MATCHED');
   }
   
   getCollectingItems() {
-    return api.get('/items?status=COLLECTING');
+    return api.get('?status=COLLECTING');
   }
   
   getRetrievedItems() {
-    return api.get('/items?status=RETRIEVED');
+    return api.get('?status=RETRIEVED');
   }
   
   reportLostItem(itemData) {
-    return api.post('/items/lost', itemData, {
+    return api.post('/lost', itemData, {
       headers: {
         'Content-Type': 'multipart/form-data'
       }
@@ -30,7 +30,7 @@ class ItemService {
   }
   
   reportFoundItem(itemData) {
-    return api.post('/items/found', itemData, {
+    return api.post('/found', itemData, {
       headers: {
         'Content-Type': 'multipart/form-data'
       }
@@ -38,14 +38,14 @@ class ItemService {
   }
   
   updateItemStatus(id, status) {
-    return api.put(`/items/${id}/status`, { status });
+    return api.put(`/${id}/status`, { status });
   }
   
   // uploadItemImage(file) {
   //   const formData = new FormData();
   //   formData.append('file', file);
     
-  //   return api.post('/items/upload', formData, {
+  //   return api.post('/upload', formData, {
   //     headers: {
   //       'Content-Type': 'multipart/form-data'
   //     }
@@ -53,19 +53,19 @@ class ItemService {
   // }
 
   initiateCollection(itemId, collectionData) {
-    return api.post(`/items/${itemId}/collection`, collectionData);
+    return api.post(`/${itemId}/collection`, collectionData);
   }
   
   getCollectionDetails(itemId) {
-    return api.get(`/items/${itemId}/collection`);
+    return api.get(`/${itemId}/collection`);
   }
 
   getPotentialMatches(itemId) {
-    return api.get(`/items/${itemId}/potential-matches`);
+    return api.get(`/${itemId}/potential-matches`);
   }
 
   getItemById(id) {
-    return api.get(`/items/${id}`);
+    return api.get(`/${id}`);
   }
 
 }

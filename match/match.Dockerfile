@@ -1,4 +1,4 @@
-FROM python:3.10
+FROM python:3.10-slim
 
 WORKDIR /usr/src/app
 
@@ -11,19 +11,14 @@ RUN apt-get update && apt-get install -y \
     libgl1-mesa-glx \
     && rm -rf /var/lib/apt/lists/*
 
+ENV PYTHONUNBUFFERED=1
+
 # Copy requirements and install dependencies
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy Python files
-COPY consumer.py .
-COPY image_matcher.py .
-COPY firebase_client.py .
-COPY main.py .
+COPY . .
 
-# Copy Firebase credentials (will be overridden by volume mount)
-COPY esd-nemo-firebase-adminsdk-fbsvc-fbe963cc58.json .
-
-EXPOSE 3002
 # Run the service - environment variables will be passed at runtime
-CMD ["python", "./main.py"]
+CMD ["python", "-u", "./main.py"]  

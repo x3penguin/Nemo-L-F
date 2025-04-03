@@ -56,7 +56,7 @@ export default {
       
       try {
         const response = await axios.get(
-          `http://localhost:3004/api/users/${user.value.id}/lost-items-with-matches`
+          `http://localhost:8000/user/api/users/${user.value.id}/lost-items-with-matches`
         );
         
         if (response.data && response.data.items && response.data.items.length > 0) {

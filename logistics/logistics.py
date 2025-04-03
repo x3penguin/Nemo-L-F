@@ -13,8 +13,8 @@ load_dotenv()
 
 app = Flask(__name__)
 EASYPARCEL_API_KEY = os.getenv("EASYPARCEL_API_KEY")
-CORS(app)  # Add CORS support to the Flask app
 
+CORS(app, resources={r"/logistics/*": {"origins": "http://localhost:8080"}})
 
 # rate check api from easy parcel modified to only return the lowest 10 rates
 @app.route("/rate-check", methods=["POST"])
@@ -143,6 +143,5 @@ def update_order_status():
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
-
 if __name__ == "__main__":
-    app.run(debug=True, port=3010)
+    app.run(host='0.0.0.0', debug=True, port=3010)

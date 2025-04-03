@@ -210,7 +210,7 @@ export default {
 
         // Call the API to confirm the match
         const response = await axios.post(
-          "http://localhost:3004/api/test/create-match",
+          "http://localhost:8000/user/api/test/create-match",
           {
             lostItemId,
             foundItemId,
@@ -227,7 +227,7 @@ export default {
           });
 
           try {
-            await axios.post("http://localhost:3001/api/found-items/notify", {
+            await axios.post("http://localhost:8000/email/api/found-items/notify", {
               itemId: foundItemId,
               itemName: item.name || "Found Item",
               itemDescription: item.description || "No description",

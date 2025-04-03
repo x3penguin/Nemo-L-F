@@ -1,5 +1,5 @@
 # Build stage
-FROM node:16-alpine as build-stage
+FROM node:22-slim as build-stage
 
 # Set working directory
 WORKDIR /app
@@ -17,6 +17,9 @@ FROM nginx:stable-alpine as production-stage
 
 # Copy built assets from build stage
 COPY --from=build-stage /app/dist /usr/share/nginx/html
+
+# Copy custom nginx configuration
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 # Expose port 8080
 EXPOSE 8080

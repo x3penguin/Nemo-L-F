@@ -217,7 +217,7 @@ export default {
           try {
             // Use existing endpoint - don't filter for now until backend is updated
             const response = await axios.get(
-              `http://localhost:3004/api/users/${userId}/lost-items-with-matches`
+              `http://localhost:8000/user/api/users/${userId}/lost-items-with-matches`
             );
             matches.value = response.data.items || [];
             console.log("Potential matches loaded:", matches.value.length);

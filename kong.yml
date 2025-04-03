@@ -1,0 +1,48 @@
+_format_version: "3.0"
+services:
+  - name: user-service
+    url: http://user:3004
+    routes:
+      - name: user-route
+        paths: 
+          - /user
+        methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+  - name: location-service
+    url: http://location:3005
+    routes:
+      - name: location-route
+        paths: 
+          - /location
+        methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+  - name: logistics-service
+    url: http://logistics:3010
+    routes:
+      - name: logistics-route
+        paths: 
+          - /logistics
+        methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+  - name: storage-service
+    url: http://storage:3000
+    routes:
+      - name: storage-route
+        paths: 
+          - /storage
+        methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+  - name: email-service
+    url: http://email:3001
+    routes:
+      - name: email-route
+        paths: 
+          - /email
+        methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+
+plugins:  
+  - name: cors
+    config:
+      origins: ["http://localhost:8080"]
+      methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+      headers: ["Accept", "Authorization", "Content-Type"]
+      exposed_headers: ["Authorization", "Content-Type"]
+      credentials: true
+      max_age: 3600
+      preflight_continue: false

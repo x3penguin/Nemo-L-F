@@ -11,7 +11,7 @@ dotenv.config();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const firebaseConfigPath = path.join(__dirname, '..', 'firebase-config', 'firebase.json');
+const firebaseConfigPath = path.join(__dirname, 'firebase-config', 'firebase.json');
 const firebaseConfig = JSON.parse(readFileSync(firebaseConfigPath, 'utf8'));
 
 

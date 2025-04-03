@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = process.env.VUE_APP_LOCATION_SERVICE_URL || 'http://localhost:3005';
+const API_URL = process.env.VUE_APP_LOCATION_API_URL;
 
 export default {
   async getPlacePredictions(input) {

@@ -7,7 +7,7 @@ from services.placesService import get_place_predictions, get_place_details, geo
 load_dotenv()
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, resources={r"/location/*": {"origins": "http://localhost:8080"}})
 
 @app.route('/health', methods=['GET'])
 def health_check():
@@ -58,5 +58,4 @@ def reverse_geocode_endpoint():
     return jsonify(results)
 
 if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 3005))
-    app.run(host='0.0.0.0', port=port)
+    app.run(host='0.0.0.0', debug=True, port=3005)

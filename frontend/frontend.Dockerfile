@@ -12,17 +12,9 @@ RUN npm install
 COPY . .
 RUN npm run build
 
-# Production stage
-FROM nginx:stable-alpine AS production-stage
-
-# Copy built assets from build stage
-COPY --from=build-stage /app/dist /usr/share/nginx/html
-
-# Copy custom nginx configuration
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+ENV NODE_ENV=development
 
 # Expose port 8080
 EXPOSE 8080
 
-# Start nginx
-CMD ["nginx", "-g", "daemon off;"]
+CMD ["npm", "run", "serve", "--", "--host", "0.0.0.0"]

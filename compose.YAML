@@ -42,12 +42,14 @@ services:
       context: ./email
       dockerfile: email.Dockerfile
     volumes:
+      - ./email:/usr/src/app  
+      - /usr/src/app/node_modules  
       - ./esd-nemo-firebase-adminsdk-fbsvc-6e8d12e51b.json:/usr/src/app/esd-nemo-firebase-adminsdk-fbsvc-6e8d12e51b.json
     env_file: ./email/.env
-    image: nemo/email:1.0
+    command: npm run dev  
     restart: unless-stopped
-    # ports:
-    #   - "3001:3001"
+    # expose:
+    #   - "3001"
     depends_on:
        kafka:
         condition: service_healthy
@@ -59,16 +61,14 @@ services:
     build: 
       context: ./frontend
       dockerfile: frontend.Dockerfile
+    volumes:
+      - ./frontend:/app  
+      - /app/node_modules  
     env_file: ./frontend/.env
-    image: nemo/frontend:1.0
     restart: unless-stopped
     ports:
       - "8080:8080"
     depends_on:
-      - storage
-      - user
-      - match
-      - logistics
       - kong
     networks:
       - nemo-net
@@ -79,15 +79,14 @@ services:
       context: ./logistics
       dockerfile: logistics.Dockerfile
     volumes:
+      - ./logistics:/usr/src/app  
+      - /usr/src/app/venv  
       - ./firebase-config:/usr/src/app/firebase-config
       - ./esd-nemo-firebase-adminsdk-fbsvc-6e8d12e51b.json:/usr/src/app/esd-nemo-firebase-adminsdk-fbsvc-6e8d12e51b.json
     env_file: ./logistics/.env
-    image: nemo/logistics:1.0
     restart: unless-stopped
     expose: 
       - "3010"
-    # ports:
-    #   - "3010:3010"
     networks:
       - nemo-net
 
@@ -97,13 +96,13 @@ services:
       context: ./match
       dockerfile: match.Dockerfile
     volumes:
+      - ./match:/usr/src/app  
+      - /usr/src/app/venv  
       - ./firebase-config:/usr/src/app/firebase-config
       - ./esd-nemo-firebase-adminsdk-fbsvc-6e8d12e51b.json:/usr/src/app/esd-nemo-firebase-adminsdk-fbsvc-6e8d12e51b.json
     env_file: ./match/.env
-    image: nemo/match:1.0
+    command: python main.py  
     restart: unless-stopped
-    # ports:
-    #   - "3002:3002"
     depends_on:
        kafka:
         condition: service_healthy
@@ -116,12 +115,14 @@ services:
       context: ./storage
       dockerfile: storage.Dockerfile
     volumes:
+      - ./storage:/usr/src/app  
+      - /usr/src/app/node_modules  
       - ./firebase-config:/usr/src/app/firebase-config
     env_file: ./storage/.env
-    image: nemo/storage:1.0
+    command: npm run dev  
     restart: unless-stopped
-    # ports:
-    #   - "3000:3000"
+    expose:
+      - "3000"
     depends_on:
        kafka:
         condition: service_healthy
@@ -134,12 +135,14 @@ services:
       context: ./user
       dockerfile: user.Dockerfile
     volumes:
+      - ./user:/usr/src/app  
+      - /usr/src/app/node_modules  
       - ./firebase-config:/usr/src/app/firebase-config
     env_file: ./user/.env
-    image: nemo/user:1.0
+    command: npm run dev  
     restart: unless-stopped
-    # ports:
-    #   - "3004:3004"
+    expose:
+      - "3004"
     networks:
       - nemo-net
 
@@ -148,29 +151,25 @@ services:
     build: 
       context: ./location
       dockerfile: location.Dockerfile
+    volumes:
+      - ./location:/usr/src/app  
+      - /usr/src/app/venv  
     env_file: ./location/.env
-    image: nemo/location:1.0
     restart: unless-stopped
     expose:
       - "3005"
-    # ports:
-    #   - "3005:3005"
     networks:
       - nemo-net
 
   zookeeper:
     container_name: zookeeper
     image: wurstmeister/zookeeper
-    # ports:
-    #   - "2181:2181"
     networks:
       - nemo-net
     
   kafka:
     container_name: kafka
     image: wurstmeister/kafka
-    # ports:
-    #   - "9092:9092"
     environment:
       KAFKA_ADVERTISED_HOST_NAME: kafka
       KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092
@@ -184,4 +183,3 @@ services:
       retries: 10
     networks:
       - nemo-net
-

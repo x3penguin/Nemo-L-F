@@ -1457,23 +1457,33 @@ export default {
     };
 
     const editItem = (item) => {
-      // Populate form with current item data
+      // Use the approach from viewItemDetails that's already working correctly
+      // Simply store the entire item object
+      selectedItem.value = item;
+      
+      // Log for debugging
+      console.log("Edit Item Called - Item ID:", item.id);
+
+      // Parse location if present
+      let venue = "";
+      let specificLocation = "";
+
+      if (item.location) {
+        const locationParts = item.location.split(" | ");
+        venue = locationParts[0] || "";
+        specificLocation = locationParts.length > 1 ? locationParts[1] : "";
+      }
+
+      // Populate form
       editForm.value = {
         name: item.name || "",
         category: item.category || "",
         description: item.description || "",
-        venue: item.location ? item.location.split(" | ")[0] : "",
-        specificLocation:
-          item.location && item.location.split(" | ")[1]
-            ? item.location.split(" | ")[1]
-            : "",
+        venue: venue,
+        specificLocation: specificLocation,
       };
 
-      // Store the current item ID for saving later
-      selectedItem.value = item;
-
-      // Close the current modal if open and show edit modal
-      closeModal();
+      // Show modal
       showEditModal.value = true;
     };
 
@@ -1514,38 +1524,37 @@ export default {
     };
 
     const saveItemChanges = async () => {
-      if (!validateEditForm() || !selectedItem.value) return;
+      if (!validateEditForm()) return;
 
       isSaving.value = true;
 
       try {
-        // Prepare data for API
+        // Simply use the ID directly from selectedItem, which contains the full item object
+        const itemId = selectedItem.value.id;
+
+        // Log for debugging
+        console.log("Saving changes for item ID:", itemId);
+
+        // Prepare data
         const updateData = {
           name: editForm.value.name,
           category: editForm.value.category,
           description: editForm.value.description,
           venue: editForm.value.venue,
           specific_location: editForm.value.specificLocation,
-          userId: store.getters["auth/user"]?.id, // Include user ID for permission check
+          userId: store.getters["auth/user"]?.id || "1",
         };
 
-        // Make sure we have a valid item ID before making the API call
-        if (!selectedItem.value.id) {
-          throw new Error("Item ID is missing");
-        }
+        // Call API with the direct item ID from the selected item
+        await itemService.updateItem(itemId, updateData);
 
-        console.log("Updating item with ID:", selectedItem.value.id);
-
-        // Call API to update item - use the correct endpoint
-        await itemService.updateItem(selectedItem.value.id, updateData);
-
-        // Show success message
+        // Success notification
         store.dispatch("notifications/add", {
           type: "success",
           message: "Item updated successfully",
         });
 
-        // Close modal and refresh data
+        // Close and refresh
         closeEditModal();
         await fetchMatchedItems();
       } catch (error) {
@@ -1562,7 +1571,10 @@ export default {
     };
 
     const confirmDelete = async (item) => {
-      if (!item || !item.id) {
+      // Use the same approach as editItem - store the item in selectedItem first
+      selectedItem.value = item;
+      
+      if (!selectedItem.value || !selectedItem.value.id) {
         store.dispatch("notifications/add", {
           type: "error",
           message: "Item ID not found",
@@ -1577,7 +1589,12 @@ export default {
       try {
         // Include user ID in request for permission check
         const userId = store.getters["auth/user"]?.id;
-        await itemService.deleteItem(item.id, { userId });
+        
+        // Now use selectedItem.value.id, just like in editItem and saveItemChanges
+        const itemId = selectedItem.value.id;
+        console.log("Deleting item with ID:", itemId);
+        
+        await itemService.deleteItem(itemId, { userId });
 
         // Show success notification
         store.dispatch("notifications/add", {
@@ -2192,7 +2209,6 @@ export default {
   color: #10b981;
   font-size: 0.875rem;
 }
-
 
 .modal-container {
   background-color: white;

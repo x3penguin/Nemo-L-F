@@ -67,6 +67,7 @@ import {
   updateItem,
   getItemsByStatus,
   uploadImage,
+  deleteItem
 } from "./services/itemService.js";
 
 const app = express();
@@ -232,6 +233,11 @@ app.post("/found", upload.single("image"), async (req, res) => {
 app.put("/:id", async (req, res) => {
   try {
     const itemId = req.params.id;
+    if (!itemId) {
+      return res.status(400).json({ success: false, error: "Item ID is required" });
+    }
+    
+    console.log(`Received update request for item: ${itemId}`, req.body);
     const updateData = req.body;
 
     // Check if item exists and isn't already matched
@@ -248,17 +254,23 @@ app.put("/:id", async (req, res) => {
     ) {
       return res.status(400).json({
         success: false,
-        error:
-          "Cannot update item that is already matched, in collection, or retrieved",
+        error: "Cannot update item that is already matched, in collection, or retrieved"
       });
     }
 
     // Check if the user is the owner of this item (security)
-    const userId = req.body.userId || "1"; // Get from auth token in production
+    const userId = req.body.userId;
+    if (!userId) {
+      return res.status(400).json({
+        success: false,
+        error: "User ID is required for permission verification"
+      });
+    }
+    
     if (itemResult.data.reportOwner !== userId) {
       return res.status(403).json({
         success: false,
-        error: "You don't have permission to update this item",
+        error: "You don't have permission to update this item"
       });
     }
 
@@ -268,23 +280,27 @@ app.put("/:id", async (req, res) => {
       "description",
       "category",
       "venue",
-      "specific_location",
+      "specific_location"
     ];
+    
     const filteredData = {};
-
     allowedFields.forEach((field) => {
       if (updateData[field] !== undefined) {
         filteredData[field] = updateData[field];
       }
     });
 
+    // Handle venue and specific_location as a combined field for storage
+    if (updateData.venue !== undefined) {
+      const specificLocation = updateData.specific_location || "";
+      filteredData.location = `${updateData.venue} | ${specificLocation}`;
+    }
+
     // Update item in Firebase
     const result = await updateItem(itemId, filteredData);
 
     if (result.success) {
-      res
-        .status(200)
-        .json({ success: true, message: "Item updated successfully" });
+      res.status(200).json({ success: true, message: "Item updated successfully" });
     } else {
       res.status(400).json({ success: false, error: result.error });
     }
@@ -298,6 +314,11 @@ app.put("/:id", async (req, res) => {
 app.delete("/:id", async (req, res) => {
   try {
     const itemId = req.params.id;
+    if (!itemId) {
+      return res.status(400).json({ success: false, error: "Item ID is required" });
+    }
+    
+    console.log(`Received delete request for item: ${itemId}`, req.body);
 
     // Check if item exists and isn't already matched
     const itemResult = await getItemById(itemId);
@@ -313,17 +334,23 @@ app.delete("/:id", async (req, res) => {
     ) {
       return res.status(400).json({
         success: false,
-        error:
-          "Cannot delete item that is already matched, in collection, or retrieved",
+        error: "Cannot delete item that is already matched, in collection, or retrieved"
       });
     }
 
     // Check if the user is the owner of this item (security)
-    const userId = req.body.userId || "1"; // Get from auth token in production
+    const userId = req.body.userId;
+    if (!userId) {
+      return res.status(400).json({
+        success: false,
+        error: "User ID is required for permission verification"
+      });
+    }
+    
     if (itemResult.data.reportOwner !== userId) {
       return res.status(403).json({
         success: false,
-        error: "You don't have permission to delete this item",
+        error: "You don't have permission to delete this item"
       });
     }
 
@@ -331,9 +358,7 @@ app.delete("/:id", async (req, res) => {
     const result = await deleteItem(itemId);
 
     if (result.success) {
-      res
-        .status(200)
-        .json({ success: true, message: "Item deleted successfully" });
+      res.status(200).json({ success: true, message: "Item deleted successfully" });
     } else {
       res.status(400).json({ success: false, error: result.error });
     }

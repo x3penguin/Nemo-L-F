@@ -319,6 +319,7 @@ export default {
     const sourceItem = ref(null);
     let map = null;
     let marker = null;
+    const selectedItem = ref(null);
 
     // Check if we came from a potential matches page
     const sourceItemId = computed(() => {
@@ -592,6 +593,7 @@ export default {
     );
 
     const showEditModal = ref(false);
+
     const editForm = ref({
       name: "",
       category: "",
@@ -603,18 +605,32 @@ export default {
     const isSaving = ref(false);
 
     const editItem = () => {
-      // Populate form with current item data
-      if (!item.value) return;
+      // Make sure selectedItem includes the ID from the route
+      selectedItem.value = {
+        ...item.value,
+        id: route.params.id, // Ensure ID is included in the object
+      };
 
+      // Log for debugging
+      console.log("Edit Item Called - Item ID:", selectedItem.value.id);
+
+      // Populate form
+      let venue = "";
+      let specificLocation = "";
+
+      if (item.value.location) {
+        const locationParts = item.value.location.split(" | ");
+        venue = locationParts[0] || "";
+        specificLocation = locationParts.length > 1 ? locationParts[1] : "";
+      }
+
+      // Populate form
       editForm.value = {
         name: item.value.name || "",
         category: item.value.category || "",
         description: item.value.description || "",
-        venue: item.value.location ? item.value.location.split(" | ")[0] : "",
-        specificLocation:
-          item.value.location && item.value.location.split(" | ")[1]
-            ? item.value.location.split(" | ")[1]
-            : "",
+        venue: venue,
+        specificLocation: specificLocation,
       };
 
       // Show modal
@@ -663,35 +679,41 @@ export default {
       isSaving.value = true;
 
       try {
-        // Prepare data for API
+        // Use the ID directly from selectedItem, as in Collection.vue
+        const itemId = selectedItem.value.id;
+
+        // Log for debugging
+        console.log("Saving changes for item ID:", itemId);
+
+        // Prepare data
         const updateData = {
           name: editForm.value.name,
           category: editForm.value.category,
           description: editForm.value.description,
           venue: editForm.value.venue,
           specific_location: editForm.value.specificLocation,
-          userId: store.getters["auth/user"]?.id, // Important: include user ID for permission check
+          userId: store.getters["auth/user"]?.id || "1",
         };
 
-        // Call API to update item
-        await itemService.updateItem(item.value.id, updateData);
+        // Call API with the direct item ID from the selected item
+        await itemService.updateItem(itemId, updateData);
 
-        // Show success message
+        // Success notification
         store.dispatch("notifications/add", {
-          type: "success",
           message: "Item updated successfully",
+          type: "success",
         });
 
-        // Close modal and refresh data
+        // Close and refresh
         closeEditModal();
         await fetchItemDetails();
       } catch (error) {
         console.error("Error updating item:", error);
         store.dispatch("notifications/add", {
-          type: "error",
           message:
             "Failed to update item: " +
             (error.response?.data?.error || error.message),
+          type: "error",
         });
       } finally {
         isSaving.value = false;
@@ -699,13 +721,17 @@ export default {
     };
 
     const confirmDelete = async () => {
+      // Make sure we have an item and it has an ID
       if (!item.value || !item.value.id) {
         store.dispatch("notifications/add", {
-          type: "error",
           message: "Item ID not found",
+          type: "error",
         });
         return;
       }
+
+      const itemId = item.value.id;
+      console.log("Attempting to delete item with ID:", itemId);
 
       if (!confirm("Are you sure you want to delete this item?")) {
         return;
@@ -714,23 +740,24 @@ export default {
       try {
         // Include user ID in request for permission check
         const userId = store.getters["auth/user"]?.id;
-        await itemService.deleteItem(item.value.id, { userId });
+
+        await itemService.deleteItem(itemId, { userId });
 
         // Show success notification
         store.dispatch("notifications/add", {
-          type: "success",
           message: "Item deleted successfully",
+          type: "success",
         });
 
-        // Navigate back to home page
+        // Navigate back to home after successful deletion
         router.push("/");
       } catch (error) {
         console.error("Error deleting item:", error);
         store.dispatch("notifications/add", {
-          type: "error",
           message:
             "Failed to delete item: " +
             (error.response?.data?.error || error.message),
+          type: "error",
         });
       }
     };

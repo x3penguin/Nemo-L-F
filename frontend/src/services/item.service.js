@@ -68,11 +68,21 @@ class ItemService {
     return api.get(`/${id}`);
   }
   updateItem(id, updateData) {
-    console.log("Calling updateItem with ID:", id);
+    if (!id) {
+      console.error("Error in updateItem: No item ID provided");
+      return Promise.reject(new Error("No item ID provided"));
+    }
+
+    // No manipulation of the ID - use it directly
     return api.put(`/${id}`, updateData);
   }
 
   deleteItem(id, options = {}) {
+    if (!id) {
+      console.error("Error in deleteItem: No item ID provided");
+      return Promise.reject(new Error("No item ID provided"));
+    }
+
     // Include userId in the request for permission check
     return api.delete(`/${id}`, {
       data: { userId: options.userId },

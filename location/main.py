@@ -1,13 +1,45 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-import os
 from dotenv import load_dotenv
 from services.placesService import get_place_predictions, get_place_details, geocode_address, reverse_geocode
+from flask_swagger_ui import get_swaggerui_blueprint
+from apispec import APISpec
+from apispec.ext.marshmallow import MarshmallowPlugin
+from apispec_webframeworks.flask import FlaskPlugin
 
 load_dotenv()
 
 app = Flask(__name__)
-CORS(app, resources={r"/location/*": {"origins": "http://localhost:8080"}})
+CORS(app, resources={
+    r"/location/*": {"origins": "http://localhost:8080"},})
+
+spec = APISpec(
+    title="Location Service API",
+    version="1.0.0",
+    openapi_version="3.0.3",
+    plugins=[FlaskPlugin(), MarshmallowPlugin()],
+)
+
+@app.route('/swagger.json')
+def swagger_spec():
+    # Dynamically generate OpenAPI spec based on routes
+    with app.test_request_context():
+        for rule in app.url_map.iter_rules():
+            if rule.endpoint != 'static' and not rule.rule.startswith('/api-docs'):
+                spec.path(view=app.view_functions[rule.endpoint])
+    return jsonify(spec.to_dict())
+
+
+SWAGGER_URL = '/api-docs'
+API_URL = '/swagger.json'
+
+swaggerui_blueprint = get_swaggerui_blueprint(
+    SWAGGER_URL,
+    API_URL,
+    config={'app_name': "Location Service"}
+)
+
+app.register_blueprint(swaggerui_blueprint, url_prefix=SWAGGER_URL)
 
 @app.route('/health', methods=['GET'])
 def health_check():
@@ -56,6 +88,7 @@ def reverse_geocode_endpoint():
     
     results = reverse_geocode(lat, lng)
     return jsonify(results)
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', debug=True, port=3005)

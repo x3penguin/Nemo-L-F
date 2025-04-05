@@ -70,9 +70,15 @@ import {
   deleteItem
 } from "./services/itemService.js";
 
+import swaggerUi from "swagger-ui-express";
+import { readFileSync } from "fs";
+
 const app = express();
 app.use(cors());
 app.use(express.json());
+
+const swaggerFile = JSON.parse(readFileSync("./swagger-output.json", "utf8"));
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerFile));
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {

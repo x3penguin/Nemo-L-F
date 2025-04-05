@@ -13,5 +13,7 @@ RUN npm install --production
 # Copy application code
 COPY . .
 
+RUN node swagger.js
+
 # Start the application
-CMD ["node", "index.js"]
+CMD ["sh", "-c", "node swagger.js && node index.js"]

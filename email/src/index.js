@@ -5,9 +5,12 @@ const config = require('./config');
 const kafkaProducer = require('./kafka/producer');
 const kafkaConsumer = require('./kafka/consumer');
 const matchNotificationConsumer = require('./kafka/match-notification-consumer');
+const swaggerUi = require('swagger-ui-express');
+const swaggerFile = require('../swagger-output.json');
 
 // Initialize Express app
 const app = express();
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerFile));
 
 // Middleware
 app.use(bodyParser.json());

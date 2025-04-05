@@ -13,13 +13,17 @@ import {
   updateDoc,
 } from "firebase/firestore";
 import jwt from "jsonwebtoken";
-import bcrypt from "bcrypt";
+import bcryptjs from "bcryptjs";
+
+import swaggerUi from "swagger-ui-express";
+import { readFileSync } from "fs";
 
 dotenv.config();
-
 const app = express();
-
 app.use(express.json());
+
+const swaggerFile = JSON.parse(readFileSync("./swagger-output.json", "utf8"));
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerFile));
 
 // Health check route
 app.get("/", (req, res) => {
@@ -53,7 +57,7 @@ app.post("/users", async (req, res) => {
   }
 
   try {
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const hashedPassword = await bcryptjs.hash(password, 10);
     // Save user data in Firestore
     const docRef = await addDoc(collection(db, "users"), {
       name,
@@ -150,7 +154,7 @@ app.post("/login", async (req, res) => {
     }
 
     // Verify the password
-    const isValidPassword = await bcrypt.compare(password, user.password);
+    const isValidPassword = await bcryptjs.compare(password, user.password);
 
     if (!isValidPassword) {
       return res.status(401).send({ message: "Invalid email or password" });

@@ -10,4 +10,4 @@ ENV PYTHONUNBUFFERED=1
 
 COPY . .
 
-CMD ["python", "./logistics.py"]
+CMD ["python", "./main.py"]

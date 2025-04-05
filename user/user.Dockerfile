@@ -8,10 +8,12 @@ WORKDIR /usr/src/app
 COPY package*.json ./
 
 # Install dependencies
-RUN npm install --production
+RUN npm install
 
 # Copy application code
 COPY . .
 
-# Command to run the application
-CMD ["node", "index.js"]
+RUN node swagger.js
+
+# Start the application
+CMD ["sh", "-c", "node swagger.js && node index.js"]

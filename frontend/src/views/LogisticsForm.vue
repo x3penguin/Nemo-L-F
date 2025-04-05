@@ -504,7 +504,7 @@ export default {
         if (data.availableServices && data.availableServices.length) {
           this.availableServices = data.availableServices;
         }
-        console.log('Development: Form data loaded for testing');
+
       } catch (error) {
         console.error('Error loading saved form data:', error);
       }
@@ -720,7 +720,7 @@ export default {
         };
         
         localStorage.setItem('orderData', JSON.stringify(orderData));
-        console.log('Order data saved to localStorage:', orderData);
+
         
         this.$router.push('/payment-form');
       } catch (error) {

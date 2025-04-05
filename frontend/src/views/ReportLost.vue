@@ -447,14 +447,14 @@ export default {
     watch(currentStep, (newStep) => {
       if (newStep === 2) {
         // We're now on the location step
-        console.log("Now on step 2, initializing map");
+
 
         // Use setTimeout to ensure the DOM is updated
         setTimeout(() => {
           loader
             .load()
             .then(() => {
-              console.log("Google Maps API loaded from step change");
+
               initMap();
               initAutocomplete();
             })
@@ -550,7 +550,7 @@ export default {
           const lat = position.lat();
           const lng = position.lng();
 
-          console.log("Marker dragged to:", lat, lng);
+
           formData.value.coordinates.lat = lat;
           formData.value.coordinates.lng = lng;
 
@@ -568,7 +568,7 @@ export default {
           reverseGeocode(event.latLng.lat(), event.latLng.lng());
         });
 
-        console.log("Map initialized successfully");
+
       } catch (error) {
         console.error("Error initializing map:", error);
       }
@@ -593,7 +593,7 @@ export default {
       });
 
       autocomplete.addListener("place_changed", async () => {
-        console.log("Place selected via Autocomplete");
+
         const place = autocomplete.getPlace();
         if (!place.geometry || !place.geometry.location) return;
 
@@ -641,7 +641,7 @@ export default {
             const lat = position.coords.latitude;
             const lng = position.coords.longitude;
 
-            console.log("Got current location:", lat, lng);
+
             formData.value.coordinates.lat = lat;
             formData.value.coordinates.lng = lng;
 
@@ -672,13 +672,13 @@ export default {
     // Convert coordinates to address using reverse geocoding
     const reverseGeocode = async (lat, lng) => {
       try {
-        console.log("Reverse geocoding coordinates:", lat, lng);
+
         const result = await locationService.reverseGeocode(lat, lng);
-        console.log("Reverse geocode result:", result);
+
 
         if (result.results && result.results.length > 0) {
           formData.value.venue = result.results[0].formatted_address;
-          console.log("Updated venue to:", formData.value.venue);
+
         } else {
           console.warn("No reverse geocoding results found");
         }

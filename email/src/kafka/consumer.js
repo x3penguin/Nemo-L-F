@@ -20,7 +20,7 @@ class KafkaConsumer {
     if (!this.connected) {
       await this.consumer.connect();
       this.connected = true;
-      console.log('Kafka consumer connected');
+
     }
   }
 
@@ -28,7 +28,7 @@ class KafkaConsumer {
     if (this.connected) {
       await this.consumer.disconnect();
       this.connected = false;
-      console.log('Kafka consumer disconnected');
+
     }
   }
 
@@ -45,7 +45,7 @@ class KafkaConsumer {
         eachMessage: async ({ topic, partition, message }) => {
           try {
             const itemData = JSON.parse(message.value.toString());
-            console.log(`Received message: ${JSON.stringify(itemData)}`);
+
             
             // Send email notification
             await this.processItemFound(itemData);
@@ -56,7 +56,7 @@ class KafkaConsumer {
         }
       });
       
-      console.log(`Started listening to topic: ${config.kafka.topics.foundItems}`);
+
     } catch (error) {
       console.error('Error starting Kafka consumer:', error);
     }
@@ -77,7 +77,7 @@ class KafkaConsumer {
     `;
     
     await emailService.sendEmail(ownerEmail, subject, body);
-    console.log(`Email notification sent to ${ownerEmail} (ends up in spam)`);
+
   }
 }
 

@@ -16,7 +16,7 @@ class KafkaProducer {
     if (!this.connected) {
       await this.producer.connect();
       this.connected = true;
-      console.log('Kafka producer connected');
+
     }
   }
 
@@ -24,7 +24,7 @@ class KafkaProducer {
     if (this.connected) {
       await this.producer.disconnect();
       this.connected = false;
-      console.log('Kafka producer disconnected');
+
     }
   }
 
@@ -42,7 +42,7 @@ class KafkaProducer {
         messages: [message]
       });
       
-      console.log(`Message sent successfully: ${JSON.stringify(result)}`);
+
       return { success: true, result };
     } catch (error) {
       console.error('Error sending message:', error);

@@ -402,11 +402,11 @@ export default {
         isLoading.value = true;
         error.value = null;
 
-        console.log("Fetching details for item ID:", itemId);
+
         const response = await itemService.getItemById(itemId);
         item.value = response.data;
 
-        console.log("Fetched item details:", item.value);
+
 
         // If sourceId is provided, load it separately but don't display as main item
         if (route.query.sourceId) {
@@ -415,7 +415,7 @@ export default {
               route.query.sourceId
             );
             sourceItem.value = sourceResponse.data;
-            console.log("Fetched source item:", sourceItem.value);
+
           } catch (err) {
             console.error("Error fetching source item:", err);
           }
@@ -451,7 +451,7 @@ export default {
         isLoadingMatches.value = true;
         const response = await itemService.getPotentialMatches(itemId);
         potentialMatches.value = response.data || [];
-        console.log("Potential matches loaded:", potentialMatches.value.length);
+
       } catch (err) {
         console.error("Error fetching potential matches:", err);
         // Don't set main error, just log it
@@ -468,7 +468,7 @@ export default {
         // Try again after a short delay to allow DOM to update
         setTimeout(() => {
           if (mapElement.value) {
-            console.log("Map element now available, initializing");
+
             initMap();
           }
         }, 500);
@@ -498,7 +498,7 @@ export default {
           return;
         }
 
-        console.log("Loading Google Maps with API key:", googleMapsApiKey);
+
 
         // Load Google Maps API
         const loader = getLoader(googleMapsApiKey);
@@ -509,7 +509,7 @@ export default {
           throw new Error("Google Maps failed to load");
         }
 
-        console.log("Google Maps API loaded successfully");
+
 
         // Get Map class - we'll use standard Marker instead of importing from library
         const { Map } = await window.google.maps.importLibrary("maps");
@@ -520,7 +520,7 @@ export default {
           throw new Error("Could not determine coordinates");
         }
 
-        console.log("Creating map with coordinates:", coords);
+
 
         // Create map
         map = new Map(mapElement.value, {
@@ -552,7 +552,7 @@ export default {
 
         // Add event listener to marker to show it's used
         marker.addListener("click", () => {
-          console.log("Marker clicked");
+
           // Optionally add some interaction with the marker
           const infoWindow = new window.google.maps.InfoWindow({
             content: `<div><strong>${item.value.name}</strong><p>${
@@ -576,7 +576,7 @@ export default {
         if (mapElement.value) {
           initMap();
         } else {
-          console.log("Map element not ready, waiting...");
+
           setTimeout(initGoogleMap, 100);
         }
       });
@@ -612,7 +612,7 @@ export default {
       };
 
       // Log for debugging
-      console.log("Edit Item Called - Item ID:", selectedItem.value.id);
+
 
       // Populate form
       let venue = "";
@@ -683,7 +683,7 @@ export default {
         const itemId = selectedItem.value.id;
 
         // Log for debugging
-        console.log("Saving changes for item ID:", itemId);
+
 
         // Prepare data
         const updateData = {
@@ -721,17 +721,13 @@ export default {
     };
 
     const confirmDelete = async () => {
-      // Make sure we have an item and it has an ID
-      if (!item.value || !item.value.id) {
-        store.dispatch("notifications/add", {
-          message: "Item ID not found",
-          type: "error",
-        });
-        return;
-      }
-
-      const itemId = item.value.id;
-      console.log("Attempting to delete item with ID:", itemId);
+      // if (!item.value || !item.value.id) {
+      //   store.dispatch("notifications/add", {
+      //     type: "error",
+      //     message: "Item ID not found",
+      //   });
+      //   return;
+      // }
 
       if (!confirm("Are you sure you want to delete this item?")) {
         return;
@@ -741,23 +737,33 @@ export default {
         // Include user ID in request for permission check
         const userId = store.getters["auth/user"]?.id;
 
-        await itemService.deleteItem(itemId, { userId });
+        // Make sure to use the correct item ID
+        selectedItem.value = {
+          ...item.value,
+          id: route.params.id, // Ensure ID is included in the object
+        };
+
+
+        // Call the service with the item ID and user ID
+        await itemService.deleteItem(selectedItem.value.id, { userId });
 
         // Show success notification
         store.dispatch("notifications/add", {
-          message: "Item deleted successfully",
           type: "success",
+          message: "Item deleted successfully",
         });
 
-        // Navigate back to home after successful deletion
+        if (window.refreshPotentialMatches) {
+          window.refreshPotentialMatches();
+        }
         router.push("/");
       } catch (error) {
         console.error("Error deleting item:", error);
         store.dispatch("notifications/add", {
+          type: "error",
           message:
             "Failed to delete item: " +
             (error.response?.data?.error || error.message),
-          type: "error",
         });
       }
     };
@@ -783,7 +789,7 @@ export default {
           !!mapEl
         );
         if (hasCoords && mapEl && !mapLoaded.value && !mapLoading.value) {
-          console.log("Initializing map from watcher");
+
           initMap();
         }
       }
@@ -807,7 +813,7 @@ export default {
       () => route.params.id,
       (newId, oldId) => {
         if (newId !== oldId) {
-          console.log("Item ID changed in route, reloading details");
+
           fetchItemDetails();
         }
       },

@@ -686,7 +686,7 @@ export default {
 
         if (response.data.success) {
           userAddress.value = response.data.address;
-          console.log("User address loaded:", userAddress.value);
+
         } else {
           throw new Error(
             response.data.error || "Failed to load address information"
@@ -963,7 +963,7 @@ export default {
         );
 
         matchedItems.value = filteredItems;
-        console.log("Collection items fetched:", matchedItems.value.length);
+
       } catch (err) {
         console.error("Error fetching items:", err);
         error.value = "Failed to load your items. Please try again.";
@@ -976,7 +976,7 @@ export default {
       try {
         const response = await itemService.getLostItems();
         matchedItems.value = response.data;
-        console.log("Items fetched:", response.data);
+
       } catch (err) {
         console.error("Error fetching items:", err);
       }
@@ -1086,7 +1086,7 @@ export default {
           targetItemId = itemData.matchedItemId;
         }
 
-        console.log("Fetching collection details for item ID:", targetItemId);
+
 
         // Now try to fetch using the API with the correct item ID
         try {
@@ -1462,7 +1462,7 @@ export default {
       selectedItem.value = item;
       
       // Log for debugging
-      console.log("Edit Item Called - Item ID:", item.id);
+
 
       // Parse location if present
       let venue = "";
@@ -1533,7 +1533,7 @@ export default {
         const itemId = selectedItem.value.id;
 
         // Log for debugging
-        console.log("Saving changes for item ID:", itemId);
+
 
         // Prepare data
         const updateData = {
@@ -1592,7 +1592,7 @@ export default {
         
         // Now use selectedItem.value.id, just like in editItem and saveItemChanges
         const itemId = selectedItem.value.id;
-        console.log("Deleting item with ID:", itemId);
+
         
         await itemService.deleteItem(itemId, { userId });
 
@@ -1653,7 +1653,7 @@ export default {
             orderPayload
           );
 
-          console.log("Logistics order created:", logisticsResponse.data);
+
 
           // Close modal
           showModal.value = false;

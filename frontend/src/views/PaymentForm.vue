@@ -220,10 +220,10 @@ export default {
   }
   try {
     const decodedToken = jwtDecode(user.token);
-    console.log('Decoded JWT:', decodedToken);
+
     const userId = decodedToken.id || decodedToken.userId || decodedToken.sub || decodedToken.uid;
     if (userId) {
-      console.log('User ID found:', userId);
+
       return true;
     } else {
       console.warn('No user ID found in token');
@@ -327,7 +327,7 @@ getUserIdFromToken(token) {
 
     // 2. Check for the payment intent ID from OutSystems
     if (!paymentData.paymentIntentId) {
-      console.log('Full paymentData response:', paymentData);
+
       throw new Error('Missing Stripe payment ID in response');
     }
 

@@ -206,7 +206,7 @@ export default {
           unitNumber: unitNumber.value,
         });
 
-        console.log("User ID:", response.userId);
+
         localStorage.setItem(
           "user",
           JSON.stringify({

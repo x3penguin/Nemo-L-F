@@ -51,7 +51,7 @@ app.get('/health', (req, res) => {
 // Start the server
 const PORT = config.api.port;
 app.listen(PORT, async () => {
-  console.log(`Server running on port ${PORT}`);
+
   
   // Start Kafka consumers
   await kafkaConsumer.startListening();

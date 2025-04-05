@@ -327,14 +327,14 @@ export default {
 
     const getOtherParticipantName = (chat) => {
       if (!chat || !chat.participants || !Array.isArray(chat.participants)) {
-        console.log("Missing chat data:", chat);
+
         return "Unknown";
       }
 
       // Get current user ID from the store
       const userId = currentUserId.value;
-      console.log("Current user ID from store:", userId);
-      console.log("Chat participants:", chat.participants);
+
+
 
       // Sometimes IDs might be stored differently in different places
       // For debugging, log comparison results:
@@ -352,7 +352,7 @@ export default {
         (id) => id.toString() !== userId.toString()
       );
 
-      console.log("Other participant ID determined as:", otherId);
+
 
       if (!otherId) return "Unknown";
 

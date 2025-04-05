@@ -49,7 +49,7 @@ export default {
       try {
         error.value = '';
         const userId = await store.dispatch('auth/login', { email: email.value, password: password.value });
-        console.log('User ID:', userId);
+
         router.push(`/home/${userId}`);
       } catch (err) {
         if (err.response?.status === 401) {

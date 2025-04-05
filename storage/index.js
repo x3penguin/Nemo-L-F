@@ -16,7 +16,7 @@ import("kafkajs")
       .connect()
       .then(() => {
         producerConnected = true;
-        console.log("Kafka producer connected");
+
       })
       .catch((err) => {
         console.error("Failed to connect to Kafka:", err);
@@ -49,7 +49,7 @@ async function publishMatchingJob(itemId, imageUrl, latitude, longitude) {
       ],
     });
 
-    console.log(`Published matching job for item ${itemId}`);
+
     return true;
   } catch (error) {
     console.error("Error publishing to Kafka:", error);
@@ -76,7 +76,7 @@ app.use(express.json());
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`Lost and Found Item Service running on port ${PORT}`);
+
 });
 
 // Configure multer for file uploads
@@ -212,7 +212,7 @@ app.post("/found", upload.single("image"), async (req, res) => {
             itemData.longitude
           );
         } catch (err) {
-          console.log("Failed to send matching job, continuing anyway:", err);
+
         }
       }
 
@@ -237,7 +237,7 @@ app.put("/:id", async (req, res) => {
       return res.status(400).json({ success: false, error: "Item ID is required" });
     }
     
-    console.log(`Received update request for item: ${itemId}`, req.body);
+
     const updateData = req.body;
 
     // Check if item exists and isn't already matched
@@ -318,7 +318,7 @@ app.delete("/:id", async (req, res) => {
       return res.status(400).json({ success: false, error: "Item ID is required" });
     }
     
-    console.log(`Received delete request for item: ${itemId}`, req.body);
+
 
     // Check if item exists and isn't already matched
     const itemResult = await getItemById(itemId);

@@ -35,7 +35,7 @@ export const auth = {
           JSON.stringify({ userId: response.data.userId, token: response.data.token })
         );
         commit('registerSuccess', { id: response.data.userId, email });
-        console.log('Backend Response:', response.data);
+
         return Promise.resolve(response.data);
       } catch (error) {
         commit('registerFailure');

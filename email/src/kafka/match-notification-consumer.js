@@ -29,7 +29,7 @@ class MatchNotificationConsumer {
 
   async connect() {
     await this.consumer.connect();
-    console.log('Match notification consumer connected');
+
   }
 
   async startListening() {
@@ -45,13 +45,13 @@ class MatchNotificationConsumer {
         eachMessage: async ({ topic, partition, message }) => {
           try {
             const matchData = JSON.parse(message.value.toString());
-            console.log(`Received match notification: ${JSON.stringify(matchData)}`);
+
             
             // Get item details directly from Firestore
             const lostItemDoc = await db.collection('items').doc(matchData.lostItemId).get();
             
             if (!lostItemDoc.exists) {
-              console.log(`Lost item ${matchData.lostItemId} not found`);
+
               return;
             }
             
@@ -67,10 +67,10 @@ class MatchNotificationConsumer {
                   // Send email notification
                   await this.sendMatchNotificationEmail(owner.email, lostItem, matchData);
                 } else {
-                  console.log(`Owner ${lostItem.ownerId} has no email address`);
+
                 }
               } else {
-                console.log(`Owner ${lostItem.ownerId} not found`);
+
               }
             }
           } catch (error) {
@@ -79,7 +79,7 @@ class MatchNotificationConsumer {
         }
       });
       
-      console.log('Started listening for match notifications');
+
     } catch (error) {
       console.error('Error starting match notification consumer:', error);
     }
@@ -101,7 +101,7 @@ class MatchNotificationConsumer {
     `;
     
     await emailService.sendEmail(email, subject, body);
-    console.log(`Match notification email sent to ${email}`);
+
   }
 }
 

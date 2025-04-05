@@ -22,7 +22,7 @@ class ChatService {
       const user = JSON.parse(localStorage.getItem("user"));
       if (!user) throw new Error("User not authenticated");
       const currentUserId = user.userId || user.id;
-      console.log("Current user ID:", currentUserId);
+
 
       // Get the correct item data first
       const itemRef = doc(db, "items", itemId);
@@ -30,7 +30,7 @@ class ChatService {
       if (!itemDoc.exists()) throw new Error("Item not found");
 
       const itemData = itemDoc.data();
-      console.log("Item data:", itemData);
+
 
       let otherUserId = null;
 
@@ -50,7 +50,7 @@ class ChatService {
         if (!matchSnapshot.empty) {
           // We found a potential match
           const matchData = matchSnapshot.docs[0].data();
-          console.log("Found potential match:", matchData);
+
 
           // Get the other item ID
           const otherItemId =
@@ -61,7 +61,7 @@ class ChatService {
           if (!otherItemId) {
             throw new Error("Missing other item ID in potential match");
           }
-          console.log("current item ID (found):", itemId);
+
           console.log(
             "Other item ID from potential match (lost item):",
             otherItemId
@@ -72,8 +72,8 @@ class ChatService {
           if (otherItemDoc.exists()) {
             const otherItemData = otherItemDoc.data();
             otherUserId = otherItemData.reportOwner;
-            console.log("Other user ID from potential match:", otherUserId);
-            console.log("currentUserId:", currentUserId);
+
+
 
             // Make sure we're not creating a chat with ourselves
             if (otherUserId.toString() === currentUserId.toString()) {
@@ -107,7 +107,7 @@ class ChatService {
       }
 
       // VERIFY the participants array has TWO DIFFERENT IDs
-      console.log("Creating chat between:", currentUserId, "and", otherUserId);
+
 
       // Check for existing chat between these users for this item
       const chatsRef = collection(db, "chats");
@@ -121,7 +121,7 @@ class ChatService {
           chatData.participants.includes(currentUserId) &&
           chatData.participants.includes(otherUserId)
         ) {
-          console.log("Found existing chat:", doc.id);
+
           return { id: doc.id, ...chatData };
         }
       }
@@ -137,7 +137,7 @@ class ChatService {
       };
 
       const chatRef = await addDoc(chatsRef, newChat);
-      console.log("Created new chat:", chatRef.id);
+
 
       return {
         id: chatRef.id,
@@ -284,7 +284,7 @@ class ChatService {
   // Get user info by ID
   async getUserInfo(userId) {
     try {
-      console.log("Fetching user info for ID:", userId);
+
 
       // Directly query Firebase for the user
       const userRef = doc(db, "users", userId);
@@ -292,7 +292,7 @@ class ChatService {
 
       if (userDoc.exists()) {
         const userData = userDoc.data();
-        console.log("Found user data:", userData);
+
 
         // Check different possible name fields based on your Firebase structure
         const name =
@@ -307,7 +307,7 @@ class ChatService {
           email: userData.email || "",
         };
       } else {
-        console.log("No user document found with ID:", userId);
+
         return { id: userId, name: `User ${userId.substring(0, 4)}` };
       }
     } catch (error) {

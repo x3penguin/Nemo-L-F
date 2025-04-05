@@ -273,7 +273,7 @@ export default {
       if (!item) return;
 
       // Make sure we're using the ID of the potential match item, not the source item
-      console.log("Viewing details for item:", item.id);
+
 
       // Navigate to item details with the correct ID
       router.push({

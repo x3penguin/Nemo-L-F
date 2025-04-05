@@ -7,7 +7,7 @@
 </template>
 
 <script>
-import { computed, } from "vue";
+import { computed,ref } from "vue";
 import { useRoute } from "vue-router";
 import NavBar from "@/components/NavBar.vue";
 import NotificationCenter from "@/components/NotificationCenter.vue";
@@ -20,12 +20,21 @@ export default {
   },
   setup() {
     const route = useRoute();
+    const navbarRef = ref(null);
 
     const showNavbar = computed(() => {
       // Hide navbar on login and register pages
       return !["login", "register"].includes(route.name);
     });
 
+    const refreshPotentialMatches = () => {
+      // Find NavBar component instance using ref
+      if (navbarRef.value) {
+        navbarRef.value.checkPotentialMatches();
+      }
+    };
+
+    window.refreshPotentialMatches = refreshPotentialMatches;
 
     return {
       showNavbar,

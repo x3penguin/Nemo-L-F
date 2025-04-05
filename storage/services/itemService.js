@@ -64,8 +64,7 @@ export const storeItemData = async (itemData) => {
       message: "Item stored successfully",
     };
   } catch (error) {
-    console.error("Error storing item data:", error);
-    return {
+     return {
       success: false,
       error: error.message,
     };
@@ -74,18 +73,55 @@ export const storeItemData = async (itemData) => {
 
 export const deleteItem = async (itemId) => {
   try {
+    // First delete the item itself
     const itemRef = doc(db, "items", itemId);
     await deleteDoc(itemRef);
-    
+
+    // Delete potential matches where this item appears as either found or lost item
+    const potentialMatchesRef = collection(db, "potential_matches");
+
+    // Query for matches where this is the foundItemId
+    const foundItemQuery = query(
+      potentialMatchesRef,
+      where("foundItemId", "==", itemId)
+    );
+
+    // Query for matches where this is the lostItemId
+    const lostItemQuery = query(
+      potentialMatchesRef,
+      where("lostItemId", "==", itemId)
+    );
+
+    // Get all matching documents
+    const foundMatches = await getDocs(foundItemQuery);
+    const lostMatches = await getDocs(lostItemQuery);
+
+    // Delete all matching documents
+    const deletePromises = [];
+
+    foundMatches.forEach((docSnapshot) => {
+      deletePromises.push(
+        deleteDoc(doc(db, "potential_matches", docSnapshot.id))
+      );
+    });
+
+    lostMatches.forEach((docSnapshot) => {
+      deletePromises.push(
+        deleteDoc(doc(db, "potential_matches", docSnapshot.id))
+      );
+    });
+
+    // Wait for all deletion operations to complete
+    await Promise.all(deletePromises);
+
     return {
       success: true,
-      message: "Item deleted successfully"
+      message: "Item and related potential matches deleted successfully",
     };
   } catch (error) {
-    console.error("Error deleting item:", error);
-    return {
+     return {
       success: false,
-      error: error.message
+      error: error.message,
     };
   }
 };
@@ -113,8 +149,7 @@ export const getItemById = async (itemId) => {
       };
     }
   } catch (error) {
-    console.error("Error getting item:", error);
-    return {
+     return {
       success: false,
       error: error.message,
     };
@@ -137,8 +172,7 @@ export const updateItem = async (itemId, updateData) => {
       message: "Item updated successfully",
     };
   } catch (error) {
-    console.error("Error updating item:", error);
-    return {
+     return {
       success: false,
       error: error.message,
     };
@@ -147,8 +181,7 @@ export const updateItem = async (itemId, updateData) => {
 
 export const getItemsByStatus = async (status) => {
   try {
-    console.log("Querying Firebase for items with status:", status);
-    const q = query(collection(db, "items"), where("status", "==", status));
+     const q = query(collection(db, "items"), where("status", "==", status));
     const querySnapshot = await getDocs(q);
 
     const items = [];
@@ -164,8 +197,7 @@ export const getItemsByStatus = async (status) => {
           });
         } else {
           // Alternative for different Firebase API
-          console.log("Using alternative data access method");
-          items.push({
+           items.push({
             id: docSnapshot.id,
             ...docSnapshot,
           });
@@ -173,8 +205,7 @@ export const getItemsByStatus = async (status) => {
       });
     } else {
       // Handle case where querySnapshot is structured differently
-      console.log("QuerySnapshot has different structure:", querySnapshot);
-      // Try to access documents array if it exists
+       // Try to access documents array if it exists
       const docs = querySnapshot.docs || [];
       docs.forEach((doc) => {
         if (doc && typeof doc.data === "function") {
@@ -191,8 +222,7 @@ export const getItemsByStatus = async (status) => {
       items,
     };
   } catch (error) {
-    console.error("Error getting items by status:", error);
-    return {
+     return {
       success: false,
       error: error.message,
     };
@@ -218,8 +248,7 @@ export const uploadImage = async (file) => {
       message: "Image uploaded successfully",
     };
   } catch (error) {
-    console.error("Error uploading image:", error);
-    return {
+     return {
       success: false,
       error: error.message,
     };
@@ -285,8 +314,7 @@ export const getCollectionItems = async (userId = 1) => {
       items: itemsWithImages,
     };
   } catch (error) {
-    console.error("Error getting collection items:", error);
-    return {
+     return {
       success: false,
       error: error.message,
     };

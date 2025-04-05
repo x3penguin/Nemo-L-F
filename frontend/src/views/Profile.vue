@@ -338,7 +338,7 @@ export default {
       try {
         // Replace with your API call
         // await api.put('/users/profile', userData.value);
-        console.log('Profile updated:', userData.value);
+
         // Update the store
         // await store.dispatch('auth/updateProfile', userData.value);
       } catch (error) {
@@ -389,11 +389,6 @@ export default {
       }
     };
     
-    const editAddress = (address) => {
-      // Implement edit functionality
-      console.log('Edit address:', address);
-    };
-    
     const deleteAddress = async (address) => {
       try {
         // Replace with your API call
@@ -404,11 +399,6 @@ export default {
       } catch (error) {
         console.error('Error deleting address:', error);
       }
-    };
-    
-    const viewItemDetails = (item) => {
-      // Navigate to item details page
-      console.log('View item details:', item);
     };
     
     const formatDate = (dateStr) => {
@@ -440,9 +430,7 @@ export default {
       updateProfile,
       addAddress,
       setDefaultAddress,
-      editAddress,
       deleteAddress,
-      viewItemDetails,
       formatDate,
       formatAddress
     };

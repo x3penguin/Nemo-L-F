@@ -220,7 +220,7 @@ export default {
               `http://localhost:8000/user/api/users/${userId}/lost-items-with-matches`
             );
             matches.value = response.data.items || [];
-            console.log("Potential matches loaded:", matches.value.length);
+
           } catch (err) {
             console.error("Error fetching lost items with matches:", err);
             error.value = "Failed to load your items. Please try again.";

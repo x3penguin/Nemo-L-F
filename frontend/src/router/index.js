@@ -5,8 +5,8 @@ import store from "@/store";
 // Views
 import Home from "@/views/Home.vue";
 import Login from "@/views/Login.vue";
-import ItemDetail from '@/views/ItemDetail.vue';
-import PotentialMatches from '@/views/PotentialMatches.vue';
+import ItemDetail from "@/views/ItemDetail.vue";
+import PotentialMatches from "@/views/PotentialMatches.vue";
 
 const routes = [
   {
@@ -53,20 +53,20 @@ const routes = [
     },
   },
   {
-    path: '/chat',
-    name: 'chat',
+    path: "/chat",
+    name: "chat",
     component: () => import("@/views/Chat.vue"),
-    meta: { 
-      requiresAuth: true 
-    }
+    meta: {
+      requiresAuth: true,
+    },
   },
   // {
   //   path: '/chats/:id',
   //   name: 'ChatDetail',
   //   component: ChatDetail,
-  //   meta: { 
-  //     requiresAuth: true 
-  //   } 
+  //   meta: {
+  //     requiresAuth: true
+  //   }
   // },
   {
     path: "/profile",
@@ -132,13 +132,20 @@ const routes = [
     beforeRouteUpdate: (to, from, next) => {
       to.meta.skipFetchingData = false;
       next();
-    }
+    },
   },
 ];
 
 const router = createRouter({
   history: createWebHistory(process.env.BASE_URL),
   routes,
+});
+
+router.afterEach(() => {
+  // Refresh potential matches indicator after each route change
+  if (window.refreshPotentialMatches) {
+    setTimeout(() => window.refreshPotentialMatches(), 500);
+  }
 });
 
 // Navigation guard

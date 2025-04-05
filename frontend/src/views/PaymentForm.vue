@@ -312,7 +312,6 @@ getUserIdFromToken(token) {
 
     // Handle non-JSON responses
     const responseText = await createPaymentResponse.text();
-    console.log('Raw response from OutSystems API:', responseText); // Log the raw response
     let paymentData;
     try {
       paymentData = JSON.parse(responseText);

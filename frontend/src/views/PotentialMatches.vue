@@ -166,7 +166,7 @@
 </template>
 
 <script>
-import { ref, computed, onMounted, watch } from "vue";
+import { ref, computed, onMounted, watch, onUnmounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import itemService from "@/services/item.service";
 import ItemCarousel from "@/components/ItemCarousel.vue";
@@ -314,6 +314,13 @@ export default {
     onMounted(() => {
       fetchMatches();
     });
+
+    onUnmounted(() => {
+  // Refresh potential matches indicator when leaving this page
+  if (window.refreshPotentialMatches) {
+    window.refreshPotentialMatches();
+  }
+});
 
     return {
       matches,

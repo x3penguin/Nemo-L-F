@@ -469,9 +469,6 @@ app.get("/:id/potential-matches", async (req, res) => {
       const matchesSnapshot = await getDocs(queryRef);
 
       if (!matchesSnapshot.empty) {
-        console.log(
-          `Found ${matchesSnapshot.size} potential matches from potential_matches collection`
-        );
 
         // Get the matching item details for each potential match
         const matchPromises = matchesSnapshot.docs.map(async (doc) => {

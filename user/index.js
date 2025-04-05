@@ -251,10 +251,6 @@ app.get("/api/users/:id/matches/new", async (req, res) => {
 
       // Commit the batch
       await batch.commit();
-
-      console.log(
-        `Marked ${matches.length} notifications as seen for user ${userId}`
-      );
     }
 
     res.json({ matches });

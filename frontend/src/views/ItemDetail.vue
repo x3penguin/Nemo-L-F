@@ -545,10 +545,6 @@ export default {
         }
 
         mapLoaded.value = true;
-        console.log(
-          "Map initialized successfully with marker at:",
-          marker.getPosition().toString()
-        );
 
         // Add event listener to marker to show it's used
         marker.addListener("click", () => {
@@ -782,12 +778,6 @@ export default {
     watch(
       [() => hasCoordinates.value, () => mapElement.value],
       ([hasCoords, mapEl]) => {
-        console.log(
-          "Watch triggered - hasCoordinates:",
-          hasCoords,
-          "mapElement exists:",
-          !!mapEl
-        );
         if (hasCoords && mapEl && !mapLoaded.value && !mapLoading.value) {
 
           initMap();

@@ -334,19 +334,6 @@ export default {
       // Get current user ID from the store
       const userId = currentUserId.value;
 
-
-
-      // Sometimes IDs might be stored differently in different places
-      // For debugging, log comparison results:
-      console.log(
-        "Participants check:",
-        chat.participants.map((id) => ({
-          id,
-          matches: id === userId,
-          stringComparison: id.toString() === userId.toString(),
-        }))
-      );
-
       // Try string comparison to avoid type issues
       const otherId = chat.participants.find(
         (id) => id.toString() !== userId.toString()

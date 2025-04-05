@@ -227,14 +227,21 @@ export default {
           });
 
           try {
-            await axios.post("http://localhost:8000/email/api/found-items/notify", {
-              itemId: foundItemId,
-              itemName: item.name || "Found Item",
-              itemDescription: item.description || "No description",
-              ownerEmail: userEmail,
-            });
+            await axios.post(
+              "http://localhost:8000/email/api/found-items/notify",
+              {
+                itemId: foundItemId,
+                itemName: item.name || "Found Item",
+                itemDescription: item.description || "No description",
+                ownerEmail: userEmail,
+              }
+            );
           } catch (emailErr) {
             console.error("Error sending email notification:", emailErr);
+          }
+
+          if (window.refreshPotentialMatches) {
+            window.refreshPotentialMatches();
           }
 
           // Redirect to collections page
@@ -273,7 +280,6 @@ export default {
       if (!item) return;
 
       // Make sure we're using the ID of the potential match item, not the source item
-
 
       // Navigate to item details with the correct ID
       router.push({

@@ -184,16 +184,6 @@ export default {
         }
         // Inside the register function, add this right before the validation
         error.value = "";
-        console.log("Sending registration data:", {
-          name: name.value,
-          email: email.value,
-          password: password.value,
-          phone: phone.value,
-          city: city.value,
-          postalCode: postalCode.value,
-          streetAddress: streetAddress.value,
-          unitNumber: unitNumber.value,
-        });
 
         const response = await store.dispatch("auth/register", {
           name: name.value,

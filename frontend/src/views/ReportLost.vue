@@ -636,11 +636,13 @@ export default {
     // Get current location using browser's geolocation API
     const getCurrentLocation = () => {
       if (navigator.geolocation) {
+        // Show a temporary loading state in the venue field
+        formData.value.venue = "Getting your location...";
+        
         navigator.geolocation.getCurrentPosition(
-          (position) => {
+          async (position) => {
             const lat = position.coords.latitude;
             const lng = position.coords.longitude;
-
 
             formData.value.coordinates.lat = lat;
             formData.value.coordinates.lng = lng;
@@ -653,14 +655,29 @@ export default {
               map.setZoom(17);
             }
 
-            // Explicitly call reverseGeocode to update the venue field
-            reverseGeocode(lat, lng);
+            try {
+              // Call reverseGeocode and await its result
+              await reverseGeocode(lat, lng);
+            } catch (error) {
+              console.error("Error updating address:", error);
+              // If reverseGeocode fails, at least show the coordinates
+              formData.value.venue = `Location at ${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+            }
           },
           (error) => {
             console.error("Error getting current location:", error);
-            alert(
-              "Unable to get your current location. Please enter it manually."
-            );
+            // Clear the loading message
+            formData.value.venue = "";
+            
+            // Show appropriate error message based on the error code
+            let errorMessage = "Unable to get your current location. Please enter it manually.";
+            if (error.code === 1) {
+              errorMessage = "Location access was denied. Please allow location access or enter the location manually.";
+            } else if (error.code === 2) {
+              errorMessage = "Your location is currently unavailable. Please try again later or enter the location manually.";
+            }
+            
+            alert(errorMessage);
           },
           { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
         );
@@ -691,10 +708,6 @@ export default {
           geocoder.geocode({ location: { lat, lng } }, (results, status) => {
             if (status === "OK" && results[0]) {
               formData.value.venue = results[0].formatted_address;
-              console.log(
-                "Updated venue via fallback to:",
-                formData.value.venue
-              );
             } else {
               console.error("Geocoder failed due to: " + status);
             }

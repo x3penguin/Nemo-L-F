@@ -62,19 +62,12 @@ class ChatService {
             throw new Error("Missing other item ID in potential match");
           }
 
-          console.log(
-            "Other item ID from potential match (lost item):",
-            otherItemId
-          );
           // Get that other item's details to find the reportOwner
           const otherItemRef = doc(db, "items", itemId);
           const otherItemDoc = await getDoc(otherItemRef);
           if (otherItemDoc.exists()) {
             const otherItemData = otherItemDoc.data();
             otherUserId = otherItemData.reportOwner;
-
-
-
             // Make sure we're not creating a chat with ourselves
             if (otherUserId.toString() === currentUserId.toString()) {
               console.error(
@@ -83,10 +76,6 @@ class ChatService {
               throw new Error("Cannot create chat with yourself");
             }
 
-            console.log(
-              "Found other user ID from potential match:",
-              otherUserId
-            );
           }
         }
       }

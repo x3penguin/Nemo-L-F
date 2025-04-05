@@ -56,7 +56,7 @@ docker-compose*
 # Testing
 coverage
 .nyc_output
-__tests__
+tests
 tests
 test
 jest.config.js

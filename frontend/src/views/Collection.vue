@@ -301,6 +301,20 @@
                     >{{ formatStatus(selectedItem.status) }}</span
                   >
                 </p>
+                <div v-if="canEditItem(selectedItem)" class="item-actions mt-2">
+                  <button
+                    @click="editItem(selectedItem)"
+                    class="btn btn-secondary btn-sm"
+                  >
+                    Edit Details
+                  </button>
+                  <button
+                    @click="confirmDelete(selectedItem)"
+                    class="btn btn-danger btn-sm ml-2"
+                  >
+                    Delete Item
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -500,11 +514,109 @@
         </div>
       </div>
     </div>
+    <div v-if="showEditModal" class="modal-overlay" @click="closeEditModal">
+      <div class="edit-modal" @click.stop>
+        <div class="modal-header">
+          <h2>Edit Item</h2>
+          <button class="close-button" @click="closeEditModal">×</button>
+        </div>
+
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="itemName">Item Name *</label>
+            <input
+              type="text"
+              id="itemName"
+              v-model="editForm.name"
+              class="form-control"
+              :class="{ error: editErrors.name }"
+            />
+            <div v-if="editErrors.name" class="error-message">
+              {{ editErrors.name }}
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="itemCategory">Category *</label>
+            <select
+              id="itemCategory"
+              v-model="editForm.category"
+              class="form-control"
+              :class="{ error: editErrors.category }"
+            >
+              <option value="">Select a category</option>
+              <option value="Electronics">Electronics</option>
+              <option value="Jewelry">Jewelry</option>
+              <option value="Clothing">Clothing</option>
+              <option value="Accessories">Accessories</option>
+              <option value="Documents">Documents</option>
+              <option value="Keys">Keys</option>
+              <option value="Other">Other</option>
+            </select>
+            <div v-if="editErrors.category" class="error-message">
+              {{ editErrors.category }}
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="itemDescription">Description *</label>
+            <textarea
+              id="itemDescription"
+              v-model="editForm.description"
+              class="form-control"
+              :class="{ error: editErrors.description }"
+              rows="4"
+            ></textarea>
+            <div v-if="editErrors.description" class="error-message">
+              {{ editErrors.description }}
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="itemVenue">Venue/Location *</label>
+            <input
+              type="text"
+              id="itemVenue"
+              v-model="editForm.venue"
+              class="form-control"
+              :class="{ error: editErrors.venue }"
+            />
+            <div v-if="editErrors.venue" class="error-message">
+              {{ editErrors.venue }}
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="specificLocation">Specific Location</label>
+            <input
+              type="text"
+              id="specificLocation"
+              v-model="editForm.specificLocation"
+              class="form-control"
+            />
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button @click="closeEditModal" class="btn btn-secondary">
+            Cancel
+          </button>
+          <button
+            @click="saveItemChanges"
+            class="btn btn-primary"
+            :disabled="isSaving"
+          >
+            <span v-if="isSaving" class="spinner small"></span>
+            Save Changes
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script>
-import { useRouter } from 'vue-router';
+import { useRouter } from "vue-router";
 import { ref, computed, onMounted } from "vue";
 import itemService from "@/services/item.service";
 import ItemCard from "@/components/ItemCard.vue";
@@ -597,31 +709,31 @@ export default {
         // First, fetch the item details to get currentLocation
         const itemResponse = await itemService.getItemById(itemId);
         const itemData = itemResponse.data;
-        
+
         console.log("Item data:", itemData); // Add here to verify item data retrieval
-        
+
         if (!itemData) {
           throw new Error("Item not found");
         }
-        
+
         // Check the currentLocation
         const currentLocation = itemData.currentLocation;
         console.log("Current location:", currentLocation); // Add here to verify location extraction
-        
+
         let pickCode; // Declare a variable to store the pick code
-        
+
         if (currentLocation === "with_me") {
           // If item is with finder, get finder's postal code
           const finderId = itemData.finderId;
           if (!finderId) {
             throw new Error("Finder information not found");
           }
-          
+
           // Fetch address from user service
           const userResponse = await axios.get(
             `http://localhost:8000/user/api/users/${finderId}/address`
           );
-          
+
           if (userResponse.data.success) {
             pickCode = userResponse.data.address.address.postalCode;
             console.log("Extracted pick code (from finder):", pickCode); // Add here for finder path
@@ -629,21 +741,30 @@ export default {
           } else {
             throw new Error("Failed to fetch finder's address");
           }
-        } else if (currentLocation === "lost_found_office" || currentLocation === "venue_staff") {
+        } else if (
+          currentLocation === "lost_found_office" ||
+          currentLocation === "venue_staff"
+        ) {
           // Extract postal code from location string
           // Example format: "202 Jurong East Street 21, Singapore 600202 | AF"
           const locationString = itemData.location;
-          
+
           // Use regex to extract 6-digit postal code
           const postalCodeMatch = locationString.match(/Singapore\s+(\d{6})/i);
-          
+
           if (postalCodeMatch && postalCodeMatch[1]) {
             pickCode = postalCodeMatch[1];
-            console.log("Extracted pick code (from location string):", pickCode); // Add here for location extraction path
+            console.log(
+              "Extracted pick code (from location string):",
+              pickCode
+            ); // Add here for location extraction path
             return pickCode;
           } else {
             // Fallback to default if postal code not found in string
-            console.warn("Could not extract postal code from location:", locationString);
+            console.warn(
+              "Could not extract postal code from location:",
+              locationString
+            );
             pickCode = "059893"; // Default postal code
             console.log("Using default pick code:", pickCode); // Add here for fallback case
             return pickCode;
@@ -660,7 +781,7 @@ export default {
         // Return default pick code on error
         const pickCode = "059893";
         console.log("Using default pick code (error case):", pickCode); // Add here for error case
-        return pickCode; 
+        return pickCode;
       }
     };
 
@@ -970,7 +1091,7 @@ export default {
         // Now try to fetch using the API with the correct item ID
         try {
           const response = await axios.get(
-            `http://localhost:8000/user` + `/${targetItemId}`  
+            `http://localhost:8000/user` + `/${targetItemId}`
           );
 
           if (response.data && response.data.success) {
@@ -1315,6 +1436,169 @@ export default {
       };
     };
 
+    const showEditModal = ref(false);
+    const editForm = ref({
+      name: "",
+      category: "",
+      description: "",
+      venue: "",
+      specificLocation: "",
+    });
+    const editErrors = ref({});
+    const isSaving = ref(false);
+
+    const canEditItem = (item) => {
+      if (!item) return false;
+      const userId = store.getters["auth/user"]?.id;
+      return (
+        item.reportOwner === userId &&
+        !["MATCHED", "COLLECTING", "RETRIEVED"].includes(item.status)
+      );
+    };
+
+    const editItem = (item) => {
+      // Populate form with current item data
+      editForm.value = {
+        name: item.name || "",
+        category: item.category || "",
+        description: item.description || "",
+        venue: item.location ? item.location.split(" | ")[0] : "",
+        specificLocation:
+          item.location && item.location.split(" | ")[1]
+            ? item.location.split(" | ")[1]
+            : "",
+      };
+
+      // Store the current item ID for saving later
+      selectedItem.value = item;
+
+      // Close the current modal if open and show edit modal
+      closeModal();
+      showEditModal.value = true;
+    };
+
+    const closeEditModal = () => {
+      showEditModal.value = false;
+      editErrors.value = {};
+    };
+
+    const validateEditForm = () => {
+      editErrors.value = {};
+      let isValid = true;
+
+      if (!editForm.value.name) {
+        editErrors.value.name = "Item name is required";
+        isValid = false;
+      }
+
+      if (!editForm.value.category) {
+        editErrors.value.category = "Category is required";
+        isValid = false;
+      }
+
+      if (!editForm.value.description) {
+        editErrors.value.description = "Description is required";
+        isValid = false;
+      } else if (editForm.value.description.length < 10) {
+        editErrors.value.description =
+          "Description should be at least 10 characters";
+        isValid = false;
+      }
+
+      if (!editForm.value.venue) {
+        editErrors.value.venue = "Venue/location is required";
+        isValid = false;
+      }
+
+      return isValid;
+    };
+
+    const saveItemChanges = async () => {
+      if (!validateEditForm() || !selectedItem.value) return;
+
+      isSaving.value = true;
+
+      try {
+        // Prepare data for API
+        const updateData = {
+          name: editForm.value.name,
+          category: editForm.value.category,
+          description: editForm.value.description,
+          venue: editForm.value.venue,
+          specific_location: editForm.value.specificLocation,
+          userId: store.getters["auth/user"]?.id, // Include user ID for permission check
+        };
+
+        // Make sure we have a valid item ID before making the API call
+        if (!selectedItem.value.id) {
+          throw new Error("Item ID is missing");
+        }
+
+        console.log("Updating item with ID:", selectedItem.value.id);
+
+        // Call API to update item - use the correct endpoint
+        await itemService.updateItem(selectedItem.value.id, updateData);
+
+        // Show success message
+        store.dispatch("notifications/add", {
+          type: "success",
+          message: "Item updated successfully",
+        });
+
+        // Close modal and refresh data
+        closeEditModal();
+        await fetchMatchedItems();
+      } catch (error) {
+        console.error("Error updating item:", error);
+        store.dispatch("notifications/add", {
+          type: "error",
+          message:
+            "Failed to update item: " +
+            (error.response?.data?.error || error.message),
+        });
+      } finally {
+        isSaving.value = false;
+      }
+    };
+
+    const confirmDelete = async (item) => {
+      if (!item || !item.id) {
+        store.dispatch("notifications/add", {
+          type: "error",
+          message: "Item ID not found",
+        });
+        return;
+      }
+
+      if (!confirm("Are you sure you want to delete this item?")) {
+        return;
+      }
+
+      try {
+        // Include user ID in request for permission check
+        const userId = store.getters["auth/user"]?.id;
+        await itemService.deleteItem(item.id, { userId });
+
+        // Show success notification
+        store.dispatch("notifications/add", {
+          type: "success",
+          message: "Item deleted successfully",
+        });
+
+        // Close modal and refresh data
+        closeModal();
+        await fetchMatchedItems();
+      } catch (error) {
+        console.error("Error deleting item:", error);
+        store.dispatch("notifications/add", {
+          type: "error",
+          message:
+            "Failed to delete item: " +
+            (error.response?.data?.error || error.message),
+        });
+      }
+    };
+
     // Add the missing refs for shipping options
     const shippingOptions = ref([]);
     const selectedOption = ref(null);
@@ -1334,7 +1618,7 @@ export default {
         if (collectionMethod.value === "COURIER" && selectedOption.value) {
           // Get the dynamic pick code based on item's currentLocation
           const pickCode = await getPickCodeFromItem(selectedItem.value.id);
-          
+
           const orderDetails = {
             item_id: selectedItem.value.id,
             user_id: store.getters["auth/user"]?.id,
@@ -1342,7 +1626,7 @@ export default {
             price: selectedOption.value.price,
             send_address: `${userAddress.value.address.unitNumber}, ${userAddress.value.address.streetAddress}, ${userAddress.value.address.city}, ${userAddress.value.address.postalCode}`,
             pick_code: pickCode,
-            delivery_status: "PENDING" // Start with PENDING status
+            delivery_status: "PENDING", // Start with PENDING status
           };
 
           // Submit order to create the record
@@ -1351,12 +1635,12 @@ export default {
             "http://localhost:8000/logistics/select-order",
             orderPayload
           );
-          
+
           console.log("Logistics order created:", logisticsResponse.data);
-          
+
           // Close modal
           showModal.value = false;
-          
+
           // Redirect to payment form with proper query parameters
           router.push({
             name: "PaymentForm", // This matches your route name in router config
@@ -1364,13 +1648,13 @@ export default {
               orderId: logisticsResponse.data.id || selectedItem.value.id,
               itemId: selectedItem.value.id,
               amount: selectedOption.value.price,
-              serviceName: selectedOption.value.service_name
-            }
+              serviceName: selectedOption.value.service_name,
+            },
           });
-          
+
           return; // Exit early since we're redirecting to payment page
         }
-        
+
         // For self-pickup, continue with the existing flow
         // Update both the lost item and the found item to COLLECTING
         await Promise.all([
@@ -1395,7 +1679,6 @@ export default {
         // Close modal and refresh items
         showModal.value = false;
         await fetchMatchedItems();
-        
       } catch (err) {
         console.error("Error processing payment:", err);
         collectionError.value = "Failed to process payment. Please try again.";
@@ -1458,12 +1741,91 @@ export default {
       markItemAsDelivered,
       isItemFinder,
       initiateCollection,
+      canEditItem,
+      editItem,
+      confirmDelete,
+      showEditModal,
+      editForm,
+      editErrors,
+      isSaving,
+      closeEditModal,
+      saveItemChanges,
     };
   },
 };
 </script>
 
 <style scoped>
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.edit-modal {
+  background-color: white;
+  border-radius: 0.5rem;
+  width: 90%;
+  max-width: 600px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.modal-header h2 {
+  margin: 0;
+  font-size: 1.5rem;
+}
+
+.close-button {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: #6b7280;
+}
+
+.modal-body {
+  padding: 1.5rem;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  padding: 1rem 1.5rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.spinner.small {
+  width: 1rem;
+  height: 1rem;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: white;
+  animation: spin 0.8s linear infinite;
+  margin-right: 0.5rem;
+}
+
 .collection-actions {
   margin-top: 1.5rem;
   padding-top: 1rem;
@@ -1680,7 +2042,9 @@ export default {
   border-radius: 0.375rem;
   font-size: 1rem;
 }
-
+.ml-2 {
+  margin-left: 0.5rem;
+}
 .matched-items {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -1829,19 +2193,6 @@ export default {
   font-size: 0.875rem;
 }
 
-/* Modal Styles */
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 100;
-}
 
 .modal-container {
   background-color: white;

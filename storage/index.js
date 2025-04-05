@@ -73,7 +73,6 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Lost and Found Item Service running on port ${PORT}`);
@@ -90,7 +89,6 @@ const kafka = new Kafka({
   clientId: "storage-service",
   brokers: [process.env.KAFKA_BROKERS],
 });
-
 
 // Get items by status (handles getLostItems, getFoundItems, getMatchedItems)
 app.get("/", async (req, res) => {
@@ -147,7 +145,7 @@ app.post("/lost", upload.single("image"), async (req, res) => {
       currentLocation: "NA",
       ownerId: req.body.userId,
       finderId: null,
-      reportOwner: req.body.userId
+      reportOwner: req.body.userId,
     };
 
     const result = await storeItemData(itemData);
@@ -198,7 +196,7 @@ app.post("/found", upload.single("image"), async (req, res) => {
       longitude: req.body.longitude,
       ownerId: null,
       finderId: req.body.userId,
-      reportOwner: req.body.userId
+      reportOwner: req.body.userId,
     };
 
     const result = await storeItemData(itemData);
@@ -228,6 +226,120 @@ app.post("/found", upload.single("image"), async (req, res) => {
   } catch (error) {
     console.error("Error processing found item:", error);
     res.status(500).json({ error: error.message });
+  }
+});
+
+app.put("/:id", async (req, res) => {
+  try {
+    const itemId = req.params.id;
+    const updateData = req.body;
+
+    // Check if item exists and isn't already matched
+    const itemResult = await getItemById(itemId);
+    if (!itemResult.success) {
+      return res.status(404).json({ success: false, error: "Item not found" });
+    }
+
+    // Check if item is already matched
+    if (
+      itemResult.data.status === "MATCHED" ||
+      itemResult.data.status === "COLLECTING" ||
+      itemResult.data.status === "RETRIEVED"
+    ) {
+      return res.status(400).json({
+        success: false,
+        error:
+          "Cannot update item that is already matched, in collection, or retrieved",
+      });
+    }
+
+    // Check if the user is the owner of this item (security)
+    const userId = req.body.userId || "1"; // Get from auth token in production
+    if (itemResult.data.reportOwner !== userId) {
+      return res.status(403).json({
+        success: false,
+        error: "You don't have permission to update this item",
+      });
+    }
+
+    // Only allow updating specific fields
+    const allowedFields = [
+      "name",
+      "description",
+      "category",
+      "venue",
+      "specific_location",
+    ];
+    const filteredData = {};
+
+    allowedFields.forEach((field) => {
+      if (updateData[field] !== undefined) {
+        filteredData[field] = updateData[field];
+      }
+    });
+
+    // Update item in Firebase
+    const result = await updateItem(itemId, filteredData);
+
+    if (result.success) {
+      res
+        .status(200)
+        .json({ success: true, message: "Item updated successfully" });
+    } else {
+      res.status(400).json({ success: false, error: result.error });
+    }
+  } catch (error) {
+    console.error("Error updating item:", error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Delete item (DELETE request)
+app.delete("/:id", async (req, res) => {
+  try {
+    const itemId = req.params.id;
+
+    // Check if item exists and isn't already matched
+    const itemResult = await getItemById(itemId);
+    if (!itemResult.success) {
+      return res.status(404).json({ success: false, error: "Item not found" });
+    }
+
+    // Check if item is already matched
+    if (
+      itemResult.data.status === "MATCHED" ||
+      itemResult.data.status === "COLLECTING" ||
+      itemResult.data.status === "RETRIEVED"
+    ) {
+      return res.status(400).json({
+        success: false,
+        error:
+          "Cannot delete item that is already matched, in collection, or retrieved",
+      });
+    }
+
+    // Check if the user is the owner of this item (security)
+    const userId = req.body.userId || "1"; // Get from auth token in production
+    if (itemResult.data.reportOwner !== userId) {
+      return res.status(403).json({
+        success: false,
+        error: "You don't have permission to delete this item",
+      });
+    }
+
+    // Delete item from Firebase
+    const result = await deleteItem(itemId);
+
+    if (result.success) {
+      res
+        .status(200)
+        .json({ success: true, message: "Item deleted successfully" });
+    } else {
+      res.status(400).json({ success: false, error: result.error });
+    }
+  } catch (error) {
+    console.error("Error deleting item:", error);
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 
@@ -276,13 +388,8 @@ app.get("/:itemId/collection", async (req, res) => {
   }
 });
 
-// Health check endpoint
-app.get("/health", (req, res) => {
-  res.status(200).json({ status: "UP" });
-});
-
-import { db } from './firebase.js';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { db } from "./firebase.js";
+import { collection, query, where, getDocs } from "firebase/firestore";
 app.get("/:id/potential-matches", async (req, res) => {
   const itemId = req.params.id;
 
@@ -310,67 +417,74 @@ app.get("/:id/potential-matches", async (req, res) => {
     }
 
     try {
-
-
-      
       // Query the potential_matches collection for matches related to this item
-      const potentialMatchesRef = collection(db, 'potential_matches');
+      const potentialMatchesRef = collection(db, "potential_matches");
       let queryRef;
-      
+
       if (status === "LOST") {
         // If item is LOST, look for matches where this is the lostItemId
-        queryRef = query(potentialMatchesRef, where('lostItemId', '==', itemId));
+        queryRef = query(
+          potentialMatchesRef,
+          where("lostItemId", "==", itemId)
+        );
       } else {
         // If item is FOUND, look for matches where this is the foundItemId
-        queryRef = query(potentialMatchesRef, where('foundItemId', '==', itemId));
+        queryRef = query(
+          potentialMatchesRef,
+          where("foundItemId", "==", itemId)
+        );
       }
-      
+
       const matchesSnapshot = await getDocs(queryRef);
-      
+
       if (!matchesSnapshot.empty) {
-        console.log(`Found ${matchesSnapshot.size} potential matches from potential_matches collection`);
-        
+        console.log(
+          `Found ${matchesSnapshot.size} potential matches from potential_matches collection`
+        );
+
         // Get the matching item details for each potential match
         const matchPromises = matchesSnapshot.docs.map(async (doc) => {
           const matchData = doc.data();
           let matchItemId;
-          
+
           // Determine which ID to use based on source item status
           if (status === "LOST") {
             matchItemId = matchData.foundItemId;
           } else {
             matchItemId = matchData.lostItemId;
           }
-          
+
           // Get the matching item details
           const matchItemResult = await getItemById(matchItemId);
           if (!matchItemResult.success) {
             return null; // Skip this match if we can't get the item details
           }
-          
+
           // Combine the match data and item data
           return {
             ...matchItemResult.data,
             id: matchItemId,
             sourceItemId: itemId,
             confidence: matchData.confidence || matchData.weightedConfidence,
-            distance: matchData.distance || null
+            distance: matchData.distance || null,
           };
         });
-        
+
         // Wait for all item details to be fetched
         const resolvedMatches = (await Promise.all(matchPromises))
-          .filter(match => match !== null) // Remove null entries
+          .filter((match) => match !== null) // Remove null entries
           .sort((a, b) => b.confidence - a.confidence)
           .slice(0, 5); // Limit to top 5 matches
-        
+
         return res.status(200).json(resolvedMatches);
       }
     } catch (firestoreError) {
-      console.warn("Error querying potential_matches collection:", firestoreError);
+      console.warn(
+        "Error querying potential_matches collection:",
+        firestoreError
+      );
       // Continue to fallback approach if potential_matches query fails
     }
-
   } catch (error) {
     console.error("Error getting potential matches:", error);
     res.status(500).json({ error: error.message || "Internal server error" });

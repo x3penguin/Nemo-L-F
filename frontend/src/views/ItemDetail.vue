@@ -144,6 +144,14 @@
                 Back to Home
               </router-link>
             </div>
+            <div class="action-section" v-if="canEditItem">
+              <button @click="editItem" class="btn btn-secondary">
+                Edit Item
+              </button>
+              <button @click="confirmDelete" class="btn btn-danger ml-2">
+                Delete Item
+              </button>
+            </div>
           </div>
         </div>
 
@@ -177,16 +185,115 @@
         </div>
       </div>
     </div>
+    <div v-if="showEditModal" class="modal-overlay" @click="closeEditModal">
+      <div class="edit-modal" @click.stop>
+        <div class="modal-header">
+          <h2>Edit Item</h2>
+          <button class="close-button" @click="closeEditModal">×</button>
+        </div>
+
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="itemName">Item Name *</label>
+            <input
+              type="text"
+              id="itemName"
+              v-model="editForm.name"
+              class="form-control"
+              :class="{ error: editErrors.name }"
+            />
+            <div v-if="editErrors.name" class="error-message">
+              {{ editErrors.name }}
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="itemCategory">Category *</label>
+            <select
+              id="itemCategory"
+              v-model="editForm.category"
+              class="form-control"
+              :class="{ error: editErrors.category }"
+            >
+              <option value="">Select a category</option>
+              <option value="Electronics">Electronics</option>
+              <option value="Jewelry">Jewelry</option>
+              <option value="Clothing">Clothing</option>
+              <option value="Accessories">Accessories</option>
+              <option value="Documents">Documents</option>
+              <option value="Keys">Keys</option>
+              <option value="Other">Other</option>
+            </select>
+            <div v-if="editErrors.category" class="error-message">
+              {{ editErrors.category }}
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="itemDescription">Description *</label>
+            <textarea
+              id="itemDescription"
+              v-model="editForm.description"
+              class="form-control"
+              :class="{ error: editErrors.description }"
+              rows="4"
+            ></textarea>
+            <div v-if="editErrors.description" class="error-message">
+              {{ editErrors.description }}
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="itemVenue">Venue/Location *</label>
+            <input
+              type="text"
+              id="itemVenue"
+              v-model="editForm.venue"
+              class="form-control"
+              :class="{ error: editErrors.venue }"
+            />
+            <div v-if="editErrors.venue" class="error-message">
+              {{ editErrors.venue }}
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="specificLocation">Specific Location</label>
+            <input
+              type="text"
+              id="specificLocation"
+              v-model="editForm.specificLocation"
+              class="form-control"
+            />
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button @click="closeEditModal" class="btn btn-secondary">
+            Cancel
+          </button>
+          <button
+            @click="saveItemChanges"
+            class="btn btn-primary"
+            :disabled="isSaving"
+          >
+            <span v-if="isSaving" class="spinner small"></span>
+            Save Changes
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 // frontend/src/views/ItemDetail.vue - Focused fix for potential matches logic
 <script>
-import { ref, onMounted, computed, watch, onUnmounted,nextTick } from "vue";
+import { ref, onMounted, computed, watch, onUnmounted, nextTick } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import itemService from "@/services/item.service";
 import ItemCarousel from "@/components/ItemCarousel.vue";
 import { getLoader } from "@/services/googleMapsLoader";
+import store from "@/store";
 
 export default {
   name: "ItemDetailView",
@@ -216,6 +323,21 @@ export default {
     // Check if we came from a potential matches page
     const sourceItemId = computed(() => {
       return route.query.sourceId || "";
+    });
+
+    const canEditItem = computed(() => {
+      if (!item.value) return false;
+
+      // Only allow editing/deleting if:
+      // 1. User is the reportOwner
+      // 2. Item is not matched/collecting/retrieved
+      const userId = store.getters["auth/user"]?.id;
+      const itemStatus = item.value.status;
+
+      return (
+        item.value.reportOwner === userId &&
+        !["MATCHED", "COLLECTING", "RETRIEVED"].includes(itemStatus)
+      );
     });
 
     // Determine if we should show potential matches
@@ -336,7 +458,6 @@ export default {
         isLoadingMatches.value = false;
       }
     };
-    
 
     const initMap = async () => {
       // Make sure the DOM element exists before trying to create the map
@@ -450,25 +571,169 @@ export default {
     };
 
     const initGoogleMap = () => {
-  nextTick(() => {
-    if (mapElement.value) {
-      initMap();
-    } else {
-      console.log("Map element not ready, waiting...");
-      setTimeout(initGoogleMap, 100);
-    }
-  });
-};
+      nextTick(() => {
+        if (mapElement.value) {
+          initMap();
+        } else {
+          console.log("Map element not ready, waiting...");
+          setTimeout(initGoogleMap, 100);
+        }
+      });
+    };
 
-// Then call this in your relevant watchers
-watch(
-  () => item.value,
-  (newItem) => {
-    if (newItem && hasCoordinates.value) {
-      initGoogleMap();
-    }
-  }
-);
+    // Then call this in your relevant watchers
+    watch(
+      () => item.value,
+      (newItem) => {
+        if (newItem && hasCoordinates.value) {
+          initGoogleMap();
+        }
+      }
+    );
+
+    const showEditModal = ref(false);
+    const editForm = ref({
+      name: "",
+      category: "",
+      description: "",
+      venue: "",
+      specificLocation: "",
+    });
+    const editErrors = ref({});
+    const isSaving = ref(false);
+
+    const editItem = () => {
+      // Populate form with current item data
+      if (!item.value) return;
+
+      editForm.value = {
+        name: item.value.name || "",
+        category: item.value.category || "",
+        description: item.value.description || "",
+        venue: item.value.location ? item.value.location.split(" | ")[0] : "",
+        specificLocation:
+          item.value.location && item.value.location.split(" | ")[1]
+            ? item.value.location.split(" | ")[1]
+            : "",
+      };
+
+      // Show modal
+      showEditModal.value = true;
+    };
+
+    const closeEditModal = () => {
+      showEditModal.value = false;
+      editErrors.value = {};
+    };
+
+    const validateEditForm = () => {
+      editErrors.value = {};
+      let isValid = true;
+
+      if (!editForm.value.name) {
+        editErrors.value.name = "Item name is required";
+        isValid = false;
+      }
+
+      if (!editForm.value.category) {
+        editErrors.value.category = "Category is required";
+        isValid = false;
+      }
+
+      if (!editForm.value.description) {
+        editErrors.value.description = "Description is required";
+        isValid = false;
+      } else if (editForm.value.description.length < 10) {
+        editErrors.value.description =
+          "Description should be at least 10 characters";
+        isValid = false;
+      }
+
+      if (!editForm.value.venue) {
+        editErrors.value.venue = "Venue/location is required";
+        isValid = false;
+      }
+
+      return isValid;
+    };
+
+    const saveItemChanges = async () => {
+      if (!validateEditForm()) return;
+
+      isSaving.value = true;
+
+      try {
+        // Prepare data for API
+        const updateData = {
+          name: editForm.value.name,
+          category: editForm.value.category,
+          description: editForm.value.description,
+          venue: editForm.value.venue,
+          specific_location: editForm.value.specificLocation,
+          userId: store.getters["auth/user"]?.id, // Important: include user ID for permission check
+        };
+
+        // Call API to update item
+        await itemService.updateItem(item.value.id, updateData);
+
+        // Show success message
+        store.dispatch("notifications/add", {
+          type: "success",
+          message: "Item updated successfully",
+        });
+
+        // Close modal and refresh data
+        closeEditModal();
+        await fetchItemDetails();
+      } catch (error) {
+        console.error("Error updating item:", error);
+        store.dispatch("notifications/add", {
+          type: "error",
+          message:
+            "Failed to update item: " +
+            (error.response?.data?.error || error.message),
+        });
+      } finally {
+        isSaving.value = false;
+      }
+    };
+
+    const confirmDelete = async () => {
+      if (!item.value || !item.value.id) {
+        store.dispatch("notifications/add", {
+          type: "error",
+          message: "Item ID not found",
+        });
+        return;
+      }
+
+      if (!confirm("Are you sure you want to delete this item?")) {
+        return;
+      }
+
+      try {
+        // Include user ID in request for permission check
+        const userId = store.getters["auth/user"]?.id;
+        await itemService.deleteItem(item.value.id, { userId });
+
+        // Show success notification
+        store.dispatch("notifications/add", {
+          type: "success",
+          message: "Item deleted successfully",
+        });
+
+        // Navigate back to home page
+        router.push("/");
+      } catch (error) {
+        console.error("Error deleting item:", error);
+        store.dispatch("notifications/add", {
+          type: "error",
+          message:
+            "Failed to delete item: " +
+            (error.response?.data?.error || error.message),
+        });
+      }
+    };
 
     // Clean up map resources when component is unmounted
     onUnmounted(() => {
@@ -573,8 +838,8 @@ watch(
     onMounted(() => {
       fetchItemDetails();
       if (hasCoordinates.value) {
-         initGoogleMap(); 
-  }
+        initGoogleMap();
+      }
     });
 
     return {
@@ -598,6 +863,15 @@ watch(
       formatDate,
       initMap,
       sourceItem,
+      canEditItem,
+      editItem,
+      confirmDelete,
+      showEditModal,
+      editForm,
+      editErrors,
+      isSaving,
+      closeEditModal,
+      saveItemChanges,
     };
   },
 };
@@ -884,5 +1158,64 @@ watch(
   .action-section {
     flex-direction: column;
   }
+}
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.edit-modal {
+  background-color: white;
+  border-radius: 0.5rem;
+  width: 90%;
+  max-width: 600px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.modal-header h2 {
+  margin: 0;
+  font-size: 1.5rem;
+}
+
+.close-button {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: #6b7280;
+}
+
+.modal-body {
+  padding: 1.5rem;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  padding: 1rem 1.5rem;
+  border-top: 1px solid #e5e7eb;
 }
 </style>

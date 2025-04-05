@@ -71,6 +71,24 @@ export const storeItemData = async (itemData) => {
   }
 };
 
+export const deleteItem = async (itemId) => {
+  try {
+    const itemRef = doc(db, "items", itemId);
+    await deleteDoc(itemRef);
+    
+    return {
+      success: true,
+      message: "Item deleted successfully"
+    };
+  } catch (error) {
+    console.error("Error deleting item:", error);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+};
+
 /**
  * Get item by ID
  * @param {string} itemId - Item ID

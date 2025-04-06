@@ -200,7 +200,7 @@ export default {
   
   // Update the fallback route to one that exists if no order data
   if (!orderData) {
-    this.$router.push('/collections'); // Changed from '/logistics' to '/collections'
+    this.$router.push('/collections'); 
     return;
   }
 
@@ -211,8 +211,8 @@ export default {
       pickupLocation: orderData.pickupLocation || 'N/A',
       deliveryLocation: orderData.deliveryLocation || 'N/A',
       itemName: orderData.itemName || 'Lost Item',
-      shippingCost: 10.00,
-      totalAmount: 50.00
+      shippingCost: parseFloat(orderData.amount) || 0.00,  // Use the passed amount
+      totalAmount: parseFloat(orderData.amount) || 0.00    // Use the passed amount
     };
 
     try {

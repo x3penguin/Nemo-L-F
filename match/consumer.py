@@ -99,28 +99,6 @@ def start_consumer():
                                     match['weightedConfidence'],
                                     match['distance']
                                 )
-                            
-                            # Update the best match in Firebase
-                        #     best_match = final_matches[0]
-                        #     update_matched_items(
-                        #         best_match['foundItemId'],
-                        #         best_match['lostItemId'],
-                        #         best_match['weightedConfidence']
-                        #     )
-
-                        #     # Publish match notification event to Kafka
-                        #     publish_match_notification({
-                        #         'lostItemId': best_match['lostItemId'],
-                        #         'foundItemId': item_id,
-                        #         'confidence': best_match['weightedConfidence'],
-                        #         'timestamp': datetime.datetime.now().isoformat()
-                        #     })
-                            
-                        #     print(f"Match completed: Found item {best_match['foundItemId']} matches with lost item {best_match['lostItemId']} with confidence {best_match['weightedConfidence']:.2f}%")
-                        #     print(f"Stored {len(top_matches)} potential matches for UI display")
-                        # else:
-                        #     print(f"No matches above threshold for item {item_id} after weighting")
-            # Commit offset after successful processing
             consumer.commit()
             
         except Exception as e:

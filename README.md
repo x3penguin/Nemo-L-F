@@ -60,11 +60,18 @@ NEMO uses a microservice architecture with the following services:
 Once the application is running, access it at:
 - Frontend: http://localhost:8080
 
-## Accessing the API Documentation
+## Accessing the HTTP-based API Documentation
 Once the application is running, access it at:
 - Email: http://localhost:8000/email/api-docs
+- Location: http://localhost:8000/location/swagger.json
+- Logistics: http://localhost:8000/logistics/swagger.json
 - Storage: http://localhost:8000/storage/api-docs
 - User: http://localhost:8000/user/api-docs
+Alternatively, access it in the Nemo_api_documentation.zip
+
+## Accessing the Kafka-based API Documentation
+- Email: Nemo_api_documentation.zip
+- Match: Nemo_api_documentation.zip
 
 ## Contributors
 - Chow Ean Ean

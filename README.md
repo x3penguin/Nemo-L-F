@@ -60,6 +60,12 @@ NEMO uses a microservice architecture with the following services:
 Once the application is running, access it at:
 - Frontend: http://localhost:8080
 
+## Accessing the API Documentation
+Once the application is running, access it at:
+- Email: http://localhost:8000/email/api-docs
+- Storage: http://localhost:8000/storage/api-docs
+- User: http://localhost:8000/user/api-docs
+
 ## Contributors
 - Chow Ean Ean
 - Dorothy Chan

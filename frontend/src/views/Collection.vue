@@ -453,249 +453,364 @@
             </div>
           </div>
 
-    <!-- Payment Form -->
-    <div v-else-if="modalType === 'payment'" class="payment-form">
-      <div class="delivery-details">
-        <h3>Delivery Details</h3>
-        <div class="delivery-route">
-          <div class="location-card">
-            <div class="location-icon pickup">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
-            </div>
-            <div class="location-info">
-              <span class="location-label">Pickup Location</span>
-              <span class="location-value">{{ paymentDetails.pickup_location || 'Unknown location' }}</span>
-              <span class="location-postal">Postal code: {{ paymentDetails.pick_code || 'N/A' }}</span>
-            </div>
-          </div>
+          <!-- Payment Form -->
+          <div v-else-if="modalType === 'payment'" class="payment-form">
+            <div class="delivery-details">
+              <h3>Delivery Details</h3>
+              <div class="delivery-route">
+                <div class="location-card">
+                  <div class="location-icon pickup">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="24"
+                      height="24"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                      />
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                      />
+                    </svg>
+                  </div>
+                  <div class="location-info">
+                    <span class="location-label">Pickup Location</span>
+                    <span class="location-value">{{
+                      paymentDetails.pickup_location || "Unknown location"
+                    }}</span>
+                    <span class="location-postal"
+                      >Postal code:
+                      {{ paymentDetails.pick_code || "N/A" }}</span
+                    >
+                  </div>
+                </div>
 
-          <div class="route-arrow">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
-            </svg>
-          </div>
+                <div class="route-arrow">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="24"
+                    height="24"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M17 8l4 4m0 0l-4 4m4-4H3"
+                    />
+                  </svg>
+                </div>
 
-          <div class="location-card">
-            <div class="location-icon dropoff">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-              </svg>
-            </div>
-            <div class="location-info">
-              <span class="location-label">Delivery Location</span>
-              <span class="location-value">{{ formatDeliveryAddress() }}</span>
-              <span class="location-postal">{{ userAddress?.address?.postalCode || 'N/A' }}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Shipping Options from rate-check API -->
-      <div class="shipping-options-container">
-        <h3>Select a Shipping Option</h3>
-        <div class="shipping-options">
-          <div
-            v-for="option in shippingOptions"
-            :key="option.service_name"
-            class="shipping-option"
-            :class="{ selected: selectedOption && selectedOption.service_name === option.service_name }"
-            @click="selectShippingOption(option)"
-          >
-            <div class="option-header">
-              <div class="option-name">{{ option.service_name }}</div>
-              <div class="option-price">${{ option.price }}</div>
-            </div>
-            <div class="option-details">
-              <div class="option-detail">
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <span>{{ option.estimated_delivery || 'Standard delivery time' }}</span>
-              </div>
-              <div class="option-detail" v-if="option.features">
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <span>{{ option.features }}</span>
-              </div>
-            </div>
-          </div>
-
-          <div v-if="!shippingOptions || shippingOptions.length === 0" class="no-options">
-            <p>No shipping options are currently available for this address. Please try again later.</p>
-          </div>
-        </div>
-      </div>
-
-      <div class="order-summary">
-        <h3>Order Summary</h3>
-        <div class="fee-details">
-          <div v-if="selectedOption" class="selected-service">
-            <div class="service-header">
-              <span class="service-name">{{ selectedOption.service_name }}</span>
-              <span class="service-price">${{ selectedOption.price }}</span>
-            </div>
-            <div class="service-details" v-if="selectedOption.estimated_delivery">
-              <div class="detail-item">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <span>{{ selectedOption.estimated_delivery }}</span>
+                <div class="location-card">
+                  <div class="location-icon dropoff">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="24"
+                      height="24"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+                      />
+                    </svg>
+                  </div>
+                  <div class="location-info">
+                    <span class="location-label">Delivery Location</span>
+                    <span class="location-value">{{
+                      formatDeliveryAddress()
+                    }}</span>
+                    <span class="location-postal">{{
+                      userAddress?.address?.postalCode || "N/A"
+                    }}</span>
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
-          
-          <div v-else class="no-selection">
-            <p>Please select a delivery option to see pricing.</p>
-          </div>
-          
-          <div class="fee-row total">
-            <span>Total</span>
-            <span v-if="selectedOption">${{ selectedOption.price }}</span>
-            <span v-else>$0.00</span>
-          </div>
-        </div>
 
-        <div v-if="paymentError" class="payment-error">
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="12" cy="12" r="10"></circle>
-            <line x1="12" y1="8" x2="12" y2="12"></line>
-            <line x1="12" y1="16" x2="12.01" y2="16"></line>
-          </svg>
-          <span>{{ paymentError }}</span>
-        </div>
+            <!-- Shipping Options from rate-check API -->
+            <div class="shipping-options-container">
+              <h3>Select a Shipping Option</h3>
+              <div class="shipping-options">
+                <div
+                  v-for="option in shippingOptions"
+                  :key="option.service_name"
+                  class="shipping-option"
+                  :class="{
+                    selected:
+                      selectedOption &&
+                      selectedOption.service_name === option.service_name,
+                  }"
+                  @click="selectShippingOption(option)"
+                >
+                  <div class="option-header">
+                    <div class="option-name">{{ option.service_name }}</div>
+                    <div class="option-price">${{ option.price }}</div>
+                  </div>
+                  <div class="option-details">
+                    <div class="option-detail">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="18"
+                        height="18"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
+                      </svg>
+                      <span>{{
+                        option.estimated_delivery || "Standard delivery time"
+                      }}</span>
+                    </div>
+                    <div class="option-detail" v-if="option.features">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="18"
+                        height="18"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
+                      </svg>
+                      <span>{{ option.features }}</span>
+                    </div>
+                  </div>
+                </div>
 
-        <div class="payment-buttons">
-          <button
-            @click="processPayment"
-            class="btn btn-primary btn-large"
-            :disabled="!selectedOption || isProcessingPayment"
-          >
-            <span v-if="isProcessingPayment" class="spinner small"></span>
-            Proceed to Payment
-          </button>
-          <button @click="closeModal" class="btn btn-secondary">
-            Cancel
-          </button>
-        </div>
-      </div>
-    </div>
+                <div
+                  v-if="!shippingOptions || shippingOptions.length === 0"
+                  class="no-options"
+                >
+                  <p>
+                    No shipping options are currently available for this
+                    address. Please try again later.
+                  </p>
+                </div>
+              </div>
+            </div>
 
-        <div v-if="modalType === 'initiate'" class="modal-footer">
-          <button @click="closeModal" class="btn btn-secondary">Cancel</button>
-          <button
-            @click="submitCollectionRequest"
-            class="btn btn-primary"
-            :disabled="isSubmitting"
-          >
-            <span v-if="isSubmitting" class="spinner small"></span>
-            View Delivery Fee
-          </button>
-        </div>
-      </div>
-    </div>
-    <div v-if="showEditModal" class="modal-overlay" @click="closeEditModal">
-      <div class="edit-modal" @click.stop>
-        <div class="modal-header">
-          <h2>Edit Item</h2>
-          <button class="close-button" @click="closeEditModal">×</button>
-        </div>
+            <div class="order-summary">
+              <h3>Order Summary</h3>
+              <div class="fee-details">
+                <div v-if="selectedOption" class="selected-service">
+                  <div class="service-header">
+                    <span class="service-name">{{
+                      selectedOption.service_name
+                    }}</span>
+                    <span class="service-price"
+                      >${{ selectedOption.price }}</span
+                    >
+                  </div>
+                  <div
+                    class="service-details"
+                    v-if="selectedOption.estimated_delivery"
+                  >
+                    <div class="detail-item">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="16"
+                        height="16"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
+                      </svg>
+                      <span>{{ selectedOption.estimated_delivery }}</span>
+                    </div>
+                  </div>
+                </div>
 
-        <div class="modal-body">
-          <div class="form-group">
-            <label for="itemName">Item Name *</label>
-            <input
-              type="text"
-              id="itemName"
-              v-model="editForm.name"
-              class="form-control"
-              :class="{ error: editErrors.name }"
-            />
-            <div v-if="editErrors.name" class="error-message">
-              {{ editErrors.name }}
+                <div v-else class="no-selection">
+                  <p>Please select a delivery option to see pricing.</p>
+                </div>
+
+                <div class="fee-row total">
+                  <span>Total</span>
+                  <span v-if="selectedOption">${{ selectedOption.price }}</span>
+                  <span v-else>$0.00</span>
+                </div>
+              </div>
+
+              <div v-if="paymentError" class="payment-error">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <line x1="12" y1="8" x2="12" y2="12"></line>
+                  <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                </svg>
+                <span>{{ paymentError }}</span>
+              </div>
+
+              <div class="payment-buttons">
+                <button
+                  @click="processPayment"
+                  class="btn btn-primary btn-large"
+                  :disabled="!selectedOption || isProcessingPayment"
+                >
+                  <span v-if="isProcessingPayment" class="spinner small"></span>
+                  Proceed to Payment
+                </button>
+                <button @click="closeModal" class="btn btn-secondary">
+                  Cancel
+                </button>
+              </div>
             </div>
           </div>
 
-          <div class="form-group">
-            <label for="itemCategory">Category *</label>
-            <select
-              id="itemCategory"
-              v-model="editForm.category"
-              class="form-control"
-              :class="{ error: editErrors.category }"
+          <div v-if="modalType === 'initiate'" class="modal-footer">
+            <button @click="closeModal" class="btn btn-secondary">
+              Cancel
+            </button>
+            <button
+              @click="submitCollectionRequest"
+              class="btn btn-primary"
+              :disabled="isSubmitting"
             >
-              <option value="">Select a category</option>
-              <option value="Electronics">Electronics</option>
-              <option value="Jewelry">Jewelry</option>
-              <option value="Clothing">Clothing</option>
-              <option value="Accessories">Accessories</option>
-              <option value="Documents">Documents</option>
-              <option value="Keys">Keys</option>
-              <option value="Other">Other</option>
-            </select>
-            <div v-if="editErrors.category" class="error-message">
-              {{ editErrors.category }}
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label for="itemDescription">Description *</label>
-            <textarea
-              id="itemDescription"
-              v-model="editForm.description"
-              class="form-control"
-              :class="{ error: editErrors.description }"
-              rows="4"
-            ></textarea>
-            <div v-if="editErrors.description" class="error-message">
-              {{ editErrors.description }}
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label for="itemVenue">Venue/Location *</label>
-            <input
-              type="text"
-              id="itemVenue"
-              v-model="editForm.venue"
-              class="form-control"
-              :class="{ error: editErrors.venue }"
-            />
-            <div v-if="editErrors.venue" class="error-message">
-              {{ editErrors.venue }}
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label for="specificLocation">Specific Location</label>
-            <input
-              type="text"
-              id="specificLocation"
-              v-model="editForm.specificLocation"
-              class="form-control"
-            />
+              <span v-if="isSubmitting" class="spinner small"></span>
+              View Delivery Fee
+            </button>
           </div>
         </div>
+      </div>
+      <div v-if="showEditModal" class="modal-overlay" @click="closeEditModal">
+        <div class="edit-modal" @click.stop>
+          <div class="modal-header">
+            <h2>Edit Item</h2>
+            <button class="close-button" @click="closeEditModal">×</button>
+          </div>
 
-        <div class="modal-footer">
-          <button @click="closeEditModal" class="btn btn-secondary">
-            Cancel
-          </button>
-          <button
-            @click="saveItemChanges"
-            class="btn btn-primary"
-            :disabled="isSaving"
-          >
-            <span v-if="isSaving" class="spinner small"></span>
-            Save Changes
-          </button>
+          <div class="modal-body">
+            <div class="form-group">
+              <label for="itemName">Item Name *</label>
+              <input
+                type="text"
+                id="itemName"
+                v-model="editForm.name"
+                class="form-control"
+                :class="{ error: editErrors.name }"
+              />
+              <div v-if="editErrors.name" class="error-message">
+                {{ editErrors.name }}
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="itemCategory">Category *</label>
+              <select
+                id="itemCategory"
+                v-model="editForm.category"
+                class="form-control"
+                :class="{ error: editErrors.category }"
+              >
+                <option value="">Select a category</option>
+                <option value="Electronics">Electronics</option>
+                <option value="Jewelry">Jewelry</option>
+                <option value="Clothing">Clothing</option>
+                <option value="Accessories">Accessories</option>
+                <option value="Documents">Documents</option>
+                <option value="Keys">Keys</option>
+                <option value="Other">Other</option>
+              </select>
+              <div v-if="editErrors.category" class="error-message">
+                {{ editErrors.category }}
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="itemDescription">Description *</label>
+              <textarea
+                id="itemDescription"
+                v-model="editForm.description"
+                class="form-control"
+                :class="{ error: editErrors.description }"
+                rows="4"
+              ></textarea>
+              <div v-if="editErrors.description" class="error-message">
+                {{ editErrors.description }}
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="itemVenue">Venue/Location *</label>
+              <input
+                type="text"
+                id="itemVenue"
+                v-model="editForm.venue"
+                class="form-control"
+                :class="{ error: editErrors.venue }"
+              />
+              <div v-if="editErrors.venue" class="error-message">
+                {{ editErrors.venue }}
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="specificLocation">Specific Location</label>
+              <input
+                type="text"
+                id="specificLocation"
+                v-model="editForm.specificLocation"
+                class="form-control"
+              />
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button @click="closeEditModal" class="btn btn-secondary">
+              Cancel
+            </button>
+            <button
+              @click="saveItemChanges"
+              class="btn btn-primary"
+              :disabled="isSaving"
+            >
+              <span v-if="isSaving" class="spinner small"></span>
+              Save Changes
+            </button>
+          </div>
         </div>
       </div>
     </div>
-  </div>
   </div>
 </template>
 
@@ -794,7 +909,6 @@ export default {
         const itemResponse = await itemService.getItemById(itemId);
         const itemData = itemResponse.data;
 
-
         if (!itemData) {
           throw new Error("Item not found");
         }
@@ -867,12 +981,12 @@ export default {
       try {
         if (collectionMethod.value === "COURIER") {
           const pickCode = await getPickCodeFromItem(selectedItem.value.id);
-          
+
           // Make sure we have user address
           if (!userAddress.value || !userAddress.value.address) {
             throw new Error("User address is missing. Please try again.");
           }
-          
+
           // Call the logistics rate-check API to get shipping options
           try {
             const response = await axios.post(
@@ -882,28 +996,31 @@ export default {
                 pick_country: "SG", // Default to Singapore
                 send_code: userAddress.value.address.postalCode,
                 send_country: "SG", // Default to Singapore
-                weight: "1" // Default to 1kg for a typical lost item
+                weight: "1", // Default to 1kg for a typical lost item
               }
             );
-            
+
             // Store the shipping options and additional details
             if (response.data && response.data.rates) {
               shippingOptions.value = response.data.rates;
               paymentDetails.value = {
                 ...paymentDetails.value,
                 pick_code: pickCode,
-                pickup_location: selectedItem.value.location || "Unknown location"
+                pickup_location:
+                  selectedItem.value.location || "Unknown location",
               };
-              
+
               // Now change the modal type to 'payment' to show shipping options
-              modalType.value = 'payment';
+              modalType.value = "payment";
             } else {
               throw new Error("No delivery options available for this route.");
             }
           } catch (apiError) {
             console.error("Logistics API error:", apiError);
-            throw new Error("Failed to retrieve delivery options: " + 
-              (apiError.response?.data?.error || apiError.message));
+            throw new Error(
+              "Failed to retrieve delivery options: " +
+                (apiError.response?.data?.error || apiError.message)
+            );
           }
         } else {
           // Your existing self-pickup logic remains unchanged
@@ -1228,24 +1345,25 @@ export default {
 
     const selectShippingOption = (option) => {
       selectedOption.value = option;
-      
+
       // If you want to update payment details when shipping option changes:
       if (option && paymentDetails.value) {
         paymentDetails.value = {
           ...paymentDetails.value,
-          total: parseFloat(option.price)
+          total: parseFloat(option.price),
         };
       }
     };
 
     const formatDeliveryAddress = () => {
-      if (!userAddress.value || !userAddress.value.address) return 'No address provided';
-      
+      if (!userAddress.value || !userAddress.value.address)
+        return "No address provided";
+
       const address = userAddress.value.address;
       if (!address.unitNumber || !address.streetAddress || !address.city) {
-        return 'Incomplete address';
+        return "Incomplete address";
       }
-      
+
       return `${address.unitNumber}, ${address.streetAddress}, ${address.city}`;
     };
 
@@ -1785,7 +1903,7 @@ export default {
           await Promise.all([
             // Update current item
             itemService.updateItemStatus(selectedItem.value.id, "COLLECTING"),
-            
+
             // Update matched item if it exists
             selectedItem.value.matchedItemId
               ? itemService.updateItemStatus(
@@ -1801,6 +1919,19 @@ export default {
             message: "Item status updated to 'In Collection'",
           });
 
+          // Save order data to localStorage before navigation
+          const orderData = {
+            orderId: logisticsResponse.data.order_id || selectedItem.value.id,
+            itemId: selectedItem.value.id,
+            serviceName: selectedOption.value.service_name,
+            amount: selectedOption.value.price,
+            pickupLocation: orderDetails.pick_code,
+            deliveryLocation: orderDetails.send_address,
+            itemName: selectedItem.value.name || "Lost Item",
+          };
+
+          localStorage.setItem("orderData", JSON.stringify(orderData));
+
           // Close modal
           showModal.value = false;
 
@@ -1808,9 +1939,9 @@ export default {
           router.push({
             name: "PaymentForm",
             query: {
-              orderId: logisticsResponse.data.order_id || selectedItem.value.id,              
+              orderId: logisticsResponse.data.order_id || selectedItem.value.id,
               itemId: selectedItem.value.id,
-              amount: selectedOption.value.price,
+              amount: selectedOption.value.price, // Make sure price is passed correctly
               serviceName: selectedOption.value.service_name,
             },
           });
@@ -1827,7 +1958,7 @@ export default {
         isProcessingPayment.value = false;
       }
     };
-    
+
     return {
       getStatusMessage,
       isLoading,
@@ -1894,7 +2025,7 @@ export default {
       isSaving,
       closeEditModal,
       saveItemChanges,
-      paymentError
+      paymentError,
     };
   },
 };
@@ -3034,7 +3165,7 @@ label {
   .delivery-route {
     flex-direction: column;
   }
-  
+
   .route-arrow {
     transform: rotate(90deg);
     margin: 0.5rem 0;

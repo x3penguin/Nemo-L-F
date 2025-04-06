@@ -453,71 +453,136 @@
             </div>
           </div>
 
-          <!-- Payment Form -->
-          <div v-else-if="modalType === 'payment'" class="payment-form">
-            <div class="payment-summary">
-              <h3>Delivery Fee</h3>
-              <div class="fee-details">
-                <div class="fee-row">
-                  <span>Base Delivery Fee</span>
-                  <span>${{ (paymentDetails.base_fee || 0).toFixed(2) }}</span>
-                </div>
-                <div class="fee-row">
-                  <span>Distance Fee</span>
-                  <span
-                    >${{ (paymentDetails.distance_fee || 0).toFixed(2) }}</span
-                  >
-                </div>
-                <div v-if="paymentDetails.surcharge" class="fee-row">
-                  <span>Surcharge</span>
-                  <span>${{ (paymentDetails.surcharge || 0).toFixed(2) }}</span>
-                </div>
-                <div class="fee-row total">
-                  <span>Total</span>
-                  <span>${{ (paymentDetails.total || 0).toFixed(2) }}</span>
-                </div>
-              </div>
+    <!-- Payment Form -->
+    <div v-else-if="modalType === 'payment'" class="payment-form">
+      <div class="delivery-details">
+        <h3>Delivery Details</h3>
+        <div class="delivery-route">
+          <div class="location-card">
+            <div class="location-icon pickup">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+            </div>
+            <div class="location-info">
+              <span class="location-label">Pickup Location</span>
+              <span class="location-value">{{ paymentDetails.pickup_location || 'Unknown location' }}</span>
+              <span class="location-postal">Postal code: {{ paymentDetails.pick_code || 'N/A' }}</span>
+            </div>
+          </div>
 
-              <!-- Shipping Options from rate-check API -->
-              <div v-if="shippingOptions && shippingOptions.length">
-                <h4>Select a Shipping Option</h4>
-                <ul>
-                  <li
-                    v-for="option in shippingOptions"
-                    :key="option.service_name"
-                  >
-                    <label>
-                      <input
-                        type="radio"
-                        :value="option"
-                        v-model="selectedOption"
-                      />
-                      {{ option.service_name }} - ${{ option.price }}
-                    </label>
-                  </li>
-                </ul>
-              </div>
+          <div class="route-arrow">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+            </svg>
+          </div>
 
-              <p class="payment-description">
-                Click the button below to proceed to our secure payment gateway.
-                Once payment is completed, your delivery will be scheduled.
-              </p>
-
-              <div class="payment-buttons">
-                <button
-                  @click="processPayment"
-                  class="btn btn-primary btn-large"
-                >
-                  <span v-if="isProcessingPayment" class="spinner small"></span>
-                  Proceed to Payment
-                </button>
-                <button @click="closeModal" class="btn btn-secondary">
-                  Cancel
-                </button>
-              </div>
+          <div class="location-card">
+            <div class="location-icon dropoff">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+              </svg>
+            </div>
+            <div class="location-info">
+              <span class="location-label">Delivery Location</span>
+              <span class="location-value">{{ formatDeliveryAddress() }}</span>
+              <span class="location-postal">{{ userAddress?.address?.postalCode || 'N/A' }}</span>
             </div>
           </div>
         </div>
+      </div>
+
+      <!-- Shipping Options from rate-check API -->
+      <div class="shipping-options-container">
+        <h3>Select a Shipping Option</h3>
+        <div class="shipping-options">
+          <div
+            v-for="option in shippingOptions"
+            :key="option.service_name"
+            class="shipping-option"
+            :class="{ selected: selectedOption && selectedOption.service_name === option.service_name }"
+            @click="selectShippingOption(option)"
+          >
+            <div class="option-header">
+              <div class="option-name">{{ option.service_name }}</div>
+              <div class="option-price">${{ option.price }}</div>
+            </div>
+            <div class="option-details">
+              <div class="option-detail">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span>{{ option.estimated_delivery || 'Standard delivery time' }}</span>
+              </div>
+              <div class="option-detail" v-if="option.features">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span>{{ option.features }}</span>
+              </div>
+            </div>
+          </div>
+
+          <div v-if="!shippingOptions || shippingOptions.length === 0" class="no-options">
+            <p>No shipping options are currently available for this address. Please try again later.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="order-summary">
+        <h3>Order Summary</h3>
+        <div class="fee-details">
+          <div v-if="selectedOption" class="selected-service">
+            <div class="service-header">
+              <span class="service-name">{{ selectedOption.service_name }}</span>
+              <span class="service-price">${{ selectedOption.price }}</span>
+            </div>
+            <div class="service-details" v-if="selectedOption.estimated_delivery">
+              <div class="detail-item">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span>{{ selectedOption.estimated_delivery }}</span>
+              </div>
+            </div>
+          </div>
+          
+          <div v-else class="no-selection">
+            <p>Please select a delivery option to see pricing.</p>
+          </div>
+          
+          <div class="fee-row total">
+            <span>Total</span>
+            <span v-if="selectedOption">${{ selectedOption.price }}</span>
+            <span v-else>$0.00</span>
+          </div>
+        </div>
+
+        <div v-if="paymentError" class="payment-error">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="8" x2="12" y2="12"></line>
+            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+          </svg>
+          <span>{{ paymentError }}</span>
+        </div>
+
+        <div class="payment-buttons">
+          <button
+            @click="processPayment"
+            class="btn btn-primary btn-large"
+            :disabled="!selectedOption || isProcessingPayment"
+          >
+            <span v-if="isProcessingPayment" class="spinner small"></span>
+            Proceed to Payment
+          </button>
+          <button @click="closeModal" class="btn btn-secondary">
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
 
         <div v-if="modalType === 'initiate'" class="modal-footer">
           <button @click="closeModal" class="btn btn-secondary">Cancel</button>
@@ -527,7 +592,7 @@
             :disabled="isSubmitting"
           >
             <span v-if="isSubmitting" class="spinner small"></span>
-            Submit Request
+            View Delivery Fee
           </button>
         </div>
       </div>
@@ -631,6 +696,7 @@
       </div>
     </div>
   </div>
+  </div>
 </template>
 
 <script>
@@ -656,6 +722,7 @@ export default {
     const userAddress = ref(null);
     const isLoadingAddress = ref(false);
     const addressError = ref(null);
+    const paymentError = ref(null);
 
     const getStatusMessage = (status) => {
       switch (status.toUpperCase()) {
@@ -792,19 +859,51 @@ export default {
       }
     };
 
-    // Enhanced initiateCollection function to fetch address
+    // Enhanced submitCollectionRequest function to handle courier delivery
     const submitCollectionRequest = async () => {
       collectionError.value = null;
-
       isSubmitting.value = true;
 
       try {
         if (collectionMethod.value === "COURIER") {
-          // Courier logic remains the same
-          // ...
+          const pickCode = await getPickCodeFromItem(selectedItem.value.id);
+          
+          // Make sure we have user address
+          if (!userAddress.value || !userAddress.value.address) {
+            throw new Error("User address is missing. Please try again.");
+          }
+          
+          // Call the logistics rate-check API to get shipping options
+          try {
+            const response = await axios.post(
+              "http://localhost:8000/logistics/rate-check",
+              {
+                pick_code: pickCode,
+                send_code: userAddress.value.address.postalCode
+              }
+            );
+            
+            // Store the shipping options and additional details
+            if (response.data && response.data.results) {
+              shippingOptions.value = response.data.results;
+              paymentDetails.value = {
+                ...paymentDetails.value,
+                pick_code: pickCode,
+                pickup_location: selectedItem.value.location || "Unknown location"
+              };
+              
+              // Now change the modal type to 'payment' to show shipping options
+              modalType.value = 'payment';
+            } else {
+              throw new Error("No delivery options available for this route.");
+            }
+          } catch (apiError) {
+            console.error("Logistics API error:", apiError);
+            throw new Error("Failed to retrieve delivery options: " + 
+              (apiError.response?.data?.error || apiError.message));
+          }
         } else {
-          // For self-pickup, update both items AND create collection details
-
+          // Your existing self-pickup logic remains unchanged
           // First, get the current item to ensure we have the matchedItemId
           const itemResponse = await itemService.getItemById(
             selectedItem.value.id
@@ -860,6 +959,7 @@ export default {
         isSubmitting.value = false;
       }
     };
+
     const getItemsToShow = computed(() => {
       // User ID from store
       const userId = store.getters["auth/user"]?.id;
@@ -978,7 +1078,7 @@ export default {
 
     // Modal state
     const showModal = ref(false);
-    const modalType = ref("initiate"); // 'initiate', 'details', 'payment'
+    const modalType = ref(null); // 'initiate', 'details', 'payment'
     const selectedItem = ref(null);
     const collectionMethod = ref("SELF_PICKUP");
     const collectionDetails = ref({});
@@ -1121,6 +1221,29 @@ export default {
         collectionError.value =
           "Failed to load collection details. Please try again.";
       }
+    };
+
+    const selectShippingOption = (option) => {
+      selectedOption.value = option;
+      
+      // If you want to update payment details when shipping option changes:
+      if (option && paymentDetails.value) {
+        paymentDetails.value = {
+          ...paymentDetails.value,
+          total: parseFloat(option.price)
+        };
+      }
+    };
+
+    const formatDeliveryAddress = () => {
+      if (!userAddress.value || !userAddress.value.address) return 'No address provided';
+      
+      const address = userAddress.value.address;
+      if (!address.unitNumber || !address.streetAddress || !address.city) {
+        return 'Incomplete address';
+      }
+      
+      return `${address.unitNumber}, ${address.streetAddress}, ${address.city}`;
     };
 
     const initiateCollection = async (item) => {
@@ -1757,6 +1880,8 @@ export default {
       updateDeliveryStatus,
       markItemAsDelivered,
       isItemFinder,
+      formatDeliveryAddress,
+      selectShippingOption,
       initiateCollection,
       canEditItem,
       editItem,
@@ -1767,6 +1892,7 @@ export default {
       isSaving,
       closeEditModal,
       saveItemChanges,
+      paymentError
     };
   },
 };
@@ -2688,6 +2814,229 @@ label {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
+}
+
+/* Payment form specific styles */
+.payment-form {
+  padding: 1rem 0;
+}
+
+/* Delivery route display styles */
+.delivery-route {
+  display: flex;
+  align-items: center;
+  margin: 1.5rem 0;
+  gap: 1rem;
+}
+
+.location-card {
+  flex: 1;
+  display: flex;
+  background-color: #f8fafc;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.location-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  margin-right: 1rem;
+  flex-shrink: 0;
+}
+
+.location-icon.pickup {
+  background-color: #dbeafe;
+  color: #3b82f6;
+}
+
+.location-icon.dropoff {
+  background-color: #dcfce7;
+  color: #10b981;
+}
+
+.location-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.location-label {
+  font-size: 0.8rem;
+  color: #64748b;
+  margin-bottom: 0.25rem;
+}
+
+.location-value {
+  font-weight: 500;
+  color: #1e293b;
+  margin-bottom: 0.25rem;
+}
+
+.location-postal {
+  font-size: 0.875rem;
+  color: #64748b;
+}
+
+.route-arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #64748b;
+}
+
+/* Shipping options styles */
+.shipping-options-container {
+  margin-bottom: 2rem;
+}
+
+.shipping-options {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.shipping-option {
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.shipping-option:hover {
+  border-color: #94a3b8;
+  transform: translateY(-2px);
+}
+
+.shipping-option.selected {
+  border-color: #2563eb;
+  background-color: #eff6ff;
+}
+
+.option-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.option-name {
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.option-price {
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.option-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.option-detail {
+  display: flex;
+  align-items: center;
+  color: #64748b;
+  font-size: 0.875rem;
+}
+
+.option-detail svg {
+  margin-right: 0.5rem;
+  flex-shrink: 0;
+}
+
+.no-options {
+  padding: 2rem;
+  text-align: center;
+  background-color: #f8fafc;
+  border-radius: 0.5rem;
+  color: #64748b;
+}
+
+/* Order summary styles */
+.order-summary {
+  background-color: #f8fafc;
+  border-radius: 0.5rem;
+  padding: 1.5rem;
+  margin-top: 1rem;
+}
+
+.selected-service {
+  padding: 1rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.375rem;
+  margin-bottom: 1rem;
+}
+
+.service-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.service-name {
+  color: #111827;
+}
+
+.service-price {
+  color: #111827;
+}
+
+.service-details {
+  margin-top: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.detail-item {
+  display: flex;
+  align-items: center;
+  color: #6b7280;
+}
+
+.detail-item svg {
+  margin-right: 0.5rem;
+  flex-shrink: 0;
+}
+
+.no-selection {
+  padding: 1rem;
+  background-color: #f3f4f6;
+  text-align: center;
+  color: #6b7280;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  font-style: italic;
+}
+
+.payment-error {
+  display: flex;
+  align-items: center;
+  background-color: #fee2e2;
+  color: #ef4444;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  margin: 1rem 0;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+  .delivery-route {
+    flex-direction: column;
+  }
+  
+  .route-arrow {
+    transform: rotate(90deg);
+    margin: 0.5rem 0;
+  }
 }
 
 @media (max-width: 768px) {

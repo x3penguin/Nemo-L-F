@@ -879,13 +879,16 @@ export default {
               "http://localhost:8000/logistics/rate-check",
               {
                 pick_code: pickCode,
-                send_code: userAddress.value.address.postalCode
+                pick_country: "SG", // Default to Singapore
+                send_code: userAddress.value.address.postalCode,
+                send_country: "SG", // Default to Singapore
+                weight: "1" // Default to 1kg for a typical lost item
               }
             );
             
             // Store the shipping options and additional details
-            if (response.data && response.data.results) {
-              shippingOptions.value = response.data.results;
+            if (response.data && response.data.rates) {
+              shippingOptions.value = response.data.rates;
               paymentDetails.value = {
                 ...paymentDetails.value,
                 pick_code: pickCode,
@@ -1785,7 +1788,7 @@ export default {
           router.push({
             name: "PaymentForm", // This matches your route name in router config
             query: {
-              orderId: logisticsResponse.data.id || selectedItem.value.id,
+              orderId: logisticsResponse.data.order_id || selectedItem.value.id,              
               itemId: selectedItem.value.id,
               amount: selectedOption.value.price,
               serviceName: selectedOption.value.service_name,

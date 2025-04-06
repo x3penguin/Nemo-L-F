@@ -181,11 +181,29 @@ export default {
       return;
     }
 
-    const orderData = this.$route.params.orderData || JSON.parse(localStorage.getItem('orderData'));
-    if (!orderData) {
-      this.$router.push('/logistics');
-      return;
-    }
+  // Get order data from params, localStorage, OR query parameters
+  let orderData = this.$route.params.orderData || JSON.parse(localStorage.getItem('orderData'));
+  
+  // Add this new check for query parameters
+  if (!orderData && this.$route.query.orderId) {
+    orderData = {
+      orderId: this.$route.query.orderId,
+      itemId: this.$route.query.itemId,
+      serviceName: this.$route.query.serviceName,
+      amount: this.$route.query.amount,
+      // Add defaults for any missing fields your component expects
+      pickupLocation: 'Item pickup location',
+      deliveryLocation: 'Your delivery address',
+      itemName: 'Lost Item'
+    };
+  }
+  
+  // Update the fallback route to one that exists if no order data
+  if (!orderData) {
+    this.$router.push('/collections'); // Changed from '/logistics' to '/collections'
+    return;
+  }
+
 
     this.orderDetails = {
       orderId: orderData.orderId || 'N/A',

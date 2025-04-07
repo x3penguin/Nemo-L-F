@@ -4,7 +4,6 @@ const bodyParser = require('body-parser');
 const config = require('./config');
 const kafkaProducer = require('./kafka/producer');
 const kafkaConsumer = require('./kafka/consumer');
-const matchNotificationConsumer = require('./kafka/match-notification-consumer');
 const swaggerUi = require('swagger-ui-express');
 const swaggerFile = require('../swagger-output.json');
 
@@ -58,5 +57,4 @@ app.listen(PORT, async () => {
   
   // Start Kafka consumers
   await kafkaConsumer.startListening();
-  await matchNotificationConsumer.startListening();
 });

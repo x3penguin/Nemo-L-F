@@ -377,7 +377,8 @@
                   <!-- For courier delivery -->
                   <button
                     v-if="
-                      collectionDetails.delivery_status === 'PAID' &&
+                      (collectionDetails.delivery_status === 'PAID' ||
+                        collectionDetails.delivery_status === 'PENDING') &&
                       collectionDetails.service_name !== 'Self Pickup'
                     "
                     @click="updateDeliveryStatus(selectedItem.id, 'PICKED_UP')"
@@ -390,7 +391,8 @@
                   <button
                     v-if="
                       collectionDetails.service_name === 'Self Pickup' &&
-                      collectionDetails.delivery_status === 'ARRANGED'
+                      (collectionDetails.delivery_status === 'ARRANGED' ||
+                        collectionDetails.delivery_status === 'PENDING')
                     "
                     @click="updateDeliveryStatus(selectedItem.id, 'PICKED_UP')"
                     class="btn btn-primary"

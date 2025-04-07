@@ -153,6 +153,7 @@
 <script>
 import { loadStripe } from "@stripe/stripe-js";
 import { jwtDecode } from "jwt-decode";
+import axios from "axios";
 
 export default {
   data() {
@@ -388,6 +389,19 @@ export default {
         }
 
         if (paymentIntent.status === "succeeded") {
+          // Add these lines to update the order status to PAID
+          try {
+            await axios.put(
+              `http://localhost:8000/logistics/api/orders/status`,
+              {
+                item_id: this.orderDetails.orderId,
+                delivery_status: "PAID",
+              }
+            );
+          } catch (err) {
+            console.error("Error updating order status:", err);
+          }
+
           // Payment was successful
           this.$router.push({
             path: "/PaymentResult",

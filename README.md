@@ -67,7 +67,8 @@ Once the application is running, access it at:
 - Logistics: http://localhost:8000/logistics/swagger.json
 - Storage: http://localhost:8000/storage/api-docs
 - User: http://localhost:8000/user/api-docs
-Alternatively, access it in the Nemo_api_documentation.zip
+- Payment: https://personal-kbjnamsn.outsystemscloud.com/NEMOPaymentService/rest/paymentAPI/#/paymentAPI/createPayment
+Alternatively, access the json files in the Nemo_api_documentation.zip
 
 ## Accessing the Kafka-based API Documentation
 - Email: Nemo_api_documentation.zip

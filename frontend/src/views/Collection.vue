@@ -17,20 +17,10 @@
 
       <div v-else-if="!matchedItems.length" class="empty-state">
         <div class="empty-icon">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="64"
-            height="64"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
-            />
+          <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" fill="none" viewBox="0 0 24 24"
+            stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
           </svg>
         </div>
         <h2>No Matched Items Yet</h2>
@@ -38,20 +28,13 @@
           When one of your lost items is found and matched, it will appear here
           for collection.
         </p>
-        <router-link to="/report-lost" class="btn btn-primary"
-          >Report a Lost Item</router-link
-        >
+        <router-link to="/report-lost" class="btn btn-primary">Report a Lost Item</router-link>
       </div>
 
       <div v-else class="collection-content">
         <div class="collection-filters">
           <div class="search-bar">
-            <input
-              type="text"
-              v-model="searchQuery"
-              placeholder="Search by item name..."
-              class="form-control"
-            />
+            <input type="text" v-model="searchQuery" placeholder="Search by item name..." class="form-control" />
           </div>
           <div class="filter-options">
             <select v-model="statusFilter" class="form-control">
@@ -64,42 +47,22 @@
         </div>
 
         <div class="matched-items">
-          <ItemCard
-            v-for="item in filteredItems"
-            :key="item.id"
-            :item="item"
-            @click="viewItemDetails(item)"
-          >
+          <ItemCard v-for="item in filteredItems" :key="item.id" :item="item" @click="viewItemDetails(item)">
             <template v-slot:actions>
-              <button
-                v-if="item.status === 'MATCHED' && isItemOwner(item)"
-                @click.stop="initiateCollection(item)"
-                class="btn btn-primary"
-              >
+              <button v-if="item.status === 'MATCHED' && isItemOwner(item)" @click.stop="initiateCollection(item)"
+                class="btn btn-primary">
                 Arrange Collection
               </button>
-              <div
-                v-else-if="item.status === 'MATCHED' && !isItemOwner(item)"
-                class="status-message finder-info"
-              >
+              <div v-else-if="item.status === 'MATCHED' && !isItemOwner(item)" class="status-message finder-info">
                 Waiting for Owner to Arrange Collection
               </div>
-              <div
-                v-else-if="item.status === 'COLLECTING'"
-                class="status-badge collecting"
-              >
+              <div v-else-if="item.status === 'COLLECTING'" class="status-badge collecting">
                 Collection in Progress
-                <button
-                  @click.stop="viewItemDetails(item)"
-                  class="btn btn-sm btn-outline"
-                >
+                <button @click.stop="viewItemDetails(item)" class="btn btn-sm btn-outline">
                   View Details
                 </button>
               </div>
-              <div
-                v-else-if="item.status === 'RETRIEVED'"
-                class="status-badge retrieved"
-              >
+              <div v-else-if="item.status === 'RETRIEVED'" class="status-badge retrieved">
                 Item Retrieved
               </div>
               <div v-else class="status-message">
@@ -117,20 +80,9 @@
         <div class="modal-header">
           <h2>{{ modalTitle }}</h2>
           <button class="close-button" @click="closeModal">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M6 18L18 6M6 6l12 12"
-              />
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24"
+              stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
         </div>
@@ -143,69 +95,33 @@
             </p>
 
             <div class="collection-methods">
-              <div
-                class="collection-method"
-                :class="{ selected: collectionMethod === 'SELF_PICKUP' }"
-                @click="collectionMethod = 'SELF_PICKUP'"
-              >
+              <div class="collection-method" :class="{ selected: collectionMethod === 'SELF_PICKUP' }"
+                @click="collectionMethod = 'SELF_PICKUP'">
                 <div class="method-icon">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="32"
-                    height="32"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-                    />
+                  <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="none" viewBox="0 0 24 24"
+                    stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                   </svg>
                 </div>
                 <h3>Self Pickup</h3>
                 <p>Collect the item yourself from the designated location</p>
-                <span
-                  v-if="collectionMethod === 'SELF_PICKUP'"
-                  class="selected-badge"
-                  >Selected</span
-                >
+                <span v-if="collectionMethod === 'SELF_PICKUP'" class="selected-badge">Selected</span>
               </div>
 
-              <div
-                class="collection-method"
-                :class="{ selected: collectionMethod === 'COURIER' }"
-                @click="collectionMethod = 'COURIER'"
-              >
+              <div class="collection-method" :class="{ selected: collectionMethod === 'COURIER' }"
+                @click="collectionMethod = 'COURIER'">
                 <div class="method-icon">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="32"
-                    height="32"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0z"
-                    />
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0"
-                    />
+                  <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="none" viewBox="0 0 24 24"
+                    stroke="currentColor">
+                    <path d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0" />
                   </svg>
                 </div>
                 <h3>Courier Delivery</h3>
                 <p>Have the item delivered to your address (fees apply)</p>
-                <span
-                  v-if="collectionMethod === 'COURIER'"
-                  class="selected-badge"
-                  >Selected</span
-                >
+                <span v-if="collectionMethod === 'COURIER'" class="selected-badge">Selected</span>
               </div>
             </div>
 
@@ -219,25 +135,15 @@
 
               <div v-else-if="addressError" class="address-error">
                 <div class="error-icon">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="24"
-                    height="24"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                  >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2">
                     <circle cx="12" cy="12" r="10"></circle>
                     <line x1="12" y1="8" x2="12" y2="12"></line>
                     <line x1="12" y1="16" x2="12.01" y2="16"></line>
                   </svg>
                 </div>
                 <p>{{ addressError }}</p>
-                <button
-                  @click="fetchUserAddress(selectedItem.id)"
-                  class="btn btn-secondary btn-sm"
-                >
+                <button @click="fetchUserAddress(selectedItem.id)" class="btn btn-secondary btn-sm">
                   Try Again
                 </button>
               </div>
@@ -282,10 +188,7 @@
           <div v-else-if="modalType === 'details'" class="collection-details">
             <div class="item-summary">
               <div class="item-image">
-                <img
-                  :src="selectedItem.imageUrl || '/img/placeholder-image.jpg'"
-                  :alt="selectedItem.name"
-                />
+                <img :src="selectedItem.imageUrl || '/img/placeholder-image.jpg'" :alt="selectedItem.name" />
               </div>
               <div class="item-info">
                 <h3>{{ selectedItem.name }}</h3>
@@ -295,42 +198,28 @@
                 </p>
                 <p>
                   <strong>Status:</strong>
-                  <span
-                    class="status-badge"
-                    :class="'status-' + selectedItem.status.toLowerCase()"
-                    >{{ formatStatus(selectedItem.status) }}</span
-                  >
+                  <span class="status-badge" :class="'status-' + selectedItem.status.toLowerCase()">{{
+                    formatStatus(selectedItem.status) }}</span>
                 </p>
                 <div v-if="canEditItem(selectedItem)" class="item-actions mt-2">
-                  <button
-                    @click="editItem(selectedItem)"
-                    class="btn btn-secondary btn-sm"
-                  >
+                  <button @click="editItem(selectedItem)" class="btn btn-secondary btn-sm">
                     Edit Details
                   </button>
-                  <button
-                    @click="confirmDelete(selectedItem)"
-                    class="btn btn-danger btn-sm ml-2"
-                  >
+                  <button @click="confirmDelete(selectedItem)" class="btn btn-danger btn-sm ml-2">
                     Delete Item
                   </button>
                 </div>
               </div>
             </div>
 
-            <div
-              v-if="selectedItem.status === 'COLLECTING' && collectionDetails"
-              class="collection-info"
-            >
+            <div v-if="selectedItem.status === 'COLLECTING' && collectionDetails" class="collection-info">
               <h3>Collection Details</h3>
 
               <!-- Common details section -->
               <div class="detail-row">
                 <span class="detail-label">Delivery Status:</span>
-                <span
-                  class="detail-value status-badge"
-                  :class="`delivery-${collectionDetails.delivery_status?.toLowerCase()}`"
-                >
+                <span class="detail-value status-badge"
+                  :class="`delivery-${collectionDetails.delivery_status?.toLowerCase()}`">
                   {{
                     formatDeliveryStatus(
                       collectionDetails.delivery_status || "PENDING"
@@ -349,9 +238,7 @@
 
               <div class="detail-row">
                 <span class="detail-label">Price:</span>
-                <span class="detail-value"
-                  >${{ collectionDetails.price || "0.00" }}</span
-                >
+                <span class="detail-value">${{ collectionDetails.price || "0.00" }}</span>
               </div>
 
               <div class="detail-row">
@@ -375,45 +262,31 @@
                   <h4>Finder Actions</h4>
 
                   <!-- For courier delivery -->
-                  <button
-                    v-if="
-                      (collectionDetails.delivery_status === 'PAID' ||
-                        collectionDetails.delivery_status === 'PENDING') &&
-                      collectionDetails.service_name !== 'Self Pickup'
-                    "
-                    @click="updateDeliveryStatus(selectedItem.id, 'PICKED_UP')"
-                    class="btn btn-primary"
-                  >
+                  <button v-if="
+                    (collectionDetails.delivery_status === 'PAID' ||
+                      collectionDetails.delivery_status === 'PENDING') &&
+                    collectionDetails.service_name !== 'Self Pickup'
+                  " @click="updateDeliveryStatus(selectedItem.id, 'PICKED_UP')" class="btn btn-primary">
                     Confirm Item Picked Up by Courier
                   </button>
 
                   <!-- For self pickup -->
-                  <button
-                    v-if="
-                      collectionDetails.service_name === 'Self Pickup' &&
-                      (collectionDetails.delivery_status === 'ARRANGED' ||
-                        collectionDetails.delivery_status === 'PENDING')
-                    "
-                    @click="updateDeliveryStatus(selectedItem.id, 'PICKED_UP')"
-                    class="btn btn-primary"
-                  >
+                  <button v-if="
+                    collectionDetails.service_name === 'Self Pickup' &&
+                    (collectionDetails.delivery_status === 'ARRANGED' ||
+                      collectionDetails.delivery_status === 'PENDING')
+                  " @click="updateDeliveryStatus(selectedItem.id, 'PICKED_UP')" class="btn btn-primary">
                     Confirm Item Picked Up by Owner
                   </button>
 
-                  <div
-                    v-else-if="
-                      collectionDetails.delivery_status === 'PICKED_UP'
-                    "
-                    class="status-message"
-                  >
+                  <div v-else-if="
+                    collectionDetails.delivery_status === 'PICKED_UP'
+                  " class="status-message">
                     Item has been picked up
                   </div>
-                  <div
-                    v-else-if="
-                      collectionDetails.delivery_status === 'DELIVERED'
-                    "
-                    class="status-message"
-                  >
+                  <div v-else-if="
+                    collectionDetails.delivery_status === 'DELIVERED'
+                  " class="status-message">
                     Item has been delivered successfully
                   </div>
                 </div>
@@ -421,27 +294,17 @@
                 <!-- Owner-specific actions -->
                 <div v-if="isItemOwner(selectedItem)" class="action-section">
                   <h4>Owner Actions</h4>
-                  <div
-                    v-if="collectionDetails.delivery_status === 'PAID'"
-                    class="status-message"
-                  >
+                  <div v-if="collectionDetails.delivery_status === 'PAID'" class="status-message">
                     Waiting for item to be picked up from finder
                   </div>
-                  <button
-                    v-else-if="
-                      collectionDetails.delivery_status === 'PICKED_UP'
-                    "
-                    @click="markItemAsDelivered(selectedItem.id)"
-                    class="btn btn-success"
-                  >
+                  <button v-else-if="
+                    collectionDetails.delivery_status === 'PICKED_UP'
+                  " @click="markItemAsDelivered(selectedItem.id)" class="btn btn-success">
                     Confirm Item Received
                   </button>
-                  <div
-                    v-else-if="
-                      collectionDetails.delivery_status === 'DELIVERED'
-                    "
-                    class="status-message"
-                  >
+                  <div v-else-if="
+                    collectionDetails.delivery_status === 'DELIVERED'
+                  " class="status-message">
                     You've confirmed receipt of this item
                   </div>
                 </div>
@@ -462,26 +325,12 @@
               <div class="delivery-route">
                 <div class="location-card">
                   <div class="location-icon pickup">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="24"
-                      height="24"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-                      />
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                      />
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24"
+                      stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                     </svg>
                   </div>
                   <div class="location-info">
@@ -489,47 +338,25 @@
                     <span class="location-value">{{
                       paymentDetails.pickup_location || "Unknown location"
                     }}</span>
-                    <span class="location-postal"
-                      >Postal code:
-                      {{ paymentDetails.pick_code || "N/A" }}</span
-                    >
+                    <span class="location-postal">Postal code:
+                      {{ paymentDetails.pick_code || "N/A" }}</span>
                   </div>
                 </div>
 
                 <div class="route-arrow">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="24"
-                    height="24"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M17 8l4 4m0 0l-4 4m4-4H3"
-                    />
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24"
+                    stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M17 8l4 4m0 0l-4 4m4-4H3" />
                   </svg>
                 </div>
 
                 <div class="location-card">
                   <div class="location-icon dropoff">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="24"
-                      height="24"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
-                      />
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24"
+                      stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
                     </svg>
                   </div>
                   <div class="location-info">
@@ -549,67 +376,38 @@
             <div class="shipping-options-container">
               <h3>Select a Shipping Option</h3>
               <div class="shipping-options">
-                <div
-                  v-for="option in shippingOptions"
-                  :key="option.service_name"
-                  class="shipping-option"
-                  :class="{
-                    selected:
-                      selectedOption &&
-                      selectedOption.service_name === option.service_name,
-                  }"
-                  @click="selectShippingOption(option)"
-                >
+                <div v-for="option in shippingOptions" :key="option.service_name" class="shipping-option" :class="{
+                  selected:
+                    selectedOption &&
+                    selectedOption.service_name === option.service_name,
+                }" @click="selectShippingOption(option)">
                   <div class="option-header">
                     <div class="option-name">{{ option.service_name }}</div>
                     <div class="option-price">${{ option.price }}</div>
                   </div>
                   <div class="option-details">
                     <div class="option-detail">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="18"
-                        height="18"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="2"
-                          d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                        />
+                      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
                       <span>{{
                         option.estimated_delivery || "Standard delivery time"
                       }}</span>
                     </div>
                     <div class="option-detail" v-if="option.features">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="18"
-                        height="18"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="2"
-                          d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                        />
+                      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
                       <span>{{ option.features }}</span>
                     </div>
                   </div>
                 </div>
 
-                <div
-                  v-if="!shippingOptions || shippingOptions.length === 0"
-                  class="no-options"
-                >
+                <div v-if="!shippingOptions || shippingOptions.length === 0" class="no-options">
                   <p>
                     No shipping options are currently available for this
                     address. Please try again later.
@@ -626,29 +424,14 @@
                     <span class="service-name">{{
                       selectedOption.service_name
                     }}</span>
-                    <span class="service-price"
-                      >${{ selectedOption.price }}</span
-                    >
+                    <span class="service-price">${{ selectedOption.price }}</span>
                   </div>
-                  <div
-                    class="service-details"
-                    v-if="selectedOption.estimated_delivery"
-                  >
+                  <div class="service-details" v-if="selectedOption.estimated_delivery">
                     <div class="detail-item">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="16"
-                        height="16"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="2"
-                          d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                        />
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
                       <span>{{ selectedOption.estimated_delivery }}</span>
                     </div>
@@ -667,15 +450,8 @@
               </div>
 
               <div v-if="paymentError" class="payment-error">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                >
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="2">
                   <circle cx="12" cy="12" r="10"></circle>
                   <line x1="12" y1="8" x2="12" y2="12"></line>
                   <line x1="12" y1="16" x2="12.01" y2="16"></line>
@@ -684,11 +460,8 @@
               </div>
 
               <div class="payment-buttons">
-                <button
-                  @click="processPayment"
-                  class="btn btn-primary btn-large"
-                  :disabled="!selectedOption || isProcessingPayment"
-                >
+                <button @click="processPayment" class="btn btn-primary btn-large"
+                  :disabled="!selectedOption || isProcessingPayment">
                   <span v-if="isProcessingPayment" class="spinner small"></span>
                   Proceed to Payment
                 </button>
@@ -703,11 +476,7 @@
             <button @click="closeModal" class="btn btn-secondary">
               Cancel
             </button>
-            <button
-              @click="submitCollectionRequest"
-              class="btn btn-primary"
-              :disabled="isSubmitting"
-            >
+            <button @click="submitCollectionRequest" class="btn btn-primary" :disabled="isSubmitting">
               <span v-if="isSubmitting" class="spinner small"></span>
               View Delivery Fee
             </button>
@@ -724,13 +493,8 @@
           <div class="modal-body">
             <div class="form-group">
               <label for="itemName">Item Name *</label>
-              <input
-                type="text"
-                id="itemName"
-                v-model="editForm.name"
-                class="form-control"
-                :class="{ error: editErrors.name }"
-              />
+              <input type="text" id="itemName" v-model="editForm.name" class="form-control"
+                :class="{ error: editErrors.name }" />
               <div v-if="editErrors.name" class="error-message">
                 {{ editErrors.name }}
               </div>
@@ -738,12 +502,8 @@
 
             <div class="form-group">
               <label for="itemCategory">Category *</label>
-              <select
-                id="itemCategory"
-                v-model="editForm.category"
-                class="form-control"
-                :class="{ error: editErrors.category }"
-              >
+              <select id="itemCategory" v-model="editForm.category" class="form-control"
+                :class="{ error: editErrors.category }">
                 <option value="">Select a category</option>
                 <option value="Electronics">Electronics</option>
                 <option value="Jewelry">Jewelry</option>
@@ -760,13 +520,8 @@
 
             <div class="form-group">
               <label for="itemDescription">Description *</label>
-              <textarea
-                id="itemDescription"
-                v-model="editForm.description"
-                class="form-control"
-                :class="{ error: editErrors.description }"
-                rows="4"
-              ></textarea>
+              <textarea id="itemDescription" v-model="editForm.description" class="form-control"
+                :class="{ error: editErrors.description }" rows="4"></textarea>
               <div v-if="editErrors.description" class="error-message">
                 {{ editErrors.description }}
               </div>
@@ -774,13 +529,8 @@
 
             <div class="form-group">
               <label for="itemVenue">Venue/Location *</label>
-              <input
-                type="text"
-                id="itemVenue"
-                v-model="editForm.venue"
-                class="form-control"
-                :class="{ error: editErrors.venue }"
-              />
+              <input type="text" id="itemVenue" v-model="editForm.venue" class="form-control"
+                :class="{ error: editErrors.venue }" />
               <div v-if="editErrors.venue" class="error-message">
                 {{ editErrors.venue }}
               </div>
@@ -788,12 +538,7 @@
 
             <div class="form-group">
               <label for="specificLocation">Specific Location</label>
-              <input
-                type="text"
-                id="specificLocation"
-                v-model="editForm.specificLocation"
-                class="form-control"
-              />
+              <input type="text" id="specificLocation" v-model="editForm.specificLocation" class="form-control" />
             </div>
           </div>
 
@@ -801,11 +546,7 @@
             <button @click="closeEditModal" class="btn btn-secondary">
               Cancel
             </button>
-            <button
-              @click="saveItemChanges"
-              class="btn btn-primary"
-              :disabled="isSaving"
-            >
+            <button @click="saveItemChanges" class="btn btn-primary" :disabled="isSaving">
               <span v-if="isSaving" class="spinner small"></span>
               Save Changes
             </button>
@@ -1021,7 +762,7 @@ export default {
             console.error("Logistics API error:", apiError);
             throw new Error(
               "Failed to retrieve delivery options: " +
-                (apiError.response?.data?.error || apiError.message)
+              (apiError.response?.data?.error || apiError.message)
             );
           }
         } else {
@@ -1426,9 +1167,9 @@ export default {
               itemService.updateItemStatus(itemId, "RETRIEVED"),
               itemData.matchedItemId
                 ? itemService.updateItemStatus(
-                    itemData.matchedItemId,
-                    "RETRIEVED"
-                  )
+                  itemData.matchedItemId,
+                  "RETRIEVED"
+                )
                 : Promise.resolve(),
             ]);
 
@@ -1703,7 +1444,9 @@ export default {
       const userId = store.getters["auth/user"]?.id;
       return (
         item.reportOwner === userId &&
-        !["MATCHED", "COLLECTING", "RETRIEVED"].includes(item.status)
+        !["MATCHED", "COLLECTING", "RETRIEVED"].includes(item.status) &&
+        ((item.ownerId === userId && item.status === "LOST") ||
+          (item.finderId === userId && item.status === "FOUND"))
       );
     };
 
@@ -1909,9 +1652,9 @@ export default {
             // Update matched item if it exists
             selectedItem.value.matchedItemId
               ? itemService.updateItemStatus(
-                  selectedItem.value.matchedItemId,
-                  "COLLECTING"
-                )
+                selectedItem.value.matchedItemId,
+                "COLLECTING"
+              )
               : Promise.resolve(),
           ]);
 
@@ -2133,6 +1876,7 @@ export default {
 .delivery-delivered {
   background-color: #10b981;
 }
+
 .collection-not-started {
   padding: 1.5rem;
   background-color: #f8fafc;
@@ -2320,9 +2064,11 @@ export default {
   border-radius: 0.375rem;
   font-size: 1rem;
 }
+
 .ml-2 {
   margin-left: 0.5rem;
 }
+
 .matched-items {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));

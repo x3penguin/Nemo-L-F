@@ -74,6 +74,8 @@ def match_images(found_item_id, image_url):
             print(f"Item {found_item_id} not found or not in FOUND status")
             return None
         
+        finder_id = found_item.get('reportOwner')
+        
         # Download the found item image
         found_img = download_image(image_url)
         
@@ -84,6 +86,10 @@ def match_images(found_item_id, image_url):
         
         # Compare with each lost item
         for lost_item in lost_items:
+            # Skip items reported by the same user
+            if lost_item.get('reportOwner') == finder_id:
+                continue
+                
             if 'imageUrl' not in lost_item or not lost_item['imageUrl']:
                 continue
                 

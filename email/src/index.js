@@ -10,6 +10,7 @@ const swaggerFile = require('../swagger-output.json');
 // Initialize Express app
 const app = express();
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerFile));
+const potentialMatchConsumer = require('./kafka/potential-match-consumer');
 
 // Middleware
 app.use(bodyParser.json());
@@ -20,12 +21,12 @@ app.use(cors());
 app.post('/api/found-items/notify', async (req, res) => {
   try {
     const { itemId, itemName, itemDescription, ownerEmail } = req.body;
-    
+
     // Validate required fields
     if (!itemId || !itemName || !ownerEmail) {
       return res.status(400).json({ success: false, error: 'Missing required fields' });
     }
-    
+
     // Send notification via Kafka
     const result = await kafkaProducer.sendItemFoundNotification({
       itemId,
@@ -33,7 +34,7 @@ app.post('/api/found-items/notify', async (req, res) => {
       itemDescription,
       ownerEmail,
     });
-    
+
     if (result.success) {
       res.status(200).json({ success: true, message: 'Notification sent successfully' });
     } else {
@@ -54,7 +55,8 @@ app.get('/health', (req, res) => {
 const PORT = config.api.port;
 app.listen(PORT, async () => {
 
-  
+
   // Start Kafka consumers
   await kafkaConsumer.startListening();
+  await potentialMatchConsumer.startListening();
 });

@@ -5,7 +5,8 @@ import os
 import datetime
 from image_match.image_matcher import match_images
 from location_match.location_matcher import match_locations
-from firebase_client import store_potential_matches
+from firebase_client import store_potential_matches, get_owner_details, get_item_by_id
+import requests
 
 
 def start_consumer():
@@ -102,12 +103,44 @@ def start_consumer():
                             for match in top_matches:
                                 # Store the match details for potential matches view
                                 store_potential_matches(
-                                    match['foundItemId'],
-                                    match['lostItemId'],
-                                    match['weightedConfidence'],
-                                    match['distance']
+                                    match["foundItemId"],
+                                    match["lostItemId"],
+                                    match["weightedConfidence"],
+                                    match["distance"],
                                 )
-            consumer.commit()
+
+                                lost_item = get_item_by_id(match["lostItemId"])
+                                if lost_item and lost_item.get("ownerId"):
+                                    owner_details = get_owner_details(
+                                        match["lostItemId"]
+                                    )
+                                    if owner_details and "email" in owner_details:
+                                        # Send notification to owner about potential match
+                                        try:
+                                            # Make HTTP request to email service
+                                            requests.post(
+                                                "http://email:3001/api/found-items/notify",
+                                                json={
+                                                    "itemId": match["foundItemId"],
+                                                    "itemName": get_item_by_id(
+                                                        match["foundItemId"]
+                                                    ).get("name", "Found Item"),
+                                                    "itemDescription": get_item_by_id(
+                                                        match["foundItemId"]
+                                                    ).get("description", ""),
+                                                    "ownerEmail": owner_details[
+                                                        "email"
+                                                    ],
+                                                },
+                                            )
+                                            print(
+                                                f"Email notification sent to owner about potential match for {match['lostItemId']}"
+                                            )
+                                        except Exception as email_err:
+                                            print(
+                                                f"Error sending email notification: {email_err}"
+                                            )
+                                        consumer.commit()
 
         except Exception as e:
             print(f"Error processing message: {e}")

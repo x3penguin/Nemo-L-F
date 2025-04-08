@@ -2,40 +2,21 @@
   <div class="match-carousel">
     <div class="carousel-container">
       <!-- Left arrow navigation -->
-      <button
-        v-if="items && items.length > 1"
-        class="carousel-arrow carousel-arrow-left"
-        @click="prevSlide"
-        :disabled="currentIndex === 0"
-      >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="24"
-          height="24"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-        >
+      <button v-if="items && items.length > 1" class="carousel-arrow carousel-arrow-left" @click="prevSlide"
+        :disabled="currentIndex === 0">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2">
           <polyline points="15 18 9 12 15 6"></polyline>
         </svg>
       </button>
 
       <!-- Carousel slides -->
       <div class="carousel-slides">
-        <div
-          v-for="(item, index) in items || []"
-          :key="item.id"
-          class="carousel-slide"
-          :class="{ active: index === currentIndex }"
-        >
+        <div v-for="(item, index) in items || []" :key="item.id" class="carousel-slide"
+          :class="{ active: index === currentIndex }">
           <div class="carousel-item">
             <div class="item-image">
-              <img
-                :src="item.imageUrl || '/img/placeholder-image.jpg'"
-                :alt="item.name"
-                @error="handleImageError"
-              />
+              <img :src="item.imageUrl || '/img/placeholder-image.jpg'" :alt="item.name" @error="handleImageError" />
               <div class="match-confidence">
                 {{ Math.round(getConfidence(item)) }}% Match
               </div>
@@ -56,10 +37,7 @@
                 <button @click="chatWithFinder(item)" class="btn btn-secondary">
                   Chat with Finder
                 </button>
-                <button
-                  @click="confirmMatch(item)"
-                  class="btn btn-success mt-2"
-                >
+                <button @click="confirmMatch(item)" class="btn btn-success mt-2">
                   Confirm This Is My Item
                 </button>
               </div>
@@ -69,21 +47,10 @@
       </div>
 
       <!-- Right arrow navigation -->
-      <button
-        v-if="items && items.length > 1"
-        class="carousel-arrow carousel-arrow-right"
-        @click="nextSlide"
-        :disabled="currentIndex === (items ? items.length - 1 : 0)"
-      >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="24"
-          height="24"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-        >
+      <button v-if="items && items.length > 1" class="carousel-arrow carousel-arrow-right" @click="nextSlide"
+        :disabled="currentIndex === (items ? items.length - 1 : 0)">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2">
           <polyline points="9 18 15 12 9 6"></polyline>
         </svg>
       </button>
@@ -91,13 +58,8 @@
 
     <!-- Slide indicators -->
     <div v-if="items && items.length > 1" class="carousel-indicators">
-      <button
-        v-for="(item, index) in items"
-        :key="`indicator-${index}`"
-        class="carousel-indicator"
-        :class="{ active: index === currentIndex }"
-        @click="goToSlide(index)"
-      ></button>
+      <button v-for="(item, index) in items" :key="`indicator-${index}`" class="carousel-indicator"
+        :class="{ active: index === currentIndex }" @click="goToSlide(index)"></button>
     </div>
   </div>
 </template>
@@ -201,13 +163,6 @@ export default {
           return;
         }
 
-        // Get user email for notification purposes
-        let userEmail = currentUser.email;
-        if (!userEmail) {
-          console.warn("User email not found in store, using fallback");
-          userEmail = "user@example.com"; // Fallback email
-        }
-
         // Call the API to confirm the match
         const response = await axios.post(
           "http://localhost:8000/user/api/test/create-match",
@@ -225,20 +180,6 @@ export default {
             message: `${item.name} has been matched! Go to the Collections page to arrange collection.`,
             isPersistent: true,
           });
-
-          try {
-            await axios.post(
-              "http://localhost:8000/email/api/found-items/notify",
-              {
-                itemId: foundItemId,
-                itemName: item.name || "Found Item",
-                itemDescription: item.description || "No description",
-                ownerEmail: userEmail,
-              }
-            );
-          } catch (emailErr) {
-            console.error("Error sending email notification:", emailErr);
-          }
 
           if (window.refreshPotentialMatches) {
             window.refreshPotentialMatches();
@@ -454,6 +395,7 @@ export default {
   cursor: pointer;
   transition: all 0.2s;
 }
+
 .btn-primary:hover {
   background-color: #1f2937;
 }

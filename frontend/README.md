@@ -1,6 +1,6 @@
 # Nemo Lost & Found - Frontend
 
-This repository contains the frontend application for Nemo Lost & Found, a platform that connects people who have lost items with those who have found them.
+This folder contains the frontend application for Nemo Lost & Found, a platform that connects people who have lost items with those who have found them.
 
 ## Features
 

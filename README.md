@@ -1,5 +1,5 @@
 # Nemo-L-F
-
+![Project Image](frontend/src/assets/Nemo.png)
 ## Description
 NEMO is a City-Wide Lost & Found Platform that helps people locate missing items or return found ones. The system leverages microservices architecture to facilitate user reporting, matching, and retrieval of lost items.
 

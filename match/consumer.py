@@ -2,9 +2,9 @@
 from kafka import KafkaConsumer
 import json
 import os
-from image_match.image_matcher import match_images
+from image_match.image_matcher import match_images, match_lost_item
 from location_match.location_matcher import match_locations
-from firebase_client import store_potential_matches, get_owner_details, get_item_by_id
+from firebase_client import get_owner_details, store_potential_matches
 import requests
 import datetime
 
@@ -46,8 +46,27 @@ def start_consumer():
 
             print(f"Processing image matching for item {item_id}")
 
-            # Run image matching algorithm
-            best_image_matches = match_images(item_id, image_url)
+            # Get item to determine if it's lost or found
+            from firebase_client import get_item_by_id
+
+            item = get_item_by_id(item_id)
+            if not item:
+                print(f"Item {item_id} not found")
+                consumer.commit()
+                continue
+
+            # Run image matching algorithm based on item status
+            best_image_matches = None
+            if item.get("status") == "FOUND":
+                # Match found item against lost items
+                best_image_matches = match_images(item_id, image_url)
+            elif item.get("status") == "LOST":
+                # Match lost item against found items
+                best_image_matches = match_lost_item(item_id, image_url)
+            else:
+                print(f"Item {item_id} has invalid status: {item.get('status')}")
+                consumer.commit()
+                continue
 
             if best_image_matches:
                 print(f"Found {len(best_image_matches)} potential image matches")
@@ -75,17 +94,33 @@ def start_consumer():
                                 0.3 * location_confidence
                             )
                             if weighted_confidence > 80:
-                                final_matches.append(
-                                    {
-                                        "lostItemId": match["id"],
-                                        "foundItemId": item_id,
-                                        "imageConfidence": image_confidence,
-                                        "locationConfidence": location_confidence,
-                                        "weightedConfidence": weighted_confidence,
-                                        "distance": match["distance"],
-                                        "timestamp": datetime.datetime.now().isoformat(),
-                                    }
-                                )
+                                # For lost items, swap the IDs to keep consistent format
+                                if item.get("status") == "LOST":
+                                    final_matches.append(
+                                        {
+                                            "lostItemId": item_id,  # This is the lost item
+                                            "foundItemId": match[
+                                                "id"
+                                            ],  # This is the found item
+                                            "imageConfidence": image_confidence,
+                                            "locationConfidence": location_confidence,
+                                            "weightedConfidence": weighted_confidence,
+                                            "distance": match["distance"],
+                                            "timestamp": datetime.datetime.now().isoformat(),
+                                        }
+                                    )
+                                else:
+                                    final_matches.append(
+                                        {
+                                            "lostItemId": match["id"],
+                                            "foundItemId": item_id,
+                                            "imageConfidence": image_confidence,
+                                            "locationConfidence": location_confidence,
+                                            "weightedConfidence": weighted_confidence,
+                                            "distance": match["distance"],
+                                            "timestamp": datetime.datetime.now().isoformat(),
+                                        }
+                                    )
 
                         if final_matches:
                             print(
@@ -101,40 +136,46 @@ def start_consumer():
 
                             # Store all potential matches for display in UI
                             for match in top_matches:
-                                # Store the match details for potential matches view
-                                store_potential_matches(
-                                    match["foundItemId"],
-                                    match["lostItemId"],
-                                    match["weightedConfidence"],
-                                    match["distance"],
-                                )
+                                # For both lost and found items, send email to the owner of the lost item
+                                lost_item_id = match["lostItemId"]
+                                found_item_id = match["foundItemId"]
 
-                                lost_item = get_item_by_id(match["lostItemId"])
+                                lost_item = get_item_by_id(lost_item_id)
                                 if lost_item and lost_item.get("ownerId"):
-                                    owner_details = get_owner_details(
-                                        match["lostItemId"]
-                                    )
+                                    owner_details = get_owner_details(lost_item_id)
                                     if owner_details and "email" in owner_details:
+                                        # Get found item details for the email
+                                        found_item = get_item_by_id(found_item_id)
+                                        found_item_name = found_item.get(
+                                            "name", "Found Item"
+                                        )
+                                        found_item_description = found_item.get(
+                                            "description", ""
+                                        )
+
+                                        store_potential_matches(
+                                            match["foundItemId"],
+                                            match["lostItemId"],
+                                            match["weightedConfidence"],
+                                            match["distance"],
+                                        )
+
                                         # Send notification to owner about potential match
                                         try:
                                             # Make HTTP request to email service
                                             requests.post(
                                                 "http://email:3001/api/found-items/notify",
                                                 json={
-                                                    "itemId": match["foundItemId"],
-                                                    "itemName": get_item_by_id(
-                                                        match["foundItemId"]
-                                                    ).get("name", "Found Item"),
-                                                    "itemDescription": get_item_by_id(
-                                                        match["foundItemId"]
-                                                    ).get("description", ""),
+                                                    "itemId": found_item_id,
+                                                    "itemName": found_item_name,
+                                                    "itemDescription": found_item_description,
                                                     "ownerEmail": owner_details[
                                                         "email"
                                                     ],
                                                 },
                                             )
                                             print(
-                                                f"Email notification sent to owner about potential match for {match['lostItemId']}"
+                                                f"Email notification sent to owner about potential match for {lost_item_id}"
                                             )
                                         except Exception as email_err:
                                             print(

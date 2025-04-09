@@ -2,7 +2,7 @@
 import cv2
 import numpy as np
 import requests
-from firebase_client import get_lost_items, get_item_by_id
+from firebase_client import get_lost_items, get_item_by_id, get_found_items
 
 def download_image(url):
     """Download image from URL to OpenCV format"""
@@ -114,4 +114,53 @@ def match_images(found_item_id, image_url):
         
     except Exception as e:
         print(f"Error in match_images: {e}")
+        return None
+    
+def match_lost_item(lost_item_id, image_url):
+    """Match lost item against found items"""
+    try:
+        # Get the lost item details
+        lost_item = get_item_by_id(lost_item_id)
+        if not lost_item or lost_item.get('status') != 'LOST':
+            print(f"Item {lost_item_id} not found or not in LOST status")
+            return None
+        
+        # Download the lost item image
+        lost_img = download_image(image_url)
+        
+        # Get all found items
+        found_items = get_found_items()
+        
+        best_image_matches = []
+        
+        # Compare with each found item
+        for found_item in found_items:
+            # Skip items reported by the same user
+            if found_item.get('reportOwner') == lost_item.get('reportOwner'):
+                continue
+                
+            if 'imageUrl' not in found_item or not found_item['imageUrl']:
+                continue
+                
+            try:
+                # Download found item image
+                found_img_url = found_item['imageUrl']
+                found_img = download_image(found_img_url)
+                
+                # Compare images
+                confidence = compare_images(lost_img, found_img)
+                print(f"Comparison with {found_item['id']}: {confidence:.2f}%")
+                
+                if confidence > 85:  # 85% threshold
+                    best_image_matches.append({'id': found_item['id'], 'image_confidence': confidence})
+            except Exception as e:
+                print(f"Error comparing with item {found_item.get('id')}: {e}")
+        
+        if best_image_matches:
+            return best_image_matches
+        
+        return None
+        
+    except Exception as e:
+        print(f"Error in match_lost_item: {e}")
         return None

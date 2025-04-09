@@ -157,6 +157,20 @@ app.post("/lost", upload.single("image"), async (req, res) => {
 
     const result = await storeItemData(itemData);
     if (result.success) {
+      // NEW: Send item for image matching
+      if (imageUrl) {
+        try {
+          await publishMatchingJob(
+            result.itemId,
+            imageUrl,
+            itemData.latitude,
+            itemData.longitude
+          );
+        } catch (err) {
+          console.error("Error publishing matching job:", err);
+        }
+      }
+
       res.status(201).json({
         success: true,
         itemId: result.itemId,

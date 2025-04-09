@@ -21,7 +21,7 @@ EASYPARCEL_API_KEY = os.getenv("EASYPARCEL_API_KEY")
 CORS(app, resources={r"/logistics/*": {"origins": "http://localhost:8080"}})
 
 spec = APISpec(
-    title="Location Service API",
+    title="Logistics Service API",
     version="1.0.0",
     openapi_version="3.0.3",
     plugins=[FlaskPlugin(), MarshmallowPlugin()],

@@ -3,7 +3,9 @@ from firebase_admin import credentials, firestore, storage
 import os
 from google.cloud.firestore_v1.base_query import FieldFilter
 from dotenv import load_dotenv
-from datetime import datetime
+import datetime
+from kafka import KafkaProducer
+import json
 
 load_dotenv()
 
@@ -43,10 +45,10 @@ def store_potential_matches(found_item_id, lost_item_id, confidence, distance=No
             filter=FieldFilter("lostItemId", "==", lost_item_id)
         )
         
-        existing_matches = query.get()
+        existing_matches = list(query.stream())
         
         # If match already exists, update it
-        if not existing_matches.empty:
+        if len(existing_matches) > 0:
             # Get the first match (should be only one)
             match_doc = existing_matches[0]
             
@@ -121,60 +123,6 @@ def get_lost_items():
         item_data["id"] = doc.id
         items.append(item_data)
     return items
-
-
-def update_matched_items(found_item_id, lost_item_id, confidence):
-    transaction = db.transaction()
-
-    @firestore.transactional
-    def update_in_transaction(transaction, found_id, lost_id, conf):
-        # Get the found item
-        found_ref = db.collection("items").document(found_id)
-        found_item = found_ref.get(transaction=transaction).to_dict()
-        finder_id = found_item.get("finderId")
-        found_report_owner = found_item.get("reportOwner")  # Get the reportOwner
-
-        # Get the lost item to get the owner ID and reportOwner
-        lost_ref = db.collection("items").document(lost_id)
-        lost_item = lost_ref.get(transaction=transaction).to_dict()
-        owner_id = lost_item.get("ownerId")
-        lost_report_owner = lost_item.get("reportOwner")
-
-        # Update found item - keep its reportType
-        transaction.update(
-            found_ref,
-            {
-                "status": "MATCHED",
-                "matchedItemId": lost_id,
-                "matchingConfidence": conf,
-                "matchedDate": firestore.SERVER_TIMESTAMP,
-                "ownerId": owner_id,
-                "notificationSeen": False,
-                "notificationRead": False,
-                "reportOwner": found_report_owner,
-            },
-        )
-
-        # Update lost item - keep its reportType
-        transaction.update(
-            lost_ref,
-            {
-                "status": "MATCHED",
-                "matchedItemId": found_id,
-                "matchingConfidence": conf,
-                "matchedDate": firestore.SERVER_TIMESTAMP,
-                "finderId": finder_id,
-                "notificationSeen": False,
-                "notificationRead": False,
-                "reportOwner": lost_report_owner,  # Preserve reportType
-            },
-        )
-
-    update_in_transaction(transaction, found_item_id, lost_item_id, confidence)
-
-    print(
-        f"Updated items {found_item_id} and {lost_item_id} as matched with notification flags"
-    )
 
 
 def get_owner_details(item_id):

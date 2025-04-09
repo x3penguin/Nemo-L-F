@@ -1,12 +1,12 @@
 # matching/consumer.py
-from kafka import KafkaConsumer, KafkaProducer
+from kafka import KafkaConsumer
 import json
 import os
-import datetime
 from image_match.image_matcher import match_images
 from location_match.location_matcher import match_locations
 from firebase_client import store_potential_matches, get_owner_details, get_item_by_id
 import requests
+import datetime
 
 
 def start_consumer():

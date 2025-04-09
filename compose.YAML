@@ -176,7 +176,7 @@ services:
       KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_CREATE_TOPICS: "found-items:1:1,image-matching-jobs:1:1"
+      KAFKA_CREATE_TOPICS: "potential-match-notifications:1:1,image-matching-jobs:1:1"
     healthcheck:
       test: ["CMD", "kafka-topics.sh", "--list", "--bootstrap-server", "kafka:9092"]
       interval: 10s

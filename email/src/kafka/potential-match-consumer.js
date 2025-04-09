@@ -2,6 +2,18 @@ const { Kafka } = require('kafkajs');
 const config = require('../config');
 const emailService = require('../services/emailService');
 
+const admin = require('firebase-admin');
+
+// Initialize Firebase if not already done
+if (!admin.apps.length) {
+  admin.initializeApp({
+    credential: admin.credential.cert(require(process.env.FILE_PATH)),
+    storageBucket: process.env.STORAGE_BUCKET
+  });
+}
+
+const db = admin.firestore();
+
 class PotentialMatchConsumer {
   constructor() {
     this.kafka = new Kafka({
@@ -31,10 +43,7 @@ class PotentialMatchConsumer {
         eachMessage: async ({ topic, partition, message }) => {
           try {
             const matchData = JSON.parse(message.value.toString());
-            
-            // Get owner details from Firebase
-            const admin = require('firebase-admin');
-            const db = admin.firestore();
+
             
             if (matchData.ownerId) {
               const userDoc = await db.collection('users').doc(matchData.ownerId).get();

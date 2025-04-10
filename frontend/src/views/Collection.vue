@@ -648,7 +648,7 @@ export default {
     // Function to determine pick code based on currentLocation
     const getPickCodeFromItem = async (itemId) => {
       try {
-        // First, fetch the item details to get currentLocation
+        // First, fetch the item details to get matchedItemId
         const itemResponse = await itemService.getItemById(itemId);
         const itemData = itemResponse.data;
 
@@ -656,14 +656,32 @@ export default {
           throw new Error("Item not found");
         }
 
-        // Check the currentLocation
-        const currentLocation = itemData.currentLocation;
+        // Get the matched item (which should be the found item)
+        let foundItem = null;
+        if (itemData.status === "MATCHED" || itemData.status === "COLLECTING") {
+          if (itemData.status === "LOST" || itemData.ownerId) {
+            // If this is a lost item, we need to get the matched found item
+            if (itemData.matchedItemId) {
+              const matchedItemResponse = await itemService.getItemById(itemData.matchedItemId);
+              foundItem = matchedItemResponse.data;
+            }
+          } else {
+            // This is already the found item
+            foundItem = itemData;
+          }
+        }
 
-        let pickCode; // Declare a variable to store the pick code
+        if (!foundItem) {
+          throw new Error("Found item information not available");
+        }
+
+        // Now use the currentLocation from the found item
+        const currentLocation = foundItem.currentLocation;
+        let pickCode;
 
         if (currentLocation === "with_me") {
           // If item is with finder, get finder's postal code
-          const finderId = itemData.finderId;
+          const finderId = foundItem.finderId || foundItem.reportOwner;
           if (!finderId) {
             throw new Error("Finder information not found");
           }
@@ -684,8 +702,7 @@ export default {
           currentLocation === "venue_staff"
         ) {
           // Extract postal code from location string
-          // Example format: "202 Jurong East Street 21, Singapore 600202 | AF"
-          const locationString = itemData.location;
+          const locationString = foundItem.location;
 
           // Use regex to extract 6-digit postal code
           const postalCodeMatch = locationString.match(/Singapore\s+(\d{6})/i);
@@ -711,8 +728,7 @@ export default {
       } catch (error) {
         console.error("Error getting pick code from item:", error);
         // Return default pick code on error
-        const pickCode = "059893";
-        return pickCode;
+        return "059893";
       }
     };
 
@@ -1032,7 +1048,7 @@ export default {
         // Now try to fetch using the API with the correct item ID
         try {
           const response = await axios.get(
-            `http://localhost:8000/user` + `/${targetItemId}`
+            `http://localhost:8000/storage` + `/${targetItemId}`
           );
 
           if (response.data && response.data.success) {

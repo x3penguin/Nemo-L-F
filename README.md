@@ -24,6 +24,7 @@ NEMO uses a microservice architecture with the following services:
 - Location Service
 - Email Service
 - Logistics Service
+- Payment Service (Outsystems)
 
 ## Prerequisites
 - Docker 27.5.1
